@@ -1,0 +1,753 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { SiteHeader } from "@/components/site-header";
+import { RichTextEditorWrapper } from "@/components/rich-text-editor-wrapper";
+import { useSession } from "@/lib/auth-client";
+import {
+  useOffers,
+  useDeleteOffer,
+  useUpdateOffer,
+  useOffer,
+} from "@/lib/hooks/use-offers";
+import { useRecruteurByUserId } from "@/lib/hooks/use-recruteurs";
+import type { JobOffer } from "@/lib/api/offres/types";
+import { toast } from "sonner";
+import {
+  IconBriefcase,
+  IconCalendar,
+  IconEye,
+  IconEdit,
+  IconTrash,
+  IconCopy,
+  IconMapPin,
+  IconCurrencyEuro,
+  IconUsers,
+  IconSearch,
+  IconFilter,
+  IconLoader,
+  IconChevronLeft,
+  IconChevronRight,
+} from "@tabler/icons-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ChevronDownIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+
+export default function MesOffresPage() {
+  const router = useRouter();
+  const { data: session, isPending: isSessionLoading } = useSession();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatut, setFilterStatut] = useState("all");
+  const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
+  const [editTypeContrat, setEditTypeContrat] = useState("cdi");
+  const [editDescription, setEditDescription] = useState("");
+  const [editDuedate, setEditDuedate] = useState<Date | undefined>(undefined);
+  const [open, setOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Fetch recruteur from session
+  const { data: recruteur } = useRecruteurByUserId(session?.user?.id);
+  const recruteurId = recruteur?.id;
+
+  const { data, isLoading, error } = useOffers(
+    recruteurId
+      ? {
+          recruteurId,
+          page: currentPage,
+          limit: itemsPerPage,
+        }
+      : undefined
+  );
+
+  const deleteOffer = useDeleteOffer();
+  const updateOffer = useUpdateOffer();
+
+  const offres = data?.items || [];
+  const pagination = data?.pagination;
+
+  // Reset to page 1 when filter or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatut, searchTerm]);
+
+  const getStatutBadge = (statut: string) => {
+    switch (statut) {
+      case "active":
+        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
+      case "expiree":
+        return <Badge className="bg-red-100 text-red-800">Expirée</Badge>;
+      case "brouillon":
+        return <Badge className="bg-gray-100 text-gray-800">Brouillon</Badge>;
+      default:
+        return <Badge variant="secondary">{statut}</Badge>;
+    }
+  };
+
+  // Note: Avec pagination côté serveur, le filtrage côté client ne s'applique qu'aux
+  // résultats actuels. Pour un filtrage complet, il faudrait envoyer les filtres au serveur.
+  // Pour l'instant, on affiche simplement les offres paginées.
+  const displayedOffres = offres;
+
+  const handleDeleteOffre = async (id: string) => {
+    if (confirm("Êtes-vous sûr de vouloir supprimer cette offre ?")) {
+      try {
+        await deleteOffer.mutateAsync(id);
+      } catch (error) {
+        console.error("Error deleting offer:", error);
+      }
+    }
+  };
+
+  const handleEditOffre = (id: string) => {
+    setEditingOfferId(id);
+    const offre = offres.find((o) => o.id === id);
+    if (offre) {
+      setEditTypeContrat(offre.type || "cdi");
+      setEditDescription(offre.description || "");
+    }
+  };
+
+  const handleCloseEditModal = () => {
+    setEditingOfferId(null);
+  };
+
+  const handleSubmitEdit = async (
+    e: React.FormEvent,
+    id: string,
+    offre: JobOffer
+  ) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+
+    try {
+      await updateOffer.mutateAsync({
+        id,
+        data: {
+          titre: (formData.get("titre") as string) || offre.title,
+          entreprise: (formData.get("entreprise") as string) || offre.company,
+          typeContrat: (formData.get("typeContrat") as string) || offre.type,
+          lieu: (formData.get("lieu") as string) || offre.location,
+          salaireMin: formData.get("salaireMin") as string,
+          salaireMax: formData.get("salaireMax") as string,
+          description: editDescription || offre.description,
+          duedate: editDuedate ? new Date(editDuedate) : undefined,
+          // duedate: editingOffer.duedate || offre.duedate,
+          // numberOfPosts: editingOffer.numberOfPosts || offre.numberOfPosts,
+        },
+      });
+      handleCloseEditModal();
+    } catch (error) {
+      console.error("Error updating offer:", error);
+    }
+  };
+
+  const editingOffer = offres.find((o) => o.id === editingOfferId);
+
+  if (isSessionLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <IconLoader className="h-12 w-12 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <SiteHeader />
+      <div className="flex flex-1 flex-col">
+        <div className="@container/main flex flex-1 flex-col gap-2">
+          <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+            <div className="px-4 lg:px-6">
+              {/* Header */}
+              <div className="mb-6">
+                <h1 className="text-2xl font-bold flex items-center gap-2">
+                  <IconBriefcase className="h-6 w-6" />
+                  Mes offres d'emploi
+                </h1>
+                <p className="text-muted-foreground mt-2">
+                  Gérez et suivez vos offres d'emploi publiées
+                </p>
+              </div>
+
+              {/* Statistiques */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">
+                          Total offres
+                        </p>
+                        <p className="text-2xl font-bold">
+                          {pagination?.total}
+                        </p>
+                      </div>
+                      <IconBriefcase className="h-8 w-8 " />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Actives</p>
+                        <p className="text-2xl font-bold">
+                          {offres.filter((o) => o.etat === "active").length}
+                        </p>
+                      </div>
+                      <IconEye className="h-8 w-8 " />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">
+                          Candidatures
+                        </p>
+                        <p className="text-2xl font-bold ">
+                          {offres.reduce(
+                            (sum, o: any) => sum + (o.applicationCount || 0),
+                            0
+                          )}
+                        </p>
+                      </div>
+                      <IconUsers className="h-8 w-8 " />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">
+                          Vues totales
+                        </p>
+                        <p className="text-2xl font-bold ">
+                          {offres.reduce(
+                            (sum, o: any) => sum + (o.views || 0),
+                            0
+                          )}
+                        </p>
+                      </div>
+                      <IconEye className="h-8 w-8 " />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Filtres et recherche */}
+              <Card className="mb-6">
+                <CardContent className="p-4">
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex-1">
+                      <div className="relative">
+                        <IconSearch className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Rechercher par titre ou entreprise..."
+                          className="pl-10"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Select
+                        value={filterStatut}
+                        onValueChange={setFilterStatut}
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Filtrer par statut" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tous les statuts</SelectItem>
+                          <SelectItem value="active">Actives</SelectItem>
+                          <SelectItem value="expiree">Expirées</SelectItem>
+                          <SelectItem value="brouillon">Brouillons</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button variant="outline" size="icon">
+                        <IconFilter className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Liste des offres */}
+              <div className="space-y-4">
+                {isLoading ? (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <IconLoader className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-spin" />
+                      <h3 className="text-lg font-semibold mb-2">
+                        Chargement des offres...
+                      </h3>
+                    </CardContent>
+                  </Card>
+                ) : error ? (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <IconBriefcase className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2 text-red-600">
+                        Erreur lors du chargement
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        Impossible de charger les offres d'emploi.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : displayedOffres.length === 0 ? (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <IconBriefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">
+                        Aucune offre trouvée
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        {searchTerm || filterStatut !== "all"
+                          ? "Aucune offre ne correspond à vos critères de recherche."
+                          : "Vous n'avez pas encore créé d'offres d'emploi."}
+                      </p>
+                      <Button asChild>
+                        <a href="/recruteur/offres/creer">
+                          Créer ma première offre
+                        </a>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  displayedOffres.map((offre) => (
+                    <Card
+                      key={offre.id}
+                      className="hover:shadow-md transition-shadow"
+                    >
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <CardTitle className="text-lg">
+                                {offre.title}
+                              </CardTitle>
+                              {getStatutBadge(offre.etat || "active")}
+                            </div>
+                            <CardDescription className="flex items-center gap-4 text-sm flex-wrap">
+                              {offre.company && (
+                                <span className="flex items-center gap-1">
+                                  <IconBriefcase className="h-4 w-4" />
+                                  {offre.company}
+                                </span>
+                              )}
+                              {offre.location && (
+                                <span className="flex items-center gap-1">
+                                  <IconMapPin className="h-4 w-4" />
+                                  {offre.location}
+                                </span>
+                              )}
+                              {(offre.salaryMin || offre.salaryMax) && (
+                                <span className="flex items-center gap-1">
+                                  {offre.salaryMin ? `${offre.salaryMin}` : ""}
+                                  {offre.salaryMin && offre.salaryMax
+                                    ? " - "
+                                    : ""}
+                                  {offre.salaryMax
+                                    ? `${offre.salaryMax} ${offre.salaryCurrency}`
+                                    : ""}
+                                </span>
+                              )}
+                            </CardDescription>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditOffre(offre.id)}
+                            >
+                              <IconEdit className="h-4 w-4" />
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteOffre(offre.id)}
+                              className="text-red-600 hover:text-red-700"
+                              disabled={deleteOffer.isPending}
+                            >
+                              <IconTrash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">
+                              Type de contrat
+                            </p>
+                            <p className="font-medium uppercase font-semibold">
+                              {offre.type || "N/A"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">
+                              Candidatures
+                            </p>
+                            <p className="font-medium ">
+                              {(offre as any).applicationCount || 0}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Vues</p>
+                            <p className="font-medium ">
+                              {(offre as any).views || 0}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Date limite</p>
+                            <p className="font-medium flex items-center gap-1">
+                              <IconCalendar className="h-4 w-4" />
+
+                              {/* {offre.duedate} */}
+                              {offre.duedate
+                                ? new Date(offre.duedate).toLocaleDateString(
+                                    "fr-FR"
+                                  )
+                                : "Non définie"}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+
+              {/* Pagination Controls */}
+              {pagination && pagination.totalPages > 1 && (
+                <Card className="mt-6">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">
+                          Afficher
+                        </span>
+                        <Select
+                          value={itemsPerPage.toString()}
+                          onValueChange={(value) => {
+                            setItemsPerPage(parseInt(value));
+                            setCurrentPage(1);
+                          }}
+                        >
+                          <SelectTrigger className="w-[80px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="5">5</SelectItem>
+                            <SelectItem value="10">10</SelectItem>
+                            <SelectItem value="20">20</SelectItem>
+                            <SelectItem value="50">50</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <span className="text-sm text-muted-foreground">
+                          par page
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">
+                          Page {pagination.page} sur {pagination.totalPages}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(1)}
+                            disabled={currentPage === 1}
+                          >
+                            <IconChevronLeft className="h-4 w-4 mr-1" />
+                            Première
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(currentPage - 1)}
+                            disabled={currentPage === 1}
+                          >
+                            <IconChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <span className="px-4 py-2 text-sm font-medium">
+                            {pagination.page}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(currentPage + 1)}
+                            disabled={
+                              currentPage === pagination.totalPages ||
+                              !pagination.totalPages
+                            }
+                          >
+                            <IconChevronRight className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setCurrentPage(pagination.totalPages || 1)
+                            }
+                            disabled={
+                              currentPage === pagination.totalPages ||
+                              !pagination.totalPages
+                            }
+                          >
+                            Dernière
+                            <IconChevronRight className="h-4 w-4 ml-1" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Edit Modal */}
+      {editingOfferId && editingOffer && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <IconEdit className="h-5 w-5" />
+                  Modifier l'offre
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCloseEditModal}
+                >
+                  ×
+                </Button>
+              </div>
+              <CardDescription>
+                Modifiez les informations de votre offre d'emploi
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form
+                onSubmit={(e) =>
+                  handleSubmitEdit(e, editingOfferId, editingOffer)
+                }
+                className="space-y-4"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-titre">Titre du poste *</Label>
+                    <Input
+                      id="edit-titre"
+                      name="titre"
+                      placeholder="Ex: Développeur React Senior"
+                      defaultValue={editingOffer.title}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-entreprise">Entreprise *</Label>
+                    <Input
+                      id="edit-entreprise"
+                      name="entreprise"
+                      placeholder="Ex: TechCorp"
+                      defaultValue={editingOffer.company || ""}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-typeContrat">Type de contrat *</Label>
+                    <Select
+                      value={editTypeContrat}
+                      onValueChange={setEditTypeContrat}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cdi">CDI</SelectItem>
+                        <SelectItem value="cdd">CDD</SelectItem>
+                        <SelectItem value="stage">Stage</SelectItem>
+                        <SelectItem value="freelance">Freelance</SelectItem>
+                        <SelectItem value="temps-partiel">
+                          Temps partiel
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <input
+                      type="hidden"
+                      name="typeContrat"
+                      value={editTypeContrat}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-lieu">Lieu de travail *</Label>
+                    <Input
+                      id="edit-lieu"
+                      name="lieu"
+                      placeholder="Ex: Paris, France"
+                      defaultValue={editingOffer.location || ""}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="nombrePostes">Nombre de postes</Label>
+                    <div className="relative">
+                      <IconUsers className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="nombrePostes"
+                        placeholder="1"
+                        className="pl-10"
+                        type="number"
+                        min="1"
+                        value={editingOffer.numberOfPosts || ""}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div>
+                      <div className="flex flex-col gap-3">
+                        <Label htmlFor="date" className="px-1">
+                          Date Limite
+                        </Label>
+                        <Popover open={open} onOpenChange={setOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              id="date"
+                              className="w-full justify-between font-normal"
+                            >
+                              {editingOffer.duedate
+                                ? new Date(
+                                    editingOffer.duedate
+                                  ).toLocaleDateString()
+                                : "Sélectionner une date"}
+                              <ChevronDownIcon />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="w-full overflow-hidden p-0"
+                            align="start"
+                          >
+                            <Calendar
+                              className="w-full"
+                              mode="single"
+                              selected={
+                                editingOffer?.duedate
+                                  ? new Date(editingOffer.duedate)
+                                  : undefined
+                              }
+                              captionLayout="dropdown"
+                              onSelect={(date: Date | undefined) => {
+                                if (date) {
+                                  setEditDuedate(date);
+                                  setOpen(false);
+                                }
+                              }}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-salaireMin">Salaire minimum </Label>
+                    <Input
+                      id="edit-salaireMin"
+                      name="salaireMin"
+                      type="number"
+                      placeholder="Ex: 45000"
+                      defaultValue={editingOffer.salaryMin || ""}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-salaireMax">Salaire maximum </Label>
+                    <Input
+                      id="edit-salaireMax"
+                      name="salaireMax"
+                      type="number"
+                      placeholder="Ex: 65000"
+                      defaultValue={editingOffer.salaryMax || ""}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-description">Description *</Label>
+                  <RichTextEditorWrapper
+                    value={editDescription}
+                    onChange={setEditDescription}
+                    placeholder="Décrivez les missions principales, les responsabilités et les objectifs du poste..."
+                    className="min-h-[200px]"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-4 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCloseEditModal}
+                    disabled={updateOffer.isPending}
+                  >
+                    Annuler
+                  </Button>
+                  <Button type="submit" disabled={updateOffer.isPending}>
+                    {updateOffer.isPending
+                      ? "Enregistrement..."
+                      : "Enregistrer"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </>
+  );
+}

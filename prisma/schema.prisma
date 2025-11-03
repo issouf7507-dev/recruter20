@@ -1,0 +1,774 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String         @id @default(cuid())
+  name                String?
+  email               String         @unique
+  emailVerified       Boolean?       @default(false) 
+  password            String?
+  passwordNeedsUpdate Boolean        @default(false)
+  image               String?
+  type                UserType?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  candidat            Candidat?      @relation("UserAsCandidat")
+  collaborateur       Collaborateur?
+  recruteur           Recruteur?     @relation("UserAsRecruteur")
+  accounts            Account[]
+  sessions            Session[]
+  notifications       Notification[]
+  
+
+  @@map("user")
+}
+
+model BackupUser {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  password  String    // Ancien hash du mot de passe (pour référence)
+  type      String?   // CANDIDAT, RECRUTEUR, COLLABORATEUR
+  userData  String?   @db.Text // JSON avec toutes les données (candidat, recruteur, etc.)
+  migrated  Boolean   @default(false) // true quand l'utilisateur s'est réenregistré
+  migratedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("backup_user")
+}
+
+model Candidat {
+  id                  String               @id @default(cuid())
+  userId              String               @unique
+  nom                 String?
+  prenom              String?
+  telephone           String?
+  cv                  String?
+  letterm             String?
+  bio                 String?
+  adresse             String?
+  ville               String?
+  statut              String?
+  pays                String
+  dateNaissance       DateTime
+  nationalite         String?
+  situationFamiliale  String?
+  permisConduire      String?
+  image               String?
+  alertes             AlerteEmploi[]
+  applications        Application[]
+  // cvs relation supprimée car le modèle CV n'existe plus
+  user                User                 @relation("UserAsCandidat", fields: [userId], references: [id], onDelete: Cascade)
+  candidatCompetences CandidatCompetence[]
+  competencesList     Competence[]
+  conversations       Conversation[]
+  experiences         Experience[]
+  formations          Formation[]
+  documents           Document[]
+  objectifs           ObjectifCarriere[]
+}
+
+model Recruteur {
+  id                  String                @id @default(cuid())
+  userId              String                @unique
+  type                RecruteurType
+  description         String?
+  firstName           String?
+  lastName            String?
+  companyName         String?
+  logo                String?
+  industry            String?
+  size                String?
+  location            String?
+  website             String?
+  email               String                @unique
+  phone               String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  collaborateurs      Collaborateur[]
+  CollaborateurCustom CollaborateurCustom[]
+  social              CompanySocial?
+  conversations       Conversation[]
+  invitations         Invitation[]
+  JobOffer            JobOffer[]
+  KanbanColumnCustom  KanbanColumnCustom[]
+  OfferTemplate       OfferTemplate[]
+  user                User                  @relation("UserAsRecruteur", fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CandidatCompetence {
+  id         String   @id @default(cuid())
+  candidatId String
+  competence String
+  createdAt  DateTime @default(now())
+  candidat   Candidat @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+
+  @@unique([candidatId, competence])
+}
+
+model CompanySocial {
+  id          String    @id @default(cuid())
+  linkedin    String?
+  twitter     String?
+  recruteurId String    @unique
+  recruteur   Recruteur @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
+}
+
+model Invitation {
+  id            String         @id @default(cuid())
+  email         String
+  recruteurId   String
+  role          Role
+  token         String         @unique
+  accepted      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  expiresAt     DateTime
+  collaborateur Collaborateur?
+  recruteur     Recruteur      @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
+
+  @@index([recruteurId], map: "Invitation_recruteurId_fkey")
+}
+
+model Collaborateur {
+  id           String                     @id @default(cuid())
+  email        String                     @unique
+  nom          String
+  prenom       String
+  role         Role
+  recruteurId  String
+  invitationId String?                    @unique
+  userId       String                     @unique
+  dueDate      DateTime?
+  createdAt    DateTime                   @default(now())
+  updatedAt    DateTime                   @updatedAt
+  applications ApplicationCollaborateur[]
+  invitation   Invitation?                @relation(fields: [invitationId], references: [id])
+  recruteur    Recruteur                  @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
+  user         User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([recruteurId], map: "Collaborateur_recruteurId_fkey")
+}
+
+model ApplicationCollaborateur {
+  id              String        @id @default(cuid())
+  applicationId   String
+  collaborateurId String
+  assignedAt      DateTime      @default(now())
+  assignedBy      String
+  application     Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  collaborateur   Collaborateur @relation(fields: [collaborateurId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, collaborateurId])
+  @@index([collaborateurId], map: "ApplicationCollaborateur_collaborateurId_fkey")
+}
+
+model JobOffer {
+  id                  String               @id @default(cuid())
+  title               String
+  description         String?              @db.Text
+  company             String?
+  location            String?
+  type                String?
+  etat                String?              @default("active")
+  experience          String?
+  salaryMin           Float?
+  salaryMax           Float?
+  salaryCurrency      String?
+  salaryPeriod        String?
+  benefits            String?              @db.Text
+  requirements        String?              @db.Text
+  responsibilities    String?              @db.Text
+  duedate             DateTime?
+  skills              String?
+  favorite            Boolean?             @default(false)
+  templateId          Int?
+  views               Int?                 @default(0)
+  recruteurId         String
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  deletedAt           DateTime?
+  applications        Application[]
+  conversations       Conversation[]
+  recruteur           Recruteur            @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
+  template            OfferTemplate?       @relation(fields: [templateId], references: [id])
+  jobOfferCompetences JobOfferCompetence[]
+  kanbanColumns       KanbanColumn[]
+
+  // ✅ Index composites pour les requêtes fréquentes
+  @@index([recruteurId, etat])           // Récupérer les offres actives d'un recruteur
+  @@index([location, etat])              // Filtrer par localisation
+  @@index([recruteurId, createdAt])      // Tri chronologique
+}
+
+model JobOfferCompetence {
+  id         String   @id @default(cuid())
+  jobOfferId String
+  competence String
+  createdAt  DateTime @default(now())
+  jobOffer   JobOffer @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
+
+  @@unique([jobOfferId, competence])
+}
+
+model OfferTemplate {
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String
+  content     String
+  recruteurId String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  offers      JobOffer[]
+  recruteur   Recruteur  @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
+
+  @@index([recruteurId], map: "OfferTemplate_recruteurId_fkey")
+}
+
+model Application {
+  id             String                     @id @default(cuid())
+  candidatId     String
+  jobOfferId     String
+
+  status         ApplicationStatus          @default(EN_ATTENTE)
+  rating         Int?
+  message        String?
+  cv             String?
+  favorite       Boolean?                   @default(false)
+  duedate        DateTime?
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+  deletedAt      DateTime?
+  candidat       Candidat                   @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+
+  jobOffer       JobOffer                   @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
+  collaborateurs ApplicationCollaborateur[]
+  files          ApplicationFile[]
+  notes          ApplicationNote[]
+  checklist      ChecklistItem[]
+
+  @@index([candidatId], map: "Application_candidatId_fkey")
+
+  @@index([jobOfferId], map: "Application_jobOfferId_fkey")
+}
+
+enum ApplicationStatus {
+  EN_ATTENTE
+  EN_COURS
+  ENTRETIEN
+  ACCEPTE
+  REFUSE
+}
+
+model ApplicationNote {
+  id            String      @id @default(cuid())
+  applicationId String
+  content       String
+  authorId      String
+  authorName    String?
+  authorType    String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId], map: "ApplicationNote_applicationId_fkey")
+}
+
+model ChecklistItem {
+  id            String      @id @default(cuid())
+  applicationId String
+  title         String
+  description   String?
+  isCompleted   Boolean     @default(false)
+  createdById   String
+  createdByType String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId], map: "ChecklistItem_applicationId_fkey")
+}
+
+model ApplicationFile {
+  id             String      @id @default(cuid())
+  applicationId  String
+  fileName       String
+  fileUrl        String
+  fileType       String
+  fileSize       Int
+  uploadedById   String
+  uploadedByType String
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  application    Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId], map: "ApplicationFile_applicationId_fkey")
+}
+
+model KanbanColumn {
+  id           String        @id @default(cuid())
+  color        String
+  name         String
+  order        Int
+  isDefault    Boolean       @default(false)
+  jobOfferId   String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  jobOffer     JobOffer      @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
+
+  @@index([jobOfferId], map: "KanbanColumn_jobOfferId_fkey")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?  @db.Text
+  userAgent String?  @db.Text
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "session_userId_fkey")
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String    @db.Text
+  providerId            String    @db.Text
+  userId                String
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?   @db.Text
+  password              String?   @db.Text
+  createdAt             DateTime
+  updatedAt             DateTime
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "account_userId_fkey")
+  @@map("account")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Experience {
+  id                    String                 @id @default(cuid())
+  poste                 String
+  entreprise            String
+  localisation          String
+  typeContrat           String
+  dateDebut             DateTime
+  dateFin               DateTime?
+  description           String
+  candidatId            String
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  candidat              Candidat               @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  experienceCompetences ExperienceCompetence[]
+
+  @@index([candidatId], map: "Experience_candidatId_fkey")
+}
+
+model ExperienceCompetence {
+  id           String     @id @default(cuid())
+  experienceId String
+  competence   String
+  createdAt    DateTime   @default(now())
+  experience   Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  @@unique([experienceId, competence])
+}
+
+model Formation {
+  id              String           @id @default(cuid())
+  diplome         String
+  etablissement   String
+  domaine         String
+  dateDebut       DateTime
+  dateFin         DateTime?
+  description     String
+  candidatId      String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  candidat        Candidat         @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  formationEtapes FormationEtape[]
+
+  @@index([candidatId], map: "Formation_candidatId_fkey")
+}
+
+model FormationEtape {
+  id          String    @id @default(cuid())
+  formationId String
+  etape       String
+  createdAt   DateTime  @default(now())
+  formation   Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
+
+  @@unique([formationId, etape])
+}
+
+model Competence {
+  id         String   @id @default(cuid())
+  categorie  String
+  nom        String
+  niveau     Int
+  candidatId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  candidat   Candidat @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+
+  @@index([candidatId], map: "Competence_candidatId_fkey")
+}
+
+model ObjectifCarriere {
+  id             String          @id @default(cuid())
+  titre          String
+  description    String
+  categorie      String
+  dateLimite     DateTime
+  progression    Int             @default(0)
+  candidatId     String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  candidat       Candidat        @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  objectifEtapes ObjectifEtape[]
+
+  @@index([candidatId], map: "ObjectifCarriere_candidatId_fkey")
+}
+
+model ObjectifEtape {
+  id         String           @id @default(cuid())
+  objectifId String
+  etape      String
+  createdAt  DateTime         @default(now())
+  objectif   ObjectifCarriere @relation(fields: [objectifId], references: [id], onDelete: Cascade)
+
+  @@unique([objectifId, etape])
+}
+
+model Document {
+  id           String       @id @default(cuid())
+  fileName     String
+  fileUrl      String
+  fileType     String
+  fileSize     Int
+  documentType DocumentType
+  candidatId   String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  candidat     Candidat     @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+
+  @@index([candidatId], map: "Document_candidatId_fkey")
+}
+
+enum DocumentType {
+  cv
+  lettre
+  autre
+}
+
+model AlerteEmploi {
+  id                String         @id @default(cuid())
+  titre             String
+  localisation      String
+  typeContrat       String
+  salaireMin        Float?
+  salaireMax        Float?
+  experience        String
+  frequence         String
+  active            Boolean        @default(true)
+  derniereMiseAJour DateTime       @default(now())
+  nombreResultats   Int            @default(0)
+  candidatId        String
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  candidat          Candidat       @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  alerteMotsCles    AlerteMotCle[]
+
+  @@index([candidatId], map: "AlerteEmploi_candidatId_fkey")
+}
+
+model AlerteMotCle {
+  id        String       @id @default(cuid())
+  alerteId  String
+  motCle    String
+  createdAt DateTime     @default(now())
+  alerte    AlerteEmploi @relation(fields: [alerteId], references: [id], onDelete: Cascade)
+
+  @@unique([alerteId, motCle])
+}
+
+model Notification {
+  id              String            @id @default(cuid())
+
+  // ✅ Système flexible : peut notifier n'importe quel user
+  recipientId     String            // ID du User qui reçoit
+  recipientType   UserType          // CANDIDAT | RECRUTEUR | COLLABORATEUR
+
+  // ✅ Type sécurisé avec un enum
+  type            NotificationType
+
+  // ✅ Données flexibles selon le type
+  data            Json?             // Contient les infos spécifiques
+
+  read            Boolean           @default(false)
+  readAt          DateTime?
+
+  createdAt       DateTime          @default(now())
+
+  recipient       User              @relation(fields: [recipientId], references: [id])
+
+  @@index([recipientId, recipientType, read])
+  @@index([createdAt])
+}
+
+model Conversation {
+  id          String    @id @default(cuid())
+  jobOfferId  String
+  candidatId  String
+  recruteurId String
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  candidat    Candidat  @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  jobOffer    JobOffer  @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
+  recruteur   Recruteur @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
+  messages    Message[]
+
+  @@unique([jobOfferId, candidatId, recruteurId])
+  @@index([candidatId], map: "Conversation_candidatId_fkey")
+  @@index([recruteurId], map: "Conversation_recruteurId_fkey")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  senderType     SenderType
+  content        String       @db.Text
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId], map: "Message_conversationId_fkey")
+}
+
+model KanbanColumnCustom {
+  id                   String              @id @default(cuid())
+  color                String
+  name                 String
+  order                Int
+  isDefault            Boolean             @default(false)
+  jobOfferId           String
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  recruteurId          String
+  applicationsCustomid String
+  applicationsCustom   ApplicationCustom[]
+  recruteur            Recruteur           @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
+
+  @@index([recruteurId], map: "KanbanColumnCustom_recruteurId_fkey")
+}
+
+model CollaborateurCustom {
+  id           String                           @id @default(cuid())
+  email        String                           @unique
+  nom          String
+  prenom       String
+  role         Role
+  recruteurId  String
+  invitationId String?                          @unique
+  userId       String                           @unique
+  createdAt    DateTime                         @default(now())
+  updatedAt    DateTime                         @updatedAt
+  applications ApplicationCollaborateurCustom[]
+  recruteur    Recruteur                        @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
+
+  @@index([recruteurId], map: "CollaborateurCustom_recruteurId_fkey")
+}
+
+model ApplicationFileCustom {
+  id             String            @id @default(cuid())
+  applicationId  String
+  fileName       String
+  fileUrl        String
+  fileType       String
+  fileSize       Int
+  uploadedById   String
+  uploadedByType String
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  application    ApplicationCustom @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId], map: "ApplicationFileCustom_applicationId_fkey")
+}
+
+model ApplicationCollaborateurCustom {
+  id              String              @id @default(cuid())
+  applicationId   String
+  collaborateurId String
+  assignedAt      DateTime            @default(now())
+  assignedBy      String
+  application     ApplicationCustom   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  collaborateur   CollaborateurCustom @relation(fields: [collaborateurId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, collaborateurId])
+  @@index([collaborateurId], map: "ApplicationCollaborateurCustom_collaborateurId_fkey")
+}
+
+model ApplicationNoteCustom {
+  id            String            @id @default(cuid())
+  applicationId String
+  content       String
+  authorId      String
+  authorName    String?
+  authorType    String
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  application   ApplicationCustom @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId], map: "ApplicationNoteCustom_applicationId_fkey")
+}
+
+model ChecklistItemCustom {
+  id            String            @id @default(cuid())
+  applicationId String
+  title         String
+  description   String?
+  isCompleted   Boolean           @default(false)
+  createdById   String
+  createdByType String
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  application   ApplicationCustom @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId], map: "ChecklistItem_applicationId_fkey")
+}
+
+model CandidatCustom {
+  id            String             @id @unique @default(cuid())
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  userId        String
+  cv            String?
+  cvUrl         String?            @unique
+  applicationId String
+  application   ApplicationCustom  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  documents     CandidatDocument[]
+
+  @@index([applicationId], map: "CandidatCustom_applicationId_fkey")
+}
+
+model CandidatDocument {
+  id         String         @id @default(cuid())
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  fileName   String
+  fileUrl    String
+  fileType   String
+  fileSize   Int
+  candidatId String
+  candidat   CandidatCustom @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+
+  @@index([candidatId], map: "CandidatDocument_candidatId_fkey")
+}
+
+model ApplicationCustom {
+  id                   String                           @id @default(cuid())
+  title                String
+  
+  description          String                           @db.Text
+  company              String
+  location             String
+  duedate              DateTime?
+  createdAt            DateTime                         @default(now())
+  updatedAt            DateTime                         @updatedAt
+  kanbanColumnCustomid String
+  collaborateurs       ApplicationCollaborateurCustom[]
+  recruteur            KanbanColumnCustom               @relation(fields: [kanbanColumnCustomid], references: [id], onDelete: Cascade)
+  files                ApplicationFileCustom[]
+  notes                ApplicationNoteCustom[]
+  candidatCustom       CandidatCustom[]
+  checklist            ChecklistItemCustom[]
+
+  @@index([kanbanColumnCustomid], map: "ApplicationCustom_kanbanColumnCustomid_fkey")
+}
+
+model Verification {
+  id         String    @id
+  identifier String    @db.Text
+  value      String    @db.Text
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+
+
+enum UserType {
+  CANDIDAT
+  RECRUTEUR
+  COLLABORATEUR
+}
+
+enum RecruteurType {
+  PARTICULIER
+  ENTREPRISE
+  ENTITE
+}
+
+enum Role {
+  ADMIN
+  USER
+  MANAGER
+  VIEWER
+}
+
+enum SenderType {
+  CANDIDAT
+  RECRUTEUR
+}
+
+
+enum NotificationType {
+  // Candidatures
+  APPLICATION_NEW
+  APPLICATION_STATUS_CHANGED
+  APPLICATION_MESSAGE
+
+  // Messages
+  CONVERSATION_NEW_MESSAGE
+
+  // Offres
+  OFFER_PUBLISHED
+  OFFER_CLOSED
+
+  // Entretiens
+  INTERVIEW_SCHEDULED
+  INTERVIEW_REMINDER
+
+  // Alertes
+  JOB_ALERT_MATCH
+  JOB_ALERT_NEW_MATCHES
+}
