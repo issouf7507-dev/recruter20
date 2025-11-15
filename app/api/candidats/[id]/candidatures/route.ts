@@ -10,9 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const candidatId = (await params)?.id;
     const applications = await applicationService.getApplicationsByCandidatId(
-      id
+      candidatId
     );
 
     return NextResponse.json({

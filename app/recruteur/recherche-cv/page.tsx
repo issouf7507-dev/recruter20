@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -31,239 +31,257 @@ import {
   IconEye,
   IconFilter,
   IconX,
-  IconUser,
   IconMail,
   IconPhone,
   IconSchool,
   IconAward,
 } from "@tabler/icons-react";
+import { useSearchCandidates } from "@/lib/hooks/use-candidats";
 
-// Données mockées pour les CV disponibles
-const mockCVs = [
-  {
-    id: 1,
-    candidat: {
-      nom: "Antoine Lefebvre",
-      email: "antoine.lefebvre@email.com",
-      telephone: "+33 6 12 34 56 78",
-      avatar: "/avatars/antoine.jpg",
-      lieu: "Paris, France",
-    },
-    cv: {
-      titre: "Développeur Full Stack Senior",
-      experience: "8 ans",
-      formation: "Master Informatique - École Polytechnique",
-      competences: [
-        "React",
-        "Node.js",
-        "TypeScript",
-        "PostgreSQL",
-        "Docker",
-        "AWS",
-        "GraphQL",
-      ],
-      langues: [
-        "Français (Natif)",
-        "Anglais (Courant)",
-        "Espagnol (Intermédiaire)",
-      ],
-      certifications: ["AWS Certified Developer", "Google Cloud Professional"],
-      derniereMiseAJour: "2024-01-20",
-      taille: "2.3 MB",
-      format: "PDF",
-    },
-    cvUrl: "/cv/antoine-lefebvre.pdf",
-    note: 4.9,
-    motsCles: ["développement", "fullstack", "react", "nodejs", "typescript"],
-  },
-  {
-    id: 2,
-    candidat: {
-      nom: "Claire Dubois",
-      email: "claire.dubois@email.com",
-      telephone: "+33 6 87 65 43 21",
-      avatar: "/avatars/claire.jpg",
-      lieu: "Lyon, France",
-    },
-    cv: {
-      titre: "Product Manager & UX Designer",
-      experience: "6 ans",
-      formation: "MBA Marketing Digital - HEC Paris",
-      competences: [
-        "Product Management",
-        "UX Design",
-        "Figma",
-        "Analytics",
-        "Agile",
-        "SQL",
-        "A/B Testing",
-      ],
-      langues: ["Français (Natif)", "Anglais (Courant)"],
-      certifications: [
-        "Certified Scrum Product Owner",
-        "Google Analytics Certified",
-      ],
-      derniereMiseAJour: "2024-01-18",
-      taille: "1.8 MB",
-      format: "PDF",
-    },
-    cvUrl: "/cv/claire-dubois.pdf",
-    note: 4.8,
-    motsCles: ["product", "management", "ux", "design", "analytics"],
-  },
-  {
-    id: 3,
-    candidat: {
-      nom: "Maxime Rousseau",
-      email: "maxime.rousseau@email.com",
-      telephone: "+33 6 98 76 54 32",
-      avatar: "/avatars/maxime.jpg",
-      lieu: "Marseille, France",
-    },
-    cv: {
-      titre: "DevOps Engineer & Cloud Architect",
-      experience: "7 ans",
-      formation: "Master Systèmes et Réseaux - INSA Lyon",
-      competences: [
-        "Kubernetes",
-        "Docker",
-        "Terraform",
-        "AWS",
-        "CI/CD",
-        "Python",
-        "Monitoring",
-      ],
-      langues: ["Français (Natif)", "Anglais (Courant)"],
-      certifications: ["AWS Solutions Architect", "Kubernetes Administrator"],
-      derniereMiseAJour: "2024-01-15",
-      taille: "2.1 MB",
-      format: "PDF",
-    },
-    cvUrl: "/cv/maxime-rousseau.pdf",
-    note: 4.7,
-    motsCles: ["devops", "cloud", "kubernetes", "aws", "terraform"],
-  },
-  {
-    id: 4,
-    candidat: {
-      nom: "Laura Moreau",
-      email: "laura.moreau@email.com",
-      telephone: "+33 6 11 22 33 44",
-      avatar: "/avatars/laura.jpg",
-      lieu: "Toulouse, France",
-    },
-    cv: {
-      titre: "Data Scientist & ML Engineer",
-      experience: "5 ans",
-      formation: "PhD Intelligence Artificielle - Université de Toulouse",
-      competences: [
-        "Python",
-        "Machine Learning",
-        "TensorFlow",
-        "PyTorch",
-        "Pandas",
-        "SQL",
-        "Statistics",
-      ],
-      langues: [
-        "Français (Natif)",
-        "Anglais (Courant)",
-        "Allemand (Intermédiaire)",
-      ],
-      certifications: [
-        "TensorFlow Developer Certificate",
-        "AWS Machine Learning Specialty",
-      ],
-      derniereMiseAJour: "2024-01-22",
-      taille: "2.5 MB",
-      format: "PDF",
-    },
-    cvUrl: "/cv/laura-moreau.pdf",
-    note: 4.9,
-    motsCles: ["data", "science", "machine", "learning", "python"],
-  },
-  {
-    id: 5,
-    candidat: {
-      nom: "Julien Petit",
-      email: "julien.petit@email.com",
-      telephone: "+33 6 55 66 77 88",
-      avatar: "/avatars/julien.jpg",
-      lieu: "Nantes, France",
-    },
-    cv: {
-      titre: "Cybersecurity Specialist",
-      experience: "6 ans",
-      formation: "Master Cybersécurité - École Supérieure d'Informatique",
-      competences: [
-        "Penetration Testing",
-        "Security Auditing",
-        "SIEM",
-        "Firewall",
-        "Incident Response",
-        "Python",
-        "Linux",
-      ],
-      langues: ["Français (Natif)", "Anglais (Courant)"],
-      certifications: ["CISSP", "CEH", "OSCP"],
-      derniereMiseAJour: "2024-01-19",
-      taille: "1.9 MB",
-      format: "PDF",
-    },
-    cvUrl: "/cv/julien-petit.pdf",
-    note: 4.6,
-    motsCles: ["cybersecurity", "security", "penetration", "audit", "incident"],
-  },
-  {
-    id: 6,
-    candidat: {
-      nom: "Sophie Bernard",
-      email: "sophie.bernard@email.com",
-      telephone: "+33 6 99 88 77 66",
-      avatar: "/avatars/sophie.jpg",
-      lieu: "Bordeaux, France",
-    },
-    cv: {
-      titre: "Digital Marketing Manager",
-      experience: "8 ans",
-      formation: "Master Marketing Digital - ESCP Business School",
-      competences: [
-        "SEO/SEM",
-        "Google Analytics",
-        "Social Media",
-        "Content Marketing",
-        "Email Marketing",
-        "Marketing Automation",
-        "Data Analysis",
-      ],
-      langues: [
-        "Français (Natif)",
-        "Anglais (Courant)",
-        "Italien (Intermédiaire)",
-      ],
-      certifications: ["Google Ads Certified", "HubSpot Content Marketing"],
-      derniereMiseAJour: "2024-01-17",
-      taille: "2.0 MB",
-      format: "PDF",
-    },
-    cvUrl: "/cv/sophie-bernard.pdf",
-    note: 4.5,
-    motsCles: ["marketing", "digital", "seo", "analytics", "content"],
-  },
+// Listes prédéfinies (importées depuis ProfilSection)
+const DOMAINES_PREDEFINIS = [
+  { value: "informatique", label: "Informatique" },
+  { value: "developpement-logiciel", label: "Développement Logiciel" },
+  { value: "developpement-web", label: "Développement Web" },
+  { value: "developpement-mobile", label: "Développement Mobile" },
+  { value: "cybersecurite", label: "Cybersécurité" },
+  { value: "intelligence-artificielle", label: "Intelligence Artificielle" },
+  { value: "data-science", label: "Data Science" },
+  { value: "big-data", label: "Big Data" },
+  { value: "cloud-computing", label: "Cloud Computing" },
+  { value: "devops", label: "DevOps" },
+  { value: "reseau-telecom", label: "Réseau & Télécommunications" },
+  { value: "marketing", label: "Marketing" },
+  { value: "marketing-digital", label: "Marketing Digital" },
+  { value: "communication", label: "Communication" },
+  { value: "publicite", label: "Publicité" },
+  { value: "relations-publiques", label: "Relations Publiques" },
+  { value: "finance", label: "Finance" },
+  { value: "banque", label: "Banque" },
+  { value: "assurance", label: "Assurance" },
+  { value: "audit", label: "Audit" },
+  { value: "gestion-patrimoine", label: "Gestion de Patrimoine" },
+  { value: "comptabilite", label: "Comptabilité" },
+  { value: "controle-gestion", label: "Contrôle de Gestion" },
+  { value: "rh", label: "Ressources Humaines" },
+  { value: "recrutement", label: "Recrutement" },
+  { value: "formation", label: "Formation" },
+  { value: "administration", label: "Administration" },
+  { value: "administration-publique", label: "Administration Publique" },
+  { value: "juridique", label: "Juridique" },
+  { value: "droit", label: "Droit" },
+  { value: "notariat", label: "Notariat" },
+  { value: "vente", label: "Vente" },
+  { value: "commerce", label: "Commerce" },
+  { value: "e-commerce", label: "E-commerce" },
+  { value: "distribution", label: "Distribution" },
+  { value: "production", label: "Production" },
+  { value: "industrie", label: "Industrie" },
+  { value: "manufacturing", label: "Manufacturing" },
+  { value: "automobile", label: "Automobile" },
+  { value: "aerospatial", label: "Aérospatial" },
+  { value: "logistique", label: "Logistique" },
+  { value: "transport", label: "Transport" },
+  { value: "supply-chain", label: "Supply Chain" },
+  { value: "technique", label: "Technique" },
+  { value: "ingenierie", label: "Ingénierie" },
+  { value: "genie-civil", label: "Génie Civil" },
+  { value: "genie-mecanique", label: "Génie Mécanique" },
+  { value: "genie-electrique", label: "Génie Électrique" },
+  { value: "genie-industriel", label: "Génie Industriel" },
+  { value: "architecture", label: "Architecture" },
+  { value: "construction", label: "Construction" },
+  { value: "bâtiment", label: "Bâtiment" },
+  { value: "sante", label: "Santé" },
+  { value: "medecine", label: "Médecine" },
+  { value: "pharmacie", label: "Pharmacie" },
+  { value: "soins-infirmiers", label: "Soins Infirmiers" },
+  { value: "paramedical", label: "Paramédical" },
+  { value: "biotechnologie", label: "Biotechnologie" },
+  { value: "education", label: "Éducation" },
+  { value: "enseignement", label: "Enseignement" },
+  { value: "recherche", label: "Recherche" },
+  { value: "hotellerie-restauration", label: "Hôtellerie & Restauration" },
+  { value: "tourisme", label: "Tourisme" },
+  { value: "evenementiel", label: "Événementiel" },
+  { value: "culture", label: "Culture" },
+  { value: "art", label: "Art" },
+  { value: "design", label: "Design" },
+  { value: "graphisme", label: "Graphisme" },
+  { value: "audiovisuel", label: "Audiovisuel" },
+  { value: "multimedia", label: "Multimédia" },
+  { value: "journalisme", label: "Journalisme" },
+  { value: "edition", label: "Édition" },
+  { value: "agriculture", label: "Agriculture" },
+  { value: "agroalimentaire", label: "Agroalimentaire" },
+  { value: "environnement", label: "Environnement" },
+  { value: "developpement-durable", label: "Développement Durable" },
+  { value: "energie", label: "Énergie" },
+  { value: "petrole-gaz", label: "Pétrole & Gaz" },
+  { value: "renouvelable", label: "Énergies Renouvelables" },
+  { value: "immobilier", label: "Immobilier" },
+  { value: "consulting", label: "Consulting" },
+  { value: "conseil", label: "Conseil" },
+  { value: "qualite", label: "Qualité" },
+  { value: "maintenance", label: "Maintenance" },
+  { value: "securite", label: "Sécurité" },
+  { value: "sport", label: "Sport" },
+  { value: "fitness", label: "Fitness" },
+  { value: "mode", label: "Mode" },
+  { value: "luxe", label: "Luxe" },
+  { value: "cosmetique", label: "Cosmétique" },
+  { value: "beaute", label: "Beauté" },
+  { value: "social", label: "Social" },
+  { value: "humanitaire", label: "Humanitaire" },
+  { value: "associatif", label: "Associatif" },
+  { value: "non-lucratif", label: "Non Lucratif" },
+  { value: "autre", label: "Autre" },
 ];
 
+const NIVEAUX_ETUDE_PREDEFINIS = [
+  { value: "sans-diplome", label: "Sans diplôme" },
+  { value: "cep", label: "CEP (Certificat d'Études Primaires)" },
+  { value: "becp", label: "BEPC (Brevet d'Études du Premier Cycle)" },
+  { value: "cap", label: "CAP (Certificat d'Aptitude Professionnelle)" },
+  { value: "bep", label: "BEP (Brevet d'Études Professionnelles)" },
+  { value: "baccalaureat", label: "Baccalauréat Général" },
+  { value: "baccalaureat-technologique", label: "Baccalauréat Technologique" },
+  { value: "baccalaureat-professionnel", label: "Baccalauréat Professionnel" },
+  { value: "bts", label: "BTS (Brevet de Technicien Supérieur)" },
+  { value: "dut", label: "DUT (Diplôme Universitaire de Technologie)" },
+  {
+    value: "deust",
+    label:
+      "DEUST (Diplôme d'Études Universitaires Scientifiques et Techniques)",
+  },
+  { value: "licence", label: "Licence" },
+  { value: "licence-professionnelle", label: "Licence Professionnelle" },
+  { value: "master-1", label: "Master 1 (Maîtrise)" },
+  { value: "master-2", label: "Master 2" },
+  { value: "master-professionnel", label: "Master Professionnel" },
+  { value: "master-recherche", label: "Master de Recherche" },
+  { value: "mba", label: "MBA (Master of Business Administration)" },
+  { value: "doctorat", label: "Doctorat" },
+  { value: "ingenieur", label: "Ingénieur" },
+  { value: "grande-ecole", label: "Grande École" },
+  { value: "autre", label: "Autre" },
+];
+
+// Helper function to calculate total years of experience
+function calculateTotalExperience(experiences: any[]): number {
+  if (!experiences || experiences.length === 0) return 0;
+
+  let totalMonths = 0;
+  const now = new Date();
+
+  for (const exp of experiences) {
+    const start = new Date(exp.dateDebut);
+    const end = exp.dateFin ? new Date(exp.dateFin) : now;
+
+    const months =
+      (end.getFullYear() - start.getFullYear()) * 12 +
+      (end.getMonth() - start.getMonth());
+
+    totalMonths += months;
+  }
+
+  return Math.floor(totalMonths / 12);
+}
+
+// Helper function to format file size
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+}
+
+// Transform API data to page format
+function transformCandidatData(candidat: any) {
+  const totalYears = calculateTotalExperience(candidat.experiences || []);
+  const latestExperience = candidat.experiences?.[0];
+  const latestFormation = candidat.formations?.[0];
+  const cvDocument = candidat.documents?.[0];
+
+  return {
+    id: candidat.id,
+    candidat: {
+      nom:
+        `${candidat.prenom || ""} ${candidat.nom || ""}`.trim() ||
+        candidat.user?.name ||
+        "Candidat",
+      email: candidat.user?.email || "",
+      telephone: candidat.telephone || "",
+      avatar: candidat.image || candidat.user?.image || "",
+      lieu: candidat.ville
+        ? `${candidat.ville}${candidat.pays ? `, ${candidat.pays}` : ""}`
+        : candidat.pays || "Non spécifié",
+      domaine: candidat.domaine || "Non spécifié",
+    },
+    cv: {
+      titre: latestExperience?.poste || "Candidat",
+      experience: totalYears > 0 ? `${totalYears} ans` : "Débutant",
+      formation: latestFormation
+        ? `${latestFormation.diplome} - ${latestFormation.etablissement}`
+        : "Non spécifié",
+      competences:
+        candidat.candidatCompetences?.map((c: any) => c.competence) || [],
+      langues: ["Français (Natif)"], // TODO: Add languages to schema if needed
+      certifications: candidat.certifications?.map((c: any) => c.nom) || [],
+      niveauxEtude: candidat.niveauEtude?.map((n: any) => n.nom) || [],
+      derniereMiseAJour: cvDocument
+        ? new Date(cvDocument.updatedAt).toISOString().split("T")[0]
+        : new Date(candidat.updatedAt).toISOString().split("T")[0],
+      taille: cvDocument ? formatFileSize(cvDocument.fileSize) : "N/A",
+      format: cvDocument?.fileType || "PDF",
+    },
+    cvUrl: cvDocument?.fileUrl || candidat.cv || "#",
+    note: 4.5, // TODO: Calculate rating if available
+    motsCles: [
+      ...(candidat.candidatCompetences?.map((c: any) =>
+        c.competence.toLowerCase()
+      ) || []),
+      ...(latestExperience?.poste?.toLowerCase().split(" ") || []),
+    ],
+  };
+}
+
 export default function RechercheCVPage() {
-  const [cvs, setCvs] = useState(mockCVs);
   const [searchTerm, setSearchTerm] = useState("");
   const [filtres, setFiltres] = useState({
     lieu: "all",
     experience: "all",
-    formation: "all",
     competences: [] as string[],
-    certifications: "all",
+    certifications: [] as string[],
+    domaine: "all",
+    niveauEtude: [] as string[],
     format: "all",
   });
-  const [cvsFavoris, setCvsFavoris] = useState<number[]>([]);
+  const [cvsFavoris, setCvsFavoris] = useState<string[]>([]);
+
+  // Use the search hook
+  const { data, isLoading, error } = useSearchCandidates({
+    search: searchTerm || undefined,
+    lieu: filtres.lieu !== "all" ? filtres.lieu : undefined,
+    experience: filtres.experience !== "all" ? filtres.experience : undefined,
+    competences:
+      filtres.competences.length > 0 ? filtres.competences : undefined,
+    certifications:
+      filtres.certifications.length > 0 ? filtres.certifications : undefined,
+    domaine: filtres.domaine !== "all" ? filtres.domaine : undefined,
+    niveauEtude:
+      filtres.niveauEtude.length > 0 ? filtres.niveauEtude : undefined,
+    format: filtres.format !== "all" ? filtres.format : undefined,
+  });
+
+  // console.log("data", data);
+
+  // Transform API data to page format
+  const cvs = useMemo(() => {
+    if (!data?.items) return [];
+    return data.items.map(transformCandidatData);
+  }, [data]);
 
   const getInitials = (nom: string) => {
     return nom
@@ -273,51 +291,7 @@ export default function RechercheCVPage() {
       .toUpperCase();
   };
 
-  const filteredCVs = cvs.filter((cv) => {
-    const matchesSearch =
-      cv.candidat.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cv.cv.titre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cv.cv.competences.some((comp) =>
-        comp.toLowerCase().includes(searchTerm.toLowerCase())
-      ) ||
-      cv.motsCles.some((mot) =>
-        mot.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-
-    const matchesLieu =
-      filtres.lieu === "all" ||
-      cv.candidat.lieu.toLowerCase().includes(filtres.lieu.toLowerCase());
-
-    const matchesExperience =
-      filtres.experience === "all" ||
-      (filtres.experience === "junior" && cv.cv.experience.includes("1-3")) ||
-      (filtres.experience === "senior" && cv.cv.experience.includes("4-6")) ||
-      (filtres.experience === "expert" && cv.cv.experience.includes("7+"));
-
-    const matchesFormation =
-      filtres.formation === "all" ||
-      cv.cv.formation.toLowerCase().includes(filtres.formation.toLowerCase());
-
-    const matchesCertifications =
-      filtres.certifications === "all" ||
-      cv.cv.certifications.some((cert) =>
-        cert.toLowerCase().includes(filtres.certifications.toLowerCase())
-      );
-
-    const matchesFormat =
-      filtres.format === "all" || cv.cv.format === filtres.format;
-
-    return (
-      matchesSearch &&
-      matchesLieu &&
-      matchesExperience &&
-      matchesFormation &&
-      matchesCertifications &&
-      matchesFormat
-    );
-  });
-
-  const handleToggleFavorite = (id: number) => {
+  const handleToggleFavorite = (id: string) => {
     setCvsFavoris((prev) =>
       prev.includes(id) ? prev.filter((favId) => favId !== id) : [...prev, id]
     );
@@ -334,25 +308,26 @@ export default function RechercheCVPage() {
     setFiltres({
       lieu: "all",
       experience: "all",
-      formation: "all",
       competences: [],
-      certifications: "all",
+      certifications: [],
+      domaine: "all",
+      niveauEtude: [],
       format: "all",
     });
     setSearchTerm("");
   };
 
-  const competencesUniques = Array.from(
-    new Set(cvs.flatMap((cv) => cv.cv.competences))
-  );
+  const competencesUniques = useMemo(() => {
+    return Array.from(new Set(cvs.flatMap((cv) => cv.cv.competences)));
+  }, [cvs]);
 
-  const lieuxUniques = Array.from(
-    new Set(cvs.map((cv) => cv.candidat.lieu.split(",")[0]))
-  );
+  const lieuxUniques = useMemo(() => {
+    return Array.from(new Set(cvs.map((cv) => cv.candidat.lieu.split(",")[0])));
+  }, [cvs]);
 
-  const formationsUniques = Array.from(
-    new Set(cvs.map((cv) => cv.cv.formation.split(" - ")[1] || cv.cv.formation))
-  );
+  const certificationsUniques = useMemo(() => {
+    return Array.from(new Set(cvs.flatMap((cv) => cv.cv.certifications)));
+  }, [cvs]);
 
   return (
     <>
@@ -409,7 +384,34 @@ export default function RechercheCVPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {/* Domaine */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Domaine</label>
+                      <Select
+                        value={filtres.domaine}
+                        onValueChange={(value) =>
+                          handleFiltreChange("domaine", value)
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Tous les domaines" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tous les domaines</SelectItem>
+                          {DOMAINES_PREDEFINIS.map((domaine) => (
+                            <SelectItem
+                              key={domaine.value}
+                              value={domaine.value}
+                            >
+                              {domaine.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Lieu */}
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Lieu</label>
                       <Select
@@ -418,7 +420,7 @@ export default function RechercheCVPage() {
                           handleFiltreChange("lieu", value)
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Tous les lieux" />
                         </SelectTrigger>
                         <SelectContent>
@@ -432,99 +434,7 @@ export default function RechercheCVPage() {
                       </Select>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Expérience</label>
-                      <Select
-                        value={filtres.experience}
-                        onValueChange={(value) =>
-                          handleFiltreChange("experience", value)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Tous les niveaux" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Tous les niveaux</SelectItem>
-                          <SelectItem value="junior">
-                            Junior (1-3 ans)
-                          </SelectItem>
-                          <SelectItem value="senior">
-                            Senior (4-6 ans)
-                          </SelectItem>
-                          <SelectItem value="expert">
-                            Expert (7+ ans)
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Formation</label>
-                      <Select
-                        value={filtres.formation}
-                        onValueChange={(value) =>
-                          handleFiltreChange("formation", value)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Toutes les formations" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">
-                            Toutes les formations
-                          </SelectItem>
-                          {formationsUniques.map((formation) => (
-                            <SelectItem key={formation} value={formation}>
-                              {formation}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        Certifications
-                      </label>
-                      <Select
-                        value={filtres.certifications}
-                        onValueChange={(value) =>
-                          handleFiltreChange("certifications", value)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Toutes les certifications" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Toutes</SelectItem>
-                          <SelectItem value="aws">AWS</SelectItem>
-                          <SelectItem value="google">Google</SelectItem>
-                          <SelectItem value="microsoft">Microsoft</SelectItem>
-                          <SelectItem value="cisco">Cisco</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Format</label>
-                      <Select
-                        value={filtres.format}
-                        onValueChange={(value) =>
-                          handleFiltreChange("format", value)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Tous les formats" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Tous les formats</SelectItem>
-                          <SelectItem value="PDF">PDF</SelectItem>
-                          <SelectItem value="DOC">DOC</SelectItem>
-                          <SelectItem value="DOCX">DOCX</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
+                    {/* Compétences */}
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Compétences</label>
                       <Select
@@ -543,7 +453,7 @@ export default function RechercheCVPage() {
                           }
                         }}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Ajouter une compétence" />
                         </SelectTrigger>
                         <SelectContent>
@@ -579,6 +489,131 @@ export default function RechercheCVPage() {
                         </div>
                       )}
                     </div>
+
+                    {/* Certifications */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        Certifications
+                      </label>
+                      <Select
+                        value="all"
+                        onValueChange={(value) => {
+                          if (value !== "all") {
+                            const newCertifications =
+                              filtres.certifications.includes(value)
+                                ? filtres.certifications.filter(
+                                    (c) => c !== value
+                                  )
+                                : [...filtres.certifications, value];
+                            setFiltres((prev) => ({
+                              ...prev,
+                              certifications: newCertifications,
+                            }));
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Ajouter une certification" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">
+                            Ajouter une certification
+                          </SelectItem>
+                          {certificationsUniques.map((certification) => (
+                            <SelectItem
+                              key={certification}
+                              value={certification}
+                            >
+                              {certification}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {filtres.certifications.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {filtres.certifications.map((certification) => (
+                            <Badge
+                              key={certification}
+                              variant="secondary"
+                              className="text-xs cursor-pointer"
+                              onClick={() => {
+                                setFiltres((prev) => ({
+                                  ...prev,
+                                  certifications: prev.certifications.filter(
+                                    (c) => c !== certification
+                                  ),
+                                }));
+                              }}
+                            >
+                              {certification} ×
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Niveau d'étude */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        Niveau d'étude
+                      </label>
+                      <Select
+                        value="all"
+                        onValueChange={(value) => {
+                          if (value !== "all") {
+                            const newNiveauxEtude =
+                              filtres.niveauEtude.includes(value)
+                                ? filtres.niveauEtude.filter((n) => n !== value)
+                                : [...filtres.niveauEtude, value];
+                            setFiltres((prev) => ({
+                              ...prev,
+                              niveauEtude: newNiveauxEtude,
+                            }));
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Ajouter un niveau d'étude" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">
+                            Ajouter un niveau d'étude
+                          </SelectItem>
+                          {NIVEAUX_ETUDE_PREDEFINIS.map((niveau) => (
+                            <SelectItem key={niveau.value} value={niveau.value}>
+                              {niveau.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {filtres.niveauEtude.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {filtres.niveauEtude.map((niveau) => {
+                            const niveauLabel =
+                              NIVEAUX_ETUDE_PREDEFINIS.find(
+                                (n) => n.value === niveau
+                              )?.label || niveau;
+                            return (
+                              <Badge
+                                key={niveau}
+                                variant="secondary"
+                                className="text-xs cursor-pointer"
+                                onClick={() => {
+                                  setFiltres((prev) => ({
+                                    ...prev,
+                                    niveauEtude: prev.niveauEtude.filter(
+                                      (n) => n !== niveau
+                                    ),
+                                  }));
+                                }}
+                              >
+                                {niveauLabel} ×
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -587,22 +622,47 @@ export default function RechercheCVPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold">
-                    {filteredCVs.length} CV trouvé
-                    {filteredCVs.length > 1 ? "s" : ""}
+                    {isLoading ? (
+                      "Chargement..."
+                    ) : error ? (
+                      "Erreur lors du chargement"
+                    ) : (
+                      <>
+                        {cvs.length} CV trouvé
+                        {cvs.length > 1 ? "s" : ""}
+                      </>
+                    )}
                   </h2>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <IconEye className="h-4 w-4" />
-                      Vue grille
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <IconFileText className="h-4 w-4" />
-                      Vue liste
-                    </Button>
-                  </div>
                 </div>
 
-                {filteredCVs.length === 0 ? (
+                {isLoading ? (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                      <p className="text-muted-foreground">
+                        Chargement des CV...
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : error ? (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <IconFileText className="h-12 w-12 text-destructive mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">
+                        Erreur de chargement
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        Une erreur est survenue lors du chargement des CV.
+                      </p>
+                      <Button
+                        variant="outline"
+                        onClick={() => window.location.reload()}
+                      >
+                        Réessayer
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : cvs.length === 0 ? (
                   <Card>
                     <CardContent className="p-8 text-center">
                       <IconFileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -620,7 +680,7 @@ export default function RechercheCVPage() {
                   </Card>
                 ) : (
                   <div className="space-y-4">
-                    {filteredCVs.map((cv) => (
+                    {cvs.map((cv) => (
                       <Card
                         key={cv.id}
                         className="hover:shadow-md transition-shadow"
@@ -639,41 +699,40 @@ export default function RechercheCVPage() {
                                   <CardTitle className="text-xl">
                                     {cv.candidat.nom}
                                   </CardTitle>
-                                  <div className="flex items-center gap-1">
-                                    <IconStar className="h-4 w-4 text-yellow-500" />
-                                    <span className="text-sm font-medium">
-                                      {cv.note}
-                                    </span>
-                                  </div>
                                 </div>
                                 <CardDescription className="space-y-2">
-                                  <div className="flex items-center gap-4 text-sm">
-                                    <span className="flex items-center gap-1">
-                                      <IconBriefcase className="h-4 w-4" />
-                                      {cv.cv.titre}
-                                    </span>
+                                  <div className="flex items-center gap-4 text-sm flex-wrap">
                                     <span className="flex items-center gap-1">
                                       <IconMapPin className="h-4 w-4" />
                                       {cv.candidat.lieu}
                                     </span>
+
                                     <span className="flex items-center gap-1">
-                                      <IconCalendar className="h-4 w-4" />
-                                      {cv.cv.experience}
+                                      <IconBriefcase className="h-4 w-4" />
+                                      {cv.candidat.domaine}
                                     </span>
                                   </div>
-                                  <div className="flex items-center gap-4 text-sm">
-                                    <span className="flex items-center gap-1">
+                                  <div className="flex items-center gap-4 text-sm flex-wrap">
+                                    {/* <span className="flex items-center gap-1">
                                       <IconSchool className="h-4 w-4" />
                                       {cv.cv.formation}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                      <IconAward className="h-4 w-4" />
-                                      {cv.cv.certifications.length}{" "}
-                                      certification
-                                      {cv.cv.certifications.length > 1
-                                        ? "s"
-                                        : ""}
-                                    </span>
+                                    </span> */}
+                                    {cv.cv.niveauxEtude.length > 0 && (
+                                      <span className="flex items-center gap-1 uppercase">
+                                        <IconSchool className="h-4 w-4" />
+                                        {cv.cv.niveauxEtude.join(", ")}
+                                      </span>
+                                    )}
+                                    {cv.cv.certifications.length > 0 && (
+                                      <span className="flex items-center gap-1">
+                                        <IconAward className="h-4 w-4" />
+                                        {cv.cv.certifications.length}{" "}
+                                        certification
+                                        {cv.cv.certifications.length > 1
+                                          ? "s"
+                                          : ""}
+                                      </span>
+                                    )}
                                     <span className="text-muted-foreground">
                                       Mis à jour: {cv.cv.derniereMiseAJour}
                                     </span>
@@ -709,62 +768,68 @@ export default function RechercheCVPage() {
                             <div>
                               <h4 className="font-medium mb-2">Compétences</h4>
                               <div className="flex flex-wrap gap-2">
-                                {cv.cv.competences.map((competence, index) => (
-                                  <Badge key={index} variant="secondary">
-                                    {competence}
-                                  </Badge>
-                                ))}
+                                {cv.cv.competences.map(
+                                  (competence: string, index: number) => (
+                                    <Badge key={index} variant="secondary">
+                                      {competence}
+                                    </Badge>
+                                  )
+                                )}
                               </div>
                             </div>
-
-                            {/* Langues */}
+                            {/* Niveaux d'étude */}
                             <div>
-                              <h4 className="font-medium mb-2">Langues</h4>
+                              <h4 className="font-medium mb-2">
+                                Niveaux d'étude
+                              </h4>
                               <div className="flex flex-wrap gap-2">
-                                {cv.cv.langues.map((langue, index) => (
-                                  <Badge key={index} variant="outline">
-                                    {langue}
-                                  </Badge>
-                                ))}
+                                {cv.cv.niveauxEtude.map(
+                                  (niveau: string, index: number) => (
+                                    <Badge key={index} variant="secondary">
+                                      {niveau}
+                                    </Badge>
+                                  )
+                                )}
                               </div>
                             </div>
 
-                            {/* Informations du CV */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            {/* Certifications */}
+                            {cv.cv.certifications.length > 0 && (
                               <div>
-                                <span className="text-muted-foreground">
-                                  Taille:
-                                </span>
-                                <span className="ml-2 font-medium">
-                                  {cv.cv.taille}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">
-                                  Format:
-                                </span>
-                                <span className="ml-2 font-medium">
-                                  {cv.cv.format}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">
-                                  Contact:
-                                </span>
-                                <div className="flex gap-2 mt-1">
-                                  <Button variant="ghost" size="sm" asChild>
-                                    <a href={`mailto:${cv.candidat.email}`}>
-                                      <IconMail className="h-4 w-4" />
-                                    </a>
-                                  </Button>
-                                  <Button variant="ghost" size="sm" asChild>
-                                    <a href={`tel:${cv.candidat.telephone}`}>
-                                      <IconPhone className="h-4 w-4" />
-                                    </a>
-                                  </Button>
+                                <h4 className="font-medium mb-2">
+                                  Certifications
+                                </h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {cv.cv.certifications.map(
+                                    (certification: string, index: number) => (
+                                      <Badge key={index} variant="outline">
+                                        <IconAward className="h-3 w-3 mr-1" />
+                                        {certification}
+                                      </Badge>
+                                    )
+                                  )}
                                 </div>
                               </div>
-                            </div>
+                            )}
+
+                            {/* Niveaux d'étude */}
+                            {cv.cv.niveauxEtude.length > 0 && (
+                              <div>
+                                <h4 className="font-medium mb-2">
+                                  Niveaux d'étude
+                                </h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {cv.cv.niveauxEtude.map(
+                                    (niveau: string, index: number) => (
+                                      <Badge key={index} variant="outline">
+                                        <IconSchool className="h-3 w-3 mr-1" />
+                                        {niveau}
+                                      </Badge>
+                                    )
+                                  )}
+                                </div>
+                              </div>
+                            )}
 
                             {/* Actions */}
                             <div className="flex gap-2 pt-4 border-t">

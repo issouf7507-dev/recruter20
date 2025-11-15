@@ -6,11 +6,12 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Download, Trash2, File } from "lucide-react";
+import { Upload, Download, Trash2, File, Plus, Link } from "lucide-react";
 import { useEdgeStore } from "@/lib/edgestore";
 import { useQuery } from "@tanstack/react-query";
 
@@ -165,19 +166,36 @@ export function DocumentsSection({ candidatId }: DocumentsSectionProps) {
 
   return (
     <div className="space-y-6 pb-6">
+      <Card>
+        <CardHeader> Vous n'avez pas de CV ? </CardHeader>
+        <CardContent>
+          <p>
+            Vous n'avez pas de CV ? Vous pouvez en créer un en quelques clics.
+          </p>
+        </CardContent>
+        <CardFooter>
+          <Button
+            className="bg-[#a590ff] text-white hover:bg-[#a590ff]/90"
+            onClick={() => window.open("http://localhost:3001", "_blank")}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Créer un CV
+          </Button>
+        </CardFooter>
+      </Card>
       <div>
-        <h3 className="text-2xl font-bold">Documents</h3>
+        <h3 className="text-2xl font-bold text-[#a590ff]">Documents</h3>
         <p className="text-muted-foreground">
           Gérez vos CV, lettres de motivation et autres documents
         </p>
       </div>
 
       {/* CV */}
-      <Card>
+      <Card className="shadow-none">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>CV</CardTitle>
+              <CardTitle className="text-[#a590ff]">CV</CardTitle>
               <CardDescription>
                 Téléchargez et gérez vos fichiers CV (PDF, DOC, DOCX)
               </CardDescription>
@@ -252,11 +270,13 @@ export function DocumentsSection({ candidatId }: DocumentsSectionProps) {
       </Card>
 
       {/* Lettres de motivation */}
-      <Card>
+      <Card className="shadow-none">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Lettres de motivation</CardTitle>
+              <CardTitle className="text-[#a590ff]">
+                Lettres de motivation
+              </CardTitle>
               <CardDescription>
                 Téléchargez et gérez vos lettres de motivation
               </CardDescription>
@@ -331,11 +351,11 @@ export function DocumentsSection({ candidatId }: DocumentsSectionProps) {
       </Card>
 
       {/* Autres documents */}
-      <Card>
+      <Card className="shadow-none">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Autres documents</CardTitle>
+              <CardTitle className="text-[#a590ff]">Autres documents</CardTitle>
               <CardDescription>Certificats, attestations, etc.</CardDescription>
             </div>
             <Button

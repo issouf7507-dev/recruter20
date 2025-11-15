@@ -20,6 +20,7 @@ import {
   Bell,
   Target,
   FolderOpen,
+  MessageCircle,
 } from "lucide-react";
 import { ProfilSection } from "./candidat-sections/ProfilSection";
 import { ExperiencesFormationsSection } from "./candidat-sections/ExperiencesFormationsSection";
@@ -27,6 +28,7 @@ import { CandidaturesSection } from "./candidat-sections/CandidaturesSection";
 import { AlertesSection } from "./candidat-sections/AlertesSection";
 import { ObjectifsSection } from "./candidat-sections/ObjectifsSection";
 import { DocumentsSection } from "./candidat-sections/DocumentsSection";
+import { MessagesSection } from "./candidat-sections/MessagesSection";
 
 interface CandidatSheetProps {
   open: boolean;
@@ -69,7 +71,7 @@ export function CandidatSheet({ open, onOpenChange }: CandidatSheetProps) {
             className="h-full flex flex-col"
           >
             <div className="border-b px-6">
-              <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 gap-2 h-auto">
+              <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 gap-2 h-auto">
                 <TabsTrigger
                   value="profil"
                   className="flex flex-col items-center gap-1 py-3 data-[state=active]:bg-[#a590ff] data-[state=active]:text-primary-foreground"
@@ -112,6 +114,13 @@ export function CandidatSheet({ open, onOpenChange }: CandidatSheetProps) {
                   <FolderOpen className="h-4 w-4" />
                   <span className="text-xs">Documents</span>
                 </TabsTrigger>
+                <TabsTrigger
+                  value="messages"
+                  className="flex flex-col items-center gap-1 py-3 data-[state=active]:bg-[#a590ff] data-[state=active]:text-primary-foreground"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  <span className="text-xs">Messages</span>
+                </TabsTrigger>
               </TabsList>
             </div>
 
@@ -138,6 +147,10 @@ export function CandidatSheet({ open, onOpenChange }: CandidatSheetProps) {
 
               <TabsContent value="documents" className="mt-0">
                 <DocumentsSection candidatId={candidat?.id} />
+              </TabsContent>
+
+              <TabsContent value="messages" className="mt-0">
+                <MessagesSection candidatId={candidat?.id} />
               </TabsContent>
             </div>
           </Tabs>

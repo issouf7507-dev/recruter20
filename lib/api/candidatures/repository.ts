@@ -1,5 +1,9 @@
 import prisma from "@/lib/prisma";
-import type { Application, CreateApplicationData } from "./types";
+import type {
+  Application,
+  ApplicationStatus,
+  CreateApplicationData,
+} from "./types";
 
 /**
  * Repository for applications (candidatures) - Database operations
@@ -22,6 +26,30 @@ export class ApplicationRepository {
             company: true,
             location: true,
             type: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  // Find all applications for a recruiter
+  async findByRecruteurId(recruteurId: string) {
+    return prisma.application.findMany({
+      where: {
+        jobOffer: { recruteurId: recruteurId },
+      },
+      include: {
+        jobOffer: true,
+        candidat: {
+          include: {
+            user: {
+              select: {
+                email: true,
+              },
+            },
+            candidatCompetences: true,
+            competencesList: true,
           },
         },
       },
@@ -105,6 +133,20 @@ export class ApplicationRepository {
   async delete(id: string): Promise<void> {
     await prisma.application.delete({
       where: { id },
+    });
+  }
+
+  async updateStatus(id: string, status: ApplicationStatus) {
+    await prisma.application.update({
+      where: { id },
+      data: { status: status },
+    });
+  }
+
+  async updateFavorite(id: string, favorite: boolean) {
+    await prisma.application.update({
+      where: { id },
+      data: { favorite: favorite },
     });
   }
 }

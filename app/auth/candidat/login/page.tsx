@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+
 import AuthForm from "../../../components/AuthForm";
 import Link from "next/link";
 import { ArrowLeftIcon } from "lucide-react";
 import { signIn } from "@/lib/auth-client";
 import { toast } from "sonner";
+import { getCandidat } from "@/action/getCandidat";
 
 interface AuthFormData {
   email: string;
@@ -20,7 +21,6 @@ interface AuthFormData {
 
 export default function CandidateLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
   const handleSubmit = async (data: AuthFormData) => {
     setIsLoading(true);
@@ -32,7 +32,15 @@ export default function CandidateLoginPage() {
         password: data.password,
       });
       if (res.data) {
-        router.push("/");
+        const candidat = await getCandidat(res.data.user.id);
+
+        if (candidat?.user.type === "CANDIDAT") {
+          window.location.href = "/";
+        } else {
+          toast.error("Vous n'êtes pas un candidat");
+
+          return;
+        }
       }
       if (res.error) {
         console.error(res.error);

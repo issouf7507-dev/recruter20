@@ -86,8 +86,6 @@ export function AlertesSection({ candidatId }: AlertesSectionProps) {
     }
   };
 
-  console.log("alertes", alertes);
-
   const handleSave = async () => {
     // Validation
     if (
@@ -240,7 +238,7 @@ export function AlertesSection({ candidatId }: AlertesSectionProps) {
     <div className="space-y-6 pb-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-bold">Alertes Emploi</h3>
+          <h3 className="text-2xl font-bold text-[#a590ff]">Alertes Emploi</h3>
           <p className="text-muted-foreground">
             Créez des alertes pour être notifié des nouvelles offres
           </p>
@@ -250,6 +248,7 @@ export function AlertesSection({ candidatId }: AlertesSectionProps) {
             resetForm();
             setShowForm(true);
           }}
+          className="bg-[#a590ff] text-white hover:bg-[#a590ff]/90"
         >
           <Plus className="h-4 w-4 mr-2" />
           Nouvelle alerte
@@ -386,7 +385,12 @@ export function AlertesSection({ candidatId }: AlertesSectionProps) {
                     }
                   }}
                 />
-                <Button type="button" onClick={addMotCle} variant="outline">
+                <Button
+                  type="button"
+                  onClick={addMotCle}
+                  variant="outline"
+                  className="bg-[#a590ff] text-white hover:bg-[#a590ff]/90"
+                >
                   Ajouter
                 </Button>
               </div>
@@ -426,7 +430,12 @@ export function AlertesSection({ candidatId }: AlertesSectionProps) {
                 <Button variant="outline" onClick={resetForm}>
                   Annuler
                 </Button>
-                <Button onClick={handleSave}>Enregistrer</Button>
+                <Button
+                  onClick={handleSave}
+                  className="bg-[#a590ff] text-white hover:bg-[#a590ff]/90"
+                >
+                  Enregistrer
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -441,7 +450,7 @@ export function AlertesSection({ candidatId }: AlertesSectionProps) {
               Vous n&apos;avez pas encore créé d&apos;alerte
             </p>
             <Button
-              className="mt-4"
+              className="mt-4 bg-[#a590ff] text-white hover:bg-[#a590ff]/90"
               onClick={() => {
                 resetForm();
                 setShowForm(true);
@@ -456,13 +465,17 @@ export function AlertesSection({ candidatId }: AlertesSectionProps) {
           {alertes.map((alerte) => (
             <Card
               key={alerte.id}
-              className={!alerte.active ? "opacity-60" : ""}
+              className={
+                !alerte.active ? "opacity-60 shadow-none" : "shadow-none"
+              }
             >
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <CardTitle>{alerte.titre}</CardTitle>
+                      <CardTitle className="text-[#a590ff]">
+                        {alerte.titre}
+                      </CardTitle>
                       {alerte.active ? (
                         <Bell className="h-4 w-4 text-primary" />
                       ) : (

@@ -16,6 +16,13 @@ export async function GET(request: NextRequest) {
     const recruteurId = searchParams.get("recruteurId");
     const search = searchParams.get("search");
     const etat = searchParams.get("etat");
+    const location = searchParams.get("location");
+    const types = searchParams.get("types");
+    const salaryMin = searchParams.get("salaryMin");
+    const salaryMax = searchParams.get("salaryMax");
+    const salaryCurrency = searchParams.get("salaryCurrency");
+    const datePosted = searchParams.get("datePosted");
+    const experience = searchParams.get("experience");
 
     // Utiliser le repository au lieu d'appeler Prisma directement
     const result = await jobOfferRepository.findAll({
@@ -24,6 +31,13 @@ export async function GET(request: NextRequest) {
       recruteurId: recruteurId || undefined,
       search: search || undefined,
       etat: etat || undefined,
+      location: location || undefined,
+      types: types ? types.split(",") : undefined,
+      salaryMin: salaryMin ? parseFloat(salaryMin) : undefined,
+      salaryMax: salaryMax ? parseFloat(salaryMax) : undefined,
+      salaryCurrency: salaryCurrency || undefined,
+      datePosted: datePosted || undefined,
+      experience: experience ? experience.split(",") : undefined,
     });
 
     return NextResponse.json({

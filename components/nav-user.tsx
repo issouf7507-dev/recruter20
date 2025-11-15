@@ -25,7 +25,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { signOut } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+
 import { toast } from "sonner";
 
 export function NavUser({
@@ -38,12 +38,12 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
-  const router = useRouter();
 
   const handleSignOut = async () => {
     try {
       await signOut();
-      router.push("/auth/recruteur/login");
+
+      window.location.href = "/auth/recruteur/login";
     } catch (error) {
       console.error(error);
       toast.error("Erreur de déconnexion");

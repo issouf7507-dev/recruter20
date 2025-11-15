@@ -2,7 +2,7 @@
 import { Search, MapPin, Filter, DollarSignIcon } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useOffers } from "@/lib/hooks/use-offers";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -54,19 +54,85 @@ export default function OffresPage() {
   const [selectedJobFunctions, setSelectedJobFunctions] = useState<string[]>(
     []
   );
-  const [selectedCurrency, setSelectedCurrency] = useState<string>("EUR (€)");
+  const [selectedCurrency, setSelectedCurrency] = useState<string>("Toutes");
   const [datePosted, setDatePosted] = useState<string>("N'importe quand");
-  const [displayedCount, setDisplayedCount] = useState(3);
-  const [isLoading, setIsLoading] = useState(false);
   const [savedJobs, setSavedJobs] = useState<number[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  const { data: offersData, isLoading: isLoadingOffers } = useOffers({
-    page: currentPage,
-    limit: itemsPerPage,
-    // recruteurId: recruteurId,
-  });
+  // Convertir les filtres UI en paramètres API
+  const filterParams = useMemo(() => {
+    const params: any = {
+      page: currentPage,
+      limit: itemsPerPage,
+    };
+
+    // Recherche textuelle
+    if (searchQuery) {
+      params.search = searchQuery;
+    }
+
+    // Localisation
+    if (locationQuery) {
+      params.location = locationQuery;
+    }
+
+    // Types de contrat
+    if (selectedContractTypes.length > 0) {
+      params.types = selectedContractTypes.map((t) => t.toLowerCase());
+    }
+
+    // Salaire
+    if (selectedSalaryRange !== "Personnalisé") {
+      switch (selectedSalaryRange) {
+        case "Moins de €1,000":
+          params.salaryMax = 1000;
+          break;
+        case "€1,000 à €2,500":
+          params.salaryMin = 1000;
+          params.salaryMax = 2500;
+          break;
+        case "€2,500 à €5,000":
+          params.salaryMin = 2500;
+          params.salaryMax = 5000;
+          break;
+      }
+    }
+
+    // Devise (extraire le code de devise)
+    // Si une devise spécifique est sélectionnée, filtrer par cette devise
+    if (selectedCurrency && selectedCurrency !== "Toutes") {
+      const currencyMap: Record<string, string> = {
+        "USD ($)": "USD",
+        "GBP (£)": "GBP",
+        "CHF (CHF)": "CHF",
+        "EUR (€)": "EUR",
+      };
+      const currencyCode = currencyMap[selectedCurrency];
+      if (currencyCode) {
+        params.salaryCurrency = currencyCode;
+      }
+    }
+
+    // Date de publication
+    if (datePosted !== "N'importe quand") {
+      params.datePosted = datePosted;
+    }
+
+    return params;
+  }, [
+    currentPage,
+    itemsPerPage,
+    searchQuery,
+    locationQuery,
+    selectedContractTypes,
+    selectedSalaryRange,
+    selectedCurrency,
+    datePosted,
+  ]);
+
+  const { data: offersData, isLoading: isLoadingOffers } =
+    useOffers(filterParams);
 
   const pagination = offersData?.pagination;
 
@@ -140,7 +206,7 @@ export default function OffresPage() {
     setSelectedExperience([]);
     setSelectedJobFunctions([]);
     setSelectedSalaryRange("Personnalisé");
-    setSelectedCurrency("EUR (€)");
+    setSelectedCurrency("Toutes");
     setDatePosted("N'importe quand");
     setSearchQuery("");
     setLocationQuery("");
@@ -152,7 +218,7 @@ export default function OffresPage() {
     selectedExperience.length > 0 ||
     selectedJobFunctions.length > 0 ||
     selectedSalaryRange !== "Personnalisé" ||
-    selectedCurrency !== "EUR (€)" ||
+    selectedCurrency !== "Toutes" ||
     datePosted !== "N'importe quand" ||
     searchQuery !== "" ||
     locationQuery !== "";
@@ -165,114 +231,17 @@ export default function OffresPage() {
     }
   };
 
-  // Fonction pour charger plus d'offres
-  const loadMoreJobs = () => {
-    setIsLoading(true);
-    // Simuler un délai de chargement (comme un appel API)
-    setTimeout(() => {
-      setDisplayedCount((prev) => Math.min(prev + 3, filteredJobs.length));
-      setIsLoading(false);
-    }, 800);
-  };
-
-  // Filtrage des offres
-  const filteredJobs = useMemo(() => {
-    let filtered = jobOffers;
-
-    // Filtre par recherche
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (job) =>
-          job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          job.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Filtre par localisation
-    if (locationQuery) {
-      filtered = filtered.filter((job) =>
-        job.location.toLowerCase().includes(locationQuery.toLowerCase())
-      );
-    }
-
-    // Filtre par type de contrat
-    if (selectedContractTypes.length > 0) {
-      filtered = filtered.filter((job) =>
-        selectedContractTypes.includes(job.type.toUpperCase())
-      );
-    }
-
-    // Filtre par salaire
-    if (selectedSalaryRange !== "Personnalisé") {
-      filtered = filtered.filter((job) => {
-        const salaryText = job.salary.replace(/€/g, "").replace(/,/g, "");
-        const parts = salaryText.split("-");
-
-        if (parts.length === 2) {
-          const min = parseInt(parts[0]);
-          const max = parseInt(parts[1]);
-
-          switch (selectedSalaryRange) {
-            case "Moins de €1,000":
-              return max < 1000;
-            case "€1,000 à €2,500":
-              return min >= 1000 && max <= 2500;
-            case "€2,500 à €5,000":
-              return min >= 2500 && max <= 5000;
-            default:
-              return true;
-          }
-        }
-        return true;
-      });
-    }
-
-    // Filtre par date de publication
-    if (datePosted !== "N'importe quand") {
-      filtered = filtered.filter((job) => {
-        const createdAt = new Date(job.id); // Utiliser l'ID pour simuler la date
-        const now = new Date();
-        const diffInDays = Math.floor(
-          (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)
-        );
-
-        switch (datePosted) {
-          case "Aujourd'hui":
-            return diffInDays === 0;
-          case "3 jours":
-            return diffInDays <= 3;
-          case "1 semaine":
-            return diffInDays <= 7;
-          case "1 mois":
-            return diffInDays <= 30;
-          default:
-            return true;
-        }
-      });
-    }
-
-    // Filtre par remote (basé sur le type d'offre)
-    if (selectedRemote.length > 0) {
-      filtered = filtered.filter((job) => selectedRemote.includes(job.remote));
-    }
-
-    return filtered;
+  // Réinitialiser la page à 1 quand les filtres changent
+  useEffect(() => {
+    setCurrentPage(1);
   }, [
-    jobOffers,
     searchQuery,
     locationQuery,
     selectedContractTypes,
-    selectedRemote,
     selectedSalaryRange,
-    selectedJobFunctions,
     selectedCurrency,
     datePosted,
   ]);
-
-  // Offres à afficher
-  const displayedJobs = filteredJobs.slice(0, displayedCount);
-  const hasMoreJobs = displayedCount < filteredJobs.length;
 
   const handleNextPage = useCallback(() => {
     setCurrentPage((prev) => prev + 1);
@@ -478,6 +447,7 @@ export default function OffresPage() {
                 onChange={(e) => setSelectedCurrency(e.target.value)}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
+                <option value="Toutes">Toutes les devises</option>
                 {currencies.map((currency) => (
                   <option key={currency} value={currency}>
                     {currency}
@@ -559,7 +529,7 @@ export default function OffresPage() {
             <div className="mb-6 flex items-center justify-between">
               <p className="text-gray-600">
                 <span className="font-semibold text-gray-900">
-                  {filteredJobs.length}
+                  {pagination?.total || 0}
                 </span>{" "}
                 Jobs resultats
               </p>
@@ -567,7 +537,7 @@ export default function OffresPage() {
 
             {/* Job Cards */}
             <div className="space-y-4">
-              {filteredJobs.length === 0 ? (
+              {!jobOffers || jobOffers.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-600 text-lg">Aucune offre trouvée</p>
                   <p className="text-gray-500 text-sm mt-2">
@@ -576,7 +546,7 @@ export default function OffresPage() {
                 </div>
               ) : (
                 <>
-                  {filteredJobs.map((job, index) => (
+                  {jobOffers.map((job, index) => (
                     <motion.div
                       key={job.id}
                       initial={{ opacity: 0, y: 20 }}
@@ -782,22 +752,6 @@ export default function OffresPage() {
                 </>
               )}
             </div>
-
-            {/* Message quand toutes les offres sont affichées */}
-            {!hasMoreJobs && displayedJobs.length > 0 && (
-              <div className="mt-8 text-center p-6 rounded-lg">
-                <p className="text-gray-700 font-medium">
-                  Vous avez vu toutes les offres disponibles !
-                </p>
-                <p className="text-gray-600 text-sm mt-2">
-                  Créez une alerte pour être informé des nouvelles offres
-                  d'emploi
-                </p>
-                <button className="mt-4 bg-[#a590ff] text-white px-6 py-2 rounded-full font-semibold hover:bg-[#9580ef] transition-colors cursor-pointer">
-                  Créer une alerte
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>

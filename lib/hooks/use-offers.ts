@@ -10,6 +10,15 @@ export function useOffers(params?: {
   page?: number;
   limit?: number;
   recruteurId?: string;
+  search?: string;
+  etat?: string;
+  location?: string;
+  types?: string[];
+  salaryMin?: number;
+  salaryMax?: number;
+  salaryCurrency?: string;
+  datePosted?: string;
+  experience?: string[];
 }) {
   return useQuery({
     queryKey: ["offers", params],

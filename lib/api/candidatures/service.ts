@@ -1,5 +1,9 @@
 import { applicationRepository } from "./repository";
-import type { CreateApplicationData, UpdateApplicationData } from "./types";
+import type {
+  ApplicationStatus,
+  CreateApplicationData,
+  UpdateApplicationData,
+} from "./types";
 
 /**
  * Service layer for applications - Business logic
@@ -10,6 +14,13 @@ export class ApplicationService {
    */
   async getApplicationsByCandidatId(candidatId: string) {
     return applicationRepository.findByCandidatId(candidatId);
+  }
+
+  /**
+   * Get all applications for a recruiter
+   */
+  async getApplicationsByRecruteurId(recruteurId: string) {
+    return applicationRepository.findByRecruteurId(recruteurId);
   }
 
   /**
@@ -76,6 +87,13 @@ export class ApplicationService {
   ): Promise<boolean> {
     const application = await applicationRepository.findById(applicationId);
     return application?.candidat.userId === userId;
+  }
+
+  async updateStatus(id: string, status: ApplicationStatus) {
+    return applicationRepository.updateStatus(id, status);
+  }
+  async updateFavorite(id: string, favorite: boolean) {
+    return applicationRepository.updateFavorite(id, favorite);
   }
 }
 

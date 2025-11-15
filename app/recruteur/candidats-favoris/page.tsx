@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,138 +22,133 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SiteHeader } from "@/components/site-header";
 import {
-  IconHeart,
+  IconUser,
   IconCalendar,
   IconEye,
-  IconMail,
-  IconPhone,
+  IconCheck,
+  IconX,
   IconMapPin,
   IconBriefcase,
   IconSearch,
   IconFilter,
   IconFileText,
-  IconStar,
-  IconUser,
-  IconTrash,
+  IconMail,
+  IconPhone,
+  IconClock,
   IconMessage,
+  IconHeart,
 } from "@tabler/icons-react";
+import { useSession } from "@/lib/auth-client";
+import { useRecruteurByUserId } from "@/lib/hooks/use-recruteurs";
+import { useCandidatures } from "@/lib/hooks/use-candidatures";
+import { Star } from "lucide-react";
+import { toast } from "sonner";
 
-// Données mockées pour les candidats favoris
-const mockCandidatsFavoris = [
-  {
-    id: 1,
-    candidat: {
-      nom: "Marie Dubois",
-      email: "marie.dubois@email.com",
-      telephone: "+33 6 12 34 56 78",
-      avatar: "/avatars/marie.jpg",
-      lieu: "Paris, France",
-      titre: "Développeuse React Senior",
-      experience: "5 ans",
-    },
-    competences: ["React", "TypeScript", "Node.js", "PostgreSQL", "Docker"],
-    derniereActivite: "2024-01-20",
-    statut: "disponible",
-    note: 5,
-    offresAppliquees: ["Développeur React Senior", "Full Stack Developer"],
-    cvUrl: "/cv/marie-dubois.pdf",
-    portfolioUrl: "https://marie-dubois.dev",
-    linkedinUrl: "https://linkedin.com/in/marie-dubois",
-  },
-  {
-    id: 2,
-    candidat: {
-      nom: "Pierre Martin",
-      email: "pierre.martin@email.com",
-      telephone: "+33 6 87 65 43 21",
-      avatar: "/avatars/pierre.jpg",
-      lieu: "Lyon, France",
-      titre: "Product Manager",
-      experience: "7 ans",
-    },
-    competences: ["Product Management", "Agile", "Analytics", "Figma", "SQL"],
-    derniereActivite: "2024-01-18",
-    statut: "en-postule",
-    note: 4,
-    offresAppliquees: ["Product Manager", "Senior PM"],
-    cvUrl: "/cv/pierre-martin.pdf",
-    portfolioUrl: "https://pierre-martin.com",
-    linkedinUrl: "https://linkedin.com/in/pierre-martin",
-  },
-  {
-    id: 3,
-    candidat: {
-      nom: "Sophie Laurent",
-      email: "sophie.laurent@email.com",
-      telephone: "+33 6 98 76 54 32",
-      avatar: "/avatars/sophie.jpg",
-      lieu: "Marseille, France",
-      titre: "Designer UX/UI",
-      experience: "4 ans",
-    },
-    competences: [
-      "UI/UX Design",
-      "Figma",
-      "Sketch",
-      "Prototyping",
-      "User Research",
-    ],
-    derniereActivite: "2024-01-15",
-    statut: "disponible",
-    note: 5,
-    offresAppliquees: ["Designer UX/UI", "Senior Designer"],
-    cvUrl: "/cv/sophie-laurent.pdf",
-    portfolioUrl: "https://sophie-laurent.design",
-    linkedinUrl: "https://linkedin.com/in/sophie-laurent",
-  },
-  {
-    id: 4,
-    candidat: {
-      nom: "Thomas Bernard",
-      email: "thomas.bernard@email.com",
-      telephone: "+33 6 11 22 33 44",
-      avatar: "/avatars/thomas.jpg",
-      lieu: "Toulouse, France",
-      titre: "Data Scientist",
-      experience: "6 ans",
-    },
-    competences: ["Python", "Machine Learning", "SQL", "TensorFlow", "Pandas"],
-    derniereActivite: "2024-01-12",
-    statut: "en-postule",
-    note: 4,
-    offresAppliquees: ["Data Scientist", "ML Engineer"],
-    cvUrl: "/cv/thomas-bernard.pdf",
-    portfolioUrl: "https://thomas-bernard.ai",
-    linkedinUrl: "https://linkedin.com/in/thomas-bernard",
-  },
-  {
-    id: 5,
-    candidat: {
-      nom: "Julie Moreau",
-      email: "julie.moreau@email.com",
-      telephone: "+33 6 55 66 77 88",
-      avatar: "/avatars/julie.jpg",
-      lieu: "Nantes, France",
-      titre: "DevOps Engineer",
-      experience: "5 ans",
-    },
-    competences: ["AWS", "Docker", "Kubernetes", "Terraform", "CI/CD"],
-    derniereActivite: "2024-01-22",
-    statut: "disponible",
-    note: 5,
-    offresAppliquees: ["DevOps Engineer", "Cloud Engineer"],
-    cvUrl: "/cv/julie-moreau.pdf",
-    portfolioUrl: "https://julie-moreau.dev",
-    linkedinUrl: "https://linkedin.com/in/julie-moreau",
-  },
-];
+interface CandidatureRecruteur {
+  id: string;
+  candidatId: string;
+  jobOfferId: string;
+  status: "EN_ATTENTE" | "ACCEPTE" | "REFUSE" | string; // selon ton enum
+  rating: number | null;
+  message: string | null;
+  cv: string | null;
+  favorite: boolean;
+  duedate: string | null; // ou Date si tu convertis tes dates
+  createdAt: string; // ou Date
+  updatedAt: string; // ou Date
+  deletedAt: string | null;
 
+  jobOffer: {
+    id: string;
+    title: string;
+    description: string;
+    company: string;
+    location: string;
+    type: string;
+    etat: "active" | "inactive" | string;
+    experience: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    salaryCurrency: string | null;
+    salaryPeriod: string | null;
+    benefits: string | null;
+    requirements: string | null;
+    responsibilities: string | null;
+    duedate: string | null; // ou Date
+    skills: string | null;
+    favorite: boolean;
+    templateId: string | null;
+    views: number;
+    recruteurId: string;
+    createdAt: string; // ou Date
+    updatedAt: string; // ou Date
+    deletedAt: string | null;
+  };
+
+  candidat: {
+    id: string;
+    userId: string;
+    nom: string;
+    prenom: string;
+    telephone: string | null;
+    cv: string | null;
+    letterm: string | null;
+    bio: string | null;
+    adresse: string | null;
+    ville: string | null;
+    statut: string | null;
+    pays: string | null;
+    dateNaissance: string | null; // ou Date
+    nationalite: string | null;
+    situationFamiliale: string | null;
+    permisConduire: string | null;
+    image: string | null;
+    user: {
+      email: string;
+    };
+    candidatCompetences: {
+      id: string;
+      candidatId: string;
+      competence: string;
+      createdAt: string;
+    }[];
+  };
+}
 export default function CandidatsFavorisPage() {
-  const [candidatsFavoris, setCandidatsFavoris] =
-    useState(mockCandidatsFavoris);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatut, setFilterStatut] = useState("all");
-  const [filterCompetence, setFilterCompetence] = useState("all");
+  const [filterOffre, setFilterOffre] = useState("all");
+
+  const router = useRouter();
+  const { data: session, isPending: isSessionLoading } = useSession();
+  const { data: recruteur } = useRecruteurByUserId(session?.user?.id);
+  const recruteurId = recruteur?.id;
+
+  const {
+    candidaturesFavorites,
+    updateStatusCandidature,
+    updateFavoriteCandidature,
+    candidaturesRecruteur,
+    isLoading,
+    refetchRecruteur,
+    createConversation,
+  } = useCandidatures(recruteurId);
+
+  console.log("candidaturesRecruteur", candidaturesRecruteur);
+  console.log("candidaturesFavorites", candidaturesFavorites);
+
+  const handleContactCandidat = (candidatId: string, jobOfferId: string) => {
+    if (!recruteurId) {
+      toast.error("Erreur: Recruteur non trouvé");
+      return;
+    }
+
+    createConversation.mutate({
+      candidatId,
+      jobOfferId,
+      recruteurId: recruteurId,
+    });
+  };
 
   const getStatutBadge = (statut: string) => {
     switch (statut) {
@@ -179,36 +175,25 @@ export default function CandidatsFavorisPage() {
       .toUpperCase();
   };
 
-  const filteredCandidats = candidatsFavoris.filter((candidat) => {
-    const matchesSearch =
-      candidat.candidat.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      candidat.candidat.titre.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatut =
-      filterStatut === "all" || candidat.statut === filterStatut;
-    const matchesCompetence =
-      filterCompetence === "all" ||
-      candidat.competences.some((comp) =>
-        comp.toLowerCase().includes(filterCompetence.toLowerCase())
-      );
-    return matchesSearch && matchesStatut && matchesCompetence;
-  });
+  const filteredCandidats = candidaturesFavorites?.filter(
+    (candidature: CandidatureRecruteur) => {
+      const matchesSearch =
+        candidature.candidat.nom
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        candidature.candidat.prenom
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        candidature.jobOffer.title
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
 
-  const handleRemoveFavorite = (id: number) => {
-    if (
-      confirm("Êtes-vous sûr de vouloir retirer ce candidat de vos favoris ?")
-    ) {
-      setCandidatsFavoris(candidatsFavoris.filter((c) => c.id !== id));
+      const matchesStatut =
+        filterStatut === "all" || candidature.status === filterStatut;
+      // const matchesOffre =
+      //   filterOffre === "all" || candidature.jobOffer.title === filterOffre;
+      return matchesSearch && matchesStatut;
     }
-  };
-
-  const handleNoteChange = (id: number, note: number) => {
-    setCandidatsFavoris(
-      candidatsFavoris.map((c) => (c.id === id ? { ...c, note } : c))
-    );
-  };
-
-  const competencesUniques = Array.from(
-    new Set(candidatsFavoris.flatMap((c) => c.competences))
   );
 
   return (
@@ -239,7 +224,7 @@ export default function CandidatsFavorisPage() {
                           Total favoris
                         </p>
                         <p className="text-2xl font-bold">
-                          {candidatsFavoris.length}
+                          {candidaturesFavorites?.length}
                         </p>
                       </div>
                       <IconHeart className="h-8 w-8 text-red-500" />
@@ -255,8 +240,9 @@ export default function CandidatsFavorisPage() {
                         </p>
                         <p className="text-2xl font-bold text-green-600">
                           {
-                            candidatsFavoris.filter(
-                              (c) => c.statut === "disponible"
+                            candidaturesFavorites?.filter(
+                              (c: CandidatureRecruteur) =>
+                                c.status === "EN_ATTENTE"
                             ).length
                           }
                         </p>
@@ -274,8 +260,9 @@ export default function CandidatsFavorisPage() {
                         </p>
                         <p className="text-2xl font-bold text-yellow-600">
                           {
-                            candidatsFavoris.filter(
-                              (c) => c.statut === "en-postule"
+                            candidaturesFavorites?.filter(
+                              (c: CandidatureRecruteur) =>
+                                c.status === "EN_REVISION"
                             ).length
                           }
                         </p>
@@ -293,13 +280,14 @@ export default function CandidatsFavorisPage() {
                         </p>
                         <p className="text-2xl font-bold text-blue-600">
                           {
-                            candidatsFavoris.filter(
-                              (c) => c.statut === "embauche"
+                            candidaturesFavorites?.filter(
+                              (c: CandidatureRecruteur) =>
+                                c.status === "ACCEPTE"
                             ).length
                           }
                         </p>
                       </div>
-                      <IconStar className="h-8 w-8 text-blue-500" />
+                      <IconHeart className="h-8 w-8 text-blue-500" />
                     </div>
                   </CardContent>
                 </Card>
@@ -330,19 +318,20 @@ export default function CandidatsFavorisPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Tous les statuts</SelectItem>
-                          <SelectItem value="disponible">
-                            Disponibles
+                          <SelectItem value="EN_ATTENTE">En attente</SelectItem>
+                          <SelectItem value="EN_REVISION">
+                            En revision
                           </SelectItem>
-                          <SelectItem value="en-postule">En postule</SelectItem>
-                          <SelectItem value="embauche">Embauchés</SelectItem>
+                          <SelectItem value="ACCEPTE">Accepté</SelectItem>
+                          <SelectItem value="REFUSE">Refusé</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Select
-                        value={filterCompetence}
-                        onValueChange={setFilterCompetence}
+                      {/* <Select
+                        value={filterOffre}
+                        onValueChange={setFilterOffre}
                       >
                         <SelectTrigger className="w-[200px]">
-                          <SelectValue placeholder="Compétence" />
+                          <SelectValue placeholder="Offre" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">
@@ -354,7 +343,7 @@ export default function CandidatsFavorisPage() {
                             </SelectItem>
                           ))}
                         </SelectContent>
-                      </Select>
+                      </Select> */}
                       <Button variant="outline" size="icon">
                         <IconFilter className="h-4 w-4" />
                       </Button>
@@ -365,7 +354,7 @@ export default function CandidatsFavorisPage() {
 
               {/* Liste des candidats favoris */}
               <div className="space-y-4">
-                {filteredCandidats.length === 0 ? (
+                {filteredCandidats?.length === 0 ? (
                   <Card>
                     <CardContent className="p-8 text-center">
                       <IconHeart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -375,172 +364,312 @@ export default function CandidatsFavorisPage() {
                       <p className="text-muted-foreground mb-4">
                         {searchTerm ||
                         filterStatut !== "all" ||
-                        filterCompetence !== "all"
+                        filterOffre !== "all"
                           ? "Aucun candidat ne correspond à vos critères de recherche."
                           : "Vous n'avez pas encore ajouté de candidats à vos favoris."}
                       </p>
                     </CardContent>
                   </Card>
                 ) : (
-                  filteredCandidats.map((candidat) => (
-                    <Card
-                      key={candidat.id}
-                      className="hover:shadow-md transition-shadow"
-                    >
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-4">
-                            <Avatar className="h-16 w-16">
-                              <AvatarImage src={candidat.candidat.avatar} />
-                              <AvatarFallback>
-                                {getInitials(candidat.candidat.nom)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <CardTitle className="text-xl">
-                                  {candidat.candidat.nom}
-                                </CardTitle>
-                                {getStatutBadge(candidat.statut)}
+                  filteredCandidats?.map(
+                    (candidature: CandidatureRecruteur) => (
+                      <Card
+                        key={candidature.id}
+                        className="hover:shadow-md transition-shadow"
+                      >
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-4">
+                              <Avatar className="h-12 w-12">
+                                <AvatarImage
+                                  src={candidature.candidat.image || ""}
+                                />
+                                <AvatarFallback>
+                                  {getInitials(candidature.candidat.nom)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <CardTitle className="text-lg">
+                                    {candidature.candidat.nom}{" "}
+                                    {candidature.candidat.prenom}
+                                  </CardTitle>
+                                  {getStatutBadge(candidature.status)}
+                                </div>
+                                <CardDescription className="space-y-1">
+                                  <div className="flex items-center gap-4 text-sm">
+                                    <span className="flex items-center gap-1">
+                                      <IconBriefcase className="h-4 w-4" />
+                                      {candidature.jobOffer.title} -{" "}
+                                      {candidature.jobOffer.company}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <IconMapPin className="h-4 w-4" />
+                                      {candidature.jobOffer.location}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <IconCalendar className="h-4 w-4" />
+                                      {candidature.createdAt}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-4 text-sm">
+                                    {/* <span>
+                                      Expérience:{" "}
+                                      {candidature.jobOffer.experience}
+                                    </span> */}
+                                    <span className="flex items-center gap-1">
+                                      <IconPhone className="h-4 w-4" />
+                                      {candidature.candidat.telephone}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <IconMail className="h-4 w-4" />
+                                      {candidature.candidat.user.email}
+                                    </span>
+                                  </div>
+                                </CardDescription>
                               </div>
-                              <CardDescription className="space-y-2">
-                                <div className="flex items-center gap-4 text-sm">
-                                  <span className="flex items-center gap-1">
-                                    <IconBriefcase className="h-4 w-4" />
-                                    {candidat.candidat.titre}
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    <IconMapPin className="h-4 w-4" />
-                                    {candidat.candidat.lieu}
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    <IconCalendar className="h-4 w-4" />
-                                    {candidat.candidat.experience}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-4 text-sm">
-                                  <span className="flex items-center gap-1">
-                                    <IconMail className="h-4 w-4" />
-                                    {candidat.candidat.email}
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    <IconPhone className="h-4 w-4" />
-                                    {candidat.candidat.telephone}
-                                  </span>
-                                  <span className="text-muted-foreground">
-                                    Dernière activité:{" "}
-                                    {candidat.derniereActivite}
-                                  </span>
-                                </div>
-                              </CardDescription>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <div className="flex gap-1">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                  key={star}
-                                  onClick={() =>
-                                    handleNoteChange(candidat.id, star)
-                                  }
-                                  className={`text-sm ${
-                                    star <= candidat.note
-                                      ? "text-yellow-500"
-                                      : "text-gray-300"
-                                  }`}
-                                >
-                                  <IconStar className="h-4 w-4 fill-current" />
-                                </button>
-                              ))}
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRemoveFavorite(candidat.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <IconTrash className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {/* Compétences */}
-                          <div>
-                            <h4 className="font-medium mb-2">Compétences</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {candidat.competences.map((competence, index) => (
-                                <Badge key={index} variant="secondary">
-                                  {competence}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Offres appliquées */}
-                          <div>
-                            <h4 className="font-medium mb-2">
-                              Offres appliquées
-                            </h4>
-                            <div className="flex flex-wrap gap-2">
-                              {candidat.offresAppliquees.map((offre, index) => (
-                                <Badge key={index} variant="outline">
-                                  {offre}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex justify-between items-center pt-4 border-t">
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm" asChild>
-                                <a
-                                  href={candidat.cvUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <IconFileText className="h-4 w-4" />
-                                  Voir CV
-                                </a>
-                              </Button>
-                              <Button variant="outline" size="sm" asChild>
-                                <a
-                                  href={candidat.portfolioUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <IconEye className="h-4 w-4" />
-                                  Portfolio
-                                </a>
-                              </Button>
-                              <Button variant="outline" size="sm" asChild>
-                                <a
-                                  href={candidat.linkedinUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <IconUser className="h-4 w-4" />
-                                  LinkedIn
-                                </a>
-                              </Button>
                             </div>
                             <div className="flex gap-2">
-                              <Button variant="outline" size="sm">
-                                <IconMessage className="h-4 w-4" />
-                                Contacter
-                              </Button>
-                              <Button size="sm">
-                                <IconEye className="h-4 w-4" />
-                                Voir profil
-                              </Button>
+                              <div>
+                                {/* <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                                 */}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            {/* Compétences */}
+                            <div>
+                              <h4 className="font-medium mb-2">Compétences</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {candidature.candidat.candidatCompetences?.map(
+                                  (
+                                    competence: {
+                                      id: string;
+                                      candidatId: string;
+                                      competence: string;
+                                      createdAt: string;
+                                    },
+                                    index: number
+                                  ) => (
+                                    <Badge key={index} variant="secondary">
+                                      {competence.competence}
+                                    </Badge>
+                                  )
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Lettre de motivation */}
+                            {/* <div>
+                              <h4 className="font-medium mb-2">
+                                Lettre de motivation
+                              </h4>
+                              <p className="text-sm text-muted-foreground line-clamp-2">
+                                {candidature.candidat.letterm}
+                              </p>
+                            </div> */}
+
+                            {/* Actions */}
+                            <div className="flex justify-between items-center pt-4 border-t">
+                              <div className="flex gap-2">
+                                <div>
+                                  <Select
+                                    value={candidature.status}
+                                    onValueChange={(value) =>
+                                      updateStatusCandidature.mutate({
+                                        id: candidature.id,
+                                        status: value as
+                                          | "EN_ATTENTE"
+                                          | "EN_REVISION"
+                                          | "ACCEPTE"
+                                          | "REFUSE",
+                                      })
+                                    }
+                                  >
+                                    <SelectTrigger className="w-[140px]">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="EN_ATTENTE">
+                                        En attente
+                                      </SelectItem>
+                                      <SelectItem value="EN_REVISION">
+                                        En revision
+                                      </SelectItem>
+                                      <SelectItem value="ACCEPTE">
+                                        Accepté
+                                      </SelectItem>
+                                      <SelectItem value="REFUSE">
+                                        Refusé
+                                      </SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="flex justify-between items-center ">
+                                  <div className="flex gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        window.open(
+                                          candidature.candidat.cv || "",
+                                          "_blank"
+                                        );
+                                      }}
+                                    >
+                                      <IconFileText className="h-4 w-4" />
+                                      Voir CV
+                                    </Button>
+                                    {/* <Button variant="outline" size="sm" asChild>
+                                      <a
+                                        // href={candidature.candidat.portfolioUrl || ""}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      >
+                                        <IconEye className="h-4 w-4" />
+                                        Portfolio
+                                      </a>
+                                    </Button> */}
+                                    <Button variant="outline" size="sm" asChild>
+                                      <a
+                                        // href={candidature.candidat.linkedinUrl || ""}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      >
+                                        <IconUser className="h-4 w-4" />
+                                        LinkedIn
+                                      </a>
+                                    </Button>
+                                  </div>
+                                  <div className="flex gap-2 ml-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleContactCandidat(
+                                          candidature.candidatId,
+                                          candidature.jobOfferId
+                                        )
+                                      }
+                                      disabled={createConversation.isPending}
+                                    >
+                                      <IconMessage className="h-4 w-4" />
+                                      {createConversation.isPending
+                                        ? "Chargement..."
+                                        : "Contacter"}
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        updateFavoriteCandidature.mutate({
+                                          id: candidature.id,
+                                          favorite: !candidature.favorite,
+                                        })
+                                      }
+                                      className="border bg-transparent shadow-none"
+                                      disabled={
+                                        updateFavoriteCandidature.isPending
+                                      }
+                                    >
+                                      {candidature.favorite ? (
+                                        <>
+                                          {" "}
+                                          Retirer des favoris{" "}
+                                          <Star className=" text-yellow-500 fill-yellow-500" />
+                                        </>
+                                      ) : (
+                                        <>
+                                          {" "}
+                                          Ajouter aux favoris
+                                          <Star className="" />
+                                        </>
+                                      )}
+                                    </Button>
+                                    <Button size="sm">
+                                      <IconEye className="h-4 w-4" />
+                                      Voir profil
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex gap-2">
+                                {candidature.status === "ACCEPTE" ? (
+                                  <Button variant="outline" size="sm" disabled>
+                                    Candidature acceptée
+                                    <IconCheck className="h-4 w-4" />
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      updateStatusCandidature.mutate({
+                                        id: candidature.id,
+                                        status: "ACCEPTE",
+                                      });
+                                      refetchRecruteur();
+                                      if (updateStatusCandidature.isSuccess) {
+                                        toast.success("Candidature acceptée");
+                                      }
+                                    }}
+                                    className="text-green-600 hover:text-green-700"
+                                  >
+                                    Accepter la candidature
+                                    <IconCheck className="h-4 w-4" />
+                                  </Button>
+                                )}
+
+                                {candidature.status !== "ACCEPTE" && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      updateStatusCandidature.mutate({
+                                        id: candidature.id,
+                                        status: "EN_REVISION",
+                                      });
+                                      refetchRecruteur();
+                                      if (updateStatusCandidature.isSuccess) {
+                                        toast.success(
+                                          "Candidature en revision"
+                                        );
+                                      }
+                                    }}
+                                  >
+                                    En revision
+                                    <IconClock className="h-4 w-4" />
+                                  </Button>
+                                )}
+
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    updateStatusCandidature.mutate({
+                                      id: candidature.id,
+                                      status: "REFUSE",
+                                    });
+                                    refetchRecruteur();
+                                    if (updateStatusCandidature.isSuccess) {
+                                      toast.success("Candidature refusée");
+                                    }
+                                  }}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  Refuser la candidature
+                                  <IconX className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  )
                 )}
               </div>
             </div>

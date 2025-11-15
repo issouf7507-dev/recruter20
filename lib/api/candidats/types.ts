@@ -114,6 +114,11 @@ export interface Candidat {
   permisConduire?: string | null;
   image?: string | null;
   competences?: string[] | null;
+  certifications?: string[] | null;
+  linkedinUrl?: string | null;
+  domaine?: string | null;
+  portfolioUrl?: string | null;
+  niveauxEtude?: string[] | null;
 }
 
 export interface ApiResponse<T> {

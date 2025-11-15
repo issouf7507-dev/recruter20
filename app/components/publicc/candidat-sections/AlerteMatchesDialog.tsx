@@ -10,7 +10,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Eye, MapPin, Briefcase, DollarSign, Calendar, ExternalLink } from "lucide-react";
+import {
+  Eye,
+  MapPin,
+  Briefcase,
+  DollarSign,
+  Calendar,
+  ExternalLink,
+} from "lucide-react";
 import Link from "next/link";
 
 interface AlerteMatchesDialogProps {
@@ -37,6 +44,7 @@ export function AlerteMatchesDialog({
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
+          console.log("result", result.data.offers);
           setMatches(result.data.offers || []);
         }
       }
@@ -68,13 +76,12 @@ export function AlerteMatchesDialog({
           ) : matches.length === 0 ? (
             <div className="text-center py-12">
               <Eye className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <p className="text-xl font-semibold mb-2">
-                Aucune offre trouvée
-              </p>
+              <p className="text-xl font-semibold mb-2">Aucune offre trouvée</p>
               <p className="text-muted-foreground">
                 Aucune offre ne correspond actuellement à vos critères.
                 <br />
-                Nous vous notifierons dès qu&apos;une nouvelle offre sera disponible.
+                Nous vous notifierons dès qu&apos;une nouvelle offre sera
+                disponible.
               </p>
             </div>
           ) : (
@@ -173,4 +180,3 @@ export function AlerteMatchesDialog({
     </div>
   );
 }
-

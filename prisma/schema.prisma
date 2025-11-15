@@ -12,7 +12,7 @@ model User {
   id                  String         @id @default(cuid())
   name                String?
   email               String         @unique
-  emailVerified       Boolean?       @default(false) 
+  emailVerified       Boolean?       @default(false)
   password            String?
   passwordNeedsUpdate Boolean        @default(false)
   image               String?
@@ -25,22 +25,21 @@ model User {
   accounts            Account[]
   sessions            Session[]
   notifications       Notification[]
-  
 
   @@map("user")
 }
 
 model BackupUser {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  name      String?
-  password  String    // Ancien hash du mot de passe (pour référence)
-  type      String?   // CANDIDAT, RECRUTEUR, COLLABORATEUR
-  userData  String?   @db.Text // JSON avec toutes les données (candidat, recruteur, etc.)
-  migrated  Boolean   @default(false) // true quand l'utilisateur s'est réenregistré
+  id         String    @id @default(cuid())
+  email      String    @unique
+  name       String?
+  password   String // Ancien hash du mot de passe (pour référence)
+  type       String? // CANDIDAT, RECRUTEUR, COLLABORATEUR
+  userData   String?   @db.Text // JSON avec toutes les données (candidat, recruteur, etc.)
+  migrated   Boolean   @default(false) // true quand l'utilisateur s'est réenregistré
   migratedAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@map("backup_user")
 }
@@ -63,17 +62,31 @@ model Candidat {
   situationFamiliale  String?
   permisConduire      String?
   image               String?
+  linkedinUrl         String?
+  domaine             String?
+  portfolioUrl        String?
+  niveauEtude         NiveauEtude[]
   alertes             AlerteEmploi[]
   applications        Application[]
   // cvs relation supprimée car le modèle CV n'existe plus
   user                User                 @relation("UserAsCandidat", fields: [userId], references: [id], onDelete: Cascade)
   candidatCompetences CandidatCompetence[]
   competencesList     Competence[]
+  certifications      Certification[]
   conversations       Conversation[]
   experiences         Experience[]
   formations          Formation[]
   documents           Document[]
   objectifs           ObjectifCarriere[]
+}
+
+model NiveauEtude {
+  id         String   @id @default(cuid())
+  nom        String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  candidatId String
+  candidat   Candidat @relation(fields: [candidatId], references: [id], onDelete: Cascade)
 }
 
 model Recruteur {
@@ -203,9 +216,9 @@ model JobOffer {
   kanbanColumns       KanbanColumn[]
 
   // ✅ Index composites pour les requêtes fréquentes
-  @@index([recruteurId, etat])           // Récupérer les offres actives d'un recruteur
-  @@index([location, etat])              // Filtrer par localisation
-  @@index([recruteurId, createdAt])      // Tri chronologique
+  @@index([recruteurId, etat]) // Récupérer les offres actives d'un recruteur
+  @@index([location, etat]) // Filtrer par localisation
+  @@index([recruteurId, createdAt]) // Tri chronologique
 }
 
 model JobOfferCompetence {
@@ -233,20 +246,20 @@ model OfferTemplate {
 }
 
 model Application {
-  id             String                     @id @default(cuid())
-  candidatId     String
-  jobOfferId     String
+  id         String @id @default(cuid())
+  candidatId String
+  jobOfferId String
 
-  status         ApplicationStatus          @default(EN_ATTENTE)
-  rating         Int?
-  message        String?
-  cv             String?
-  favorite       Boolean?                   @default(false)
-  duedate        DateTime?
-  createdAt      DateTime                   @default(now())
-  updatedAt      DateTime                   @updatedAt
-  deletedAt      DateTime?
-  candidat       Candidat                   @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  status    ApplicationStatus @default(EN_ATTENTE)
+  rating    Int?
+  message   String?
+  cv        String?
+  favorite  Boolean?          @default(false)
+  duedate   DateTime?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  deletedAt DateTime?
+  candidat  Candidat          @relation(fields: [candidatId], references: [id], onDelete: Cascade)
 
   jobOffer       JobOffer                   @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
   collaborateurs ApplicationCollaborateur[]
@@ -255,14 +268,12 @@ model Application {
   checklist      ChecklistItem[]
 
   @@index([candidatId], map: "Application_candidatId_fkey")
-
   @@index([jobOfferId], map: "Application_jobOfferId_fkey")
 }
 
 enum ApplicationStatus {
   EN_ATTENTE
-  EN_COURS
-  ENTRETIEN
+  EN_REVISION
   ACCEPTE
   REFUSE
 }
@@ -313,16 +324,16 @@ model ApplicationFile {
 }
 
 model KanbanColumn {
-  id           String        @id @default(cuid())
-  color        String
-  name         String
-  order        Int
-  isDefault    Boolean       @default(false)
-  jobOfferId   String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id         String   @id @default(cuid())
+  color      String
+  name       String
+  order      Int
+  isDefault  Boolean  @default(false)
+  jobOfferId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  jobOffer     JobOffer      @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
+  jobOffer JobOffer @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
 
   @@index([jobOfferId], map: "KanbanColumn_jobOfferId_fkey")
 }
@@ -438,6 +449,15 @@ model Competence {
   @@index([candidatId], map: "Competence_candidatId_fkey")
 }
 
+model Certification {
+  id         String   @id @default(cuid())
+  nom        String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  candidatId String
+  candidat   Candidat @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+}
+
 model ObjectifCarriere {
   id             String          @id @default(cuid())
   titre          String
@@ -517,24 +537,24 @@ model AlerteMotCle {
 }
 
 model Notification {
-  id              String            @id @default(cuid())
+  id String @id @default(cuid())
 
   // ✅ Système flexible : peut notifier n'importe quel user
-  recipientId     String            // ID du User qui reçoit
-  recipientType   UserType          // CANDIDAT | RECRUTEUR | COLLABORATEUR
+  recipientId   String // ID du User qui reçoit
+  recipientType UserType // CANDIDAT | RECRUTEUR | COLLABORATEUR
 
   // ✅ Type sécurisé avec un enum
-  type            NotificationType
+  type NotificationType
 
   // ✅ Données flexibles selon le type
-  data            Json?             // Contient les infos spécifiques
+  data Json? // Contient les infos spécifiques
 
-  read            Boolean           @default(false)
-  readAt          DateTime?
+  read   Boolean   @default(false)
+  readAt DateTime?
 
-  createdAt       DateTime          @default(now())
+  createdAt DateTime @default(now())
 
-  recipient       User              @relation(fields: [recipientId], references: [id])
+  recipient User @relation(fields: [recipientId], references: [id])
 
   @@index([recipientId, recipientType, read])
   @@index([createdAt])
@@ -693,9 +713,9 @@ model CandidatDocument {
 }
 
 model ApplicationCustom {
-  id                   String                           @id @default(cuid())
-  title                String
-  
+  id    String @id @default(cuid())
+  title String
+
   description          String                           @db.Text
   company              String
   location             String
@@ -724,8 +744,6 @@ model Verification {
   @@map("verification")
 }
 
-
-
 enum UserType {
   CANDIDAT
   RECRUTEUR
@@ -749,7 +767,6 @@ enum SenderType {
   CANDIDAT
   RECRUTEUR
 }
-
 
 enum NotificationType {
   // Candidatures

@@ -1,21 +1,246 @@
 import prisma from "@/lib/prisma";
 import { Candidat, User } from "./types";
 
-// import type { JobOffer, CreateOfferData } from "./types";÷
-
 /**
- * Repository for job offers - Database operations
+ * Repository for candidates - Database operations
  */
 export class CandidatRepository {
   /**
-   * Get offer by ID
+   * Search candidates with filters
    */
-  async findById(id: string) {
-    return;
+  async search(params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    lieu?: string;
+    experience?: string; // "junior" | "senior" | "expert"
+    competences?: string[];
+    certifications?: string[];
+    domaine?: string;
+    niveauEtude?: string[];
+    format?: string;
+  }) {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      lieu,
+      experience,
+      competences = [],
+      certifications = [],
+      domaine,
+      niveauEtude = [],
+      format,
+    } = params;
+
+    const where: any = {};
+
+    // Recherche textuelle (nom, prénom, bio, compétences)
+    // Note: MySQL doesn't support case-insensitive mode, so we use contains
+    if (search) {
+      where.OR = [
+        { nom: { contains: search } },
+        { prenom: { contains: search } },
+        { bio: { contains: search } },
+        {
+          candidatCompetences: {
+            some: {
+              competence: { contains: search },
+            },
+          },
+        },
+        {
+          experiences: {
+            some: {
+              OR: [
+                { poste: { contains: search } },
+                { entreprise: { contains: search } },
+              ],
+            },
+          },
+        },
+      ];
+    }
+
+    // Filtre par lieu (ville ou pays)
+    if (lieu && lieu !== "all") {
+      where.OR = [
+        ...(where.OR || []),
+        { ville: { contains: lieu } },
+        { pays: { contains: lieu } },
+      ];
+    }
+
+    // Filtre par compétences
+    if (competences.length > 0) {
+      where.candidatCompetences = {
+        some: {
+          competence: {
+            in: competences.map((c) => c.toLowerCase()),
+          },
+        },
+      };
+    }
+
+    // Filtre par domaine
+    if (domaine && domaine !== "all") {
+      where.domaine = { contains: domaine };
+    }
+
+    // Filtre par certifications
+    if (certifications.length > 0) {
+      where.certifications = {
+        some: {
+          nom: {
+            in: certifications,
+          },
+        },
+      };
+    }
+
+    // Filtre par niveau d'étude
+    if (niveauEtude.length > 0) {
+      where.niveauEtude = {
+        some: {
+          nom: {
+            in: niveauEtude,
+          },
+        },
+      };
+    }
+
+    // Filtre par format de CV (vérifier dans les documents)
+    if (format && format !== "all") {
+      where.documents = {
+        some: {
+          documentType: "cv",
+          fileType: format.toUpperCase(),
+        },
+      };
+    }
+
+    // Calculer l'expérience totale pour chaque candidat
+    // On va filtrer après avoir récupéré les données
+    const [candidats, total] = await Promise.all([
+      prisma.candidat.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              image: true,
+            },
+          },
+          candidatCompetences: true,
+          certifications: true,
+          niveauEtude: true,
+          experiences: {
+            orderBy: { dateDebut: "desc" },
+          },
+          formations: {
+            orderBy: { dateDebut: "desc" },
+            take: 1, // Prendre la formation la plus récente
+          },
+          documents: {
+            where: {
+              documentType: "cv",
+            },
+            orderBy: { createdAt: "desc" },
+            take: 1,
+          },
+        },
+      }),
+      prisma.candidat.count({ where }),
+    ]);
+
+    // Calculer l'expérience et filtrer si nécessaire
+    // Note: This filtering happens after fetching, which may affect pagination accuracy
+    // For better performance, consider calculating experience in the database query
+    let filteredCandidats = candidats;
+
+    if (experience && experience !== "all") {
+      filteredCandidats = candidats.filter((candidat) => {
+        const totalYears = this.calculateTotalExperience(candidat.experiences);
+        if (experience === "junior") return totalYears >= 0 && totalYears < 4;
+        if (experience === "senior") return totalYears >= 4 && totalYears < 7;
+        if (experience === "expert") return totalYears >= 7;
+        return true;
+      });
+    }
+
+    // Recalculate total count after filtering
+    // Note: This is approximate since we only have the current page
+    const filteredTotal = experience ? filteredCandidats.length : total;
+
+    return {
+      items: candidats,
+      pagination: {
+        page,
+        limit,
+        total: filteredTotal,
+        totalPages: Math.ceil(filteredTotal / limit),
+      },
+    };
   }
 
   /**
-   * Create a new offer
+   * Calculate total years of experience from experiences
+   */
+  private calculateTotalExperience(experiences: any[]): number {
+    if (!experiences || experiences.length === 0) return 0;
+
+    let totalMonths = 0;
+    const now = new Date();
+
+    for (const exp of experiences) {
+      const start = new Date(exp.dateDebut);
+      const end = exp.dateFin ? new Date(exp.dateFin) : now;
+
+      const months =
+        (end.getFullYear() - start.getFullYear()) * 12 +
+        (end.getMonth() - start.getMonth());
+
+      totalMonths += months;
+    }
+
+    return Math.floor(totalMonths / 12);
+  }
+
+  /**
+   * Get candidat by ID
+   */
+  async findById(id: string) {
+    return prisma.candidat.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            image: true,
+          },
+        },
+        candidatCompetences: true,
+        certifications: true,
+        niveauEtude: true,
+        experiences: {
+          orderBy: { dateDebut: "desc" },
+        },
+        formations: {
+          orderBy: { dateDebut: "desc" },
+        },
+        documents: true,
+      },
+    });
+  }
+
+  /**
+   * Create a new candidat
    */
   async create(data: {}) {
     return null;
@@ -26,7 +251,8 @@ export class CandidatRepository {
    */
   async update(id: string, data: Partial<Candidat>) {
     // Extraire les compétences pour les gérer séparément
-    const { competences, ...candidatData } = data;
+    const { competences, certifications, niveauxEtude, ...candidatData } = data;
+    // console.log("niveauxEtude", data);
 
     // Gérer les compétences si elles sont fournies
     if (competences !== undefined && competences !== null) {
@@ -41,6 +267,40 @@ export class CandidatRepository {
           data: competences.map((competence) => ({
             candidatId: id,
             competence: competence,
+          })),
+        });
+      }
+    }
+
+    // Gérer les certifications si elles sont fournies
+    if (certifications !== undefined && certifications !== null) {
+      // Supprimer les anciennes certifications
+      await prisma.certification.deleteMany({
+        where: { candidatId: id },
+      });
+      // Créer les nouvelles certifications
+      if (certifications.length > 0) {
+        await prisma.certification.createMany({
+          data: certifications.map((certification) => ({
+            candidatId: id,
+            nom: certification,
+          })),
+        });
+      }
+    }
+
+    // Gérer le niveau d'étude si il est fourni
+    if (niveauxEtude !== undefined && niveauxEtude !== null) {
+      // Supprimer l'ancien niveau d'étude
+      await prisma.niveauEtude.deleteMany({
+        where: { candidatId: id },
+      });
+      // Créer le nouveau niveau d'étude
+      if (niveauxEtude.length > 0) {
+        await prisma.niveauEtude.createMany({
+          data: niveauxEtude.map((niveau) => ({
+            candidatId: id,
+            nom: niveau,
           })),
         });
       }
@@ -65,15 +325,20 @@ export class CandidatRepository {
         situationFamiliale: candidatData.situationFamiliale ?? undefined,
         permisConduire: candidatData.permisConduire ?? undefined,
         image: candidatData.image ?? undefined,
+        linkedinUrl: candidatData.linkedinUrl ?? undefined,
+        domaine: candidatData.domaine ?? undefined,
+        portfolioUrl: candidatData.portfolioUrl ?? undefined,
       },
       include: {
         candidatCompetences: true, // Inclure les compétences dans la réponse
+        certifications: true, // Inclure les certifications dans la réponse
+        niveauEtude: true, // Inclure les niveaux d'étude dans la réponse
       },
     });
   }
 
   /**
-   * Soft delete an offer
+   * Soft delete a candidat
    */
   async delete(id: string) {
     return;

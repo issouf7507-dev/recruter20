@@ -14,8 +14,28 @@ export class JobOfferRepository {
     recruteurId?: string;
     search?: string;
     etat?: string;
+    location?: string;
+    types?: string[];
+    salaryMin?: number;
+    salaryMax?: number;
+    salaryCurrency?: string;
+    datePosted?: string;
+    experience?: string[];
   }) {
-    const { page = 1, limit = 10, recruteurId, search, etat } = params;
+    const {
+      page = 1,
+      limit = 10,
+      recruteurId,
+      search,
+      etat,
+      location,
+      types,
+      salaryMin,
+      salaryMax,
+      salaryCurrency,
+      datePosted,
+      experience,
+    } = params;
 
     const where: any = {
       deletedAt: null,
@@ -27,14 +47,125 @@ export class JobOfferRepository {
 
     if (search) {
       where.OR = [
-        { title: { contains: search, mode: "insensitive" } },
-        { company: { contains: search, mode: "insensitive" } },
-        { location: { contains: search, mode: "insensitive" } },
+        { title: { contains: search } },
+        { company: { contains: search } },
+        { description: { contains: search } },
       ];
     }
 
     if (etat && etat !== "all") {
       where.etat = etat;
+    }
+
+    // Filtre par localisation
+    if (location) {
+      where.location = { contains: location };
+    }
+
+    // Filtre par types de contrat
+    if (types && types.length > 0) {
+      where.type = { in: types.map((t) => t.toLowerCase()) };
+    }
+
+    // Filtre par salaire
+    if (salaryMin !== undefined || salaryMax !== undefined) {
+      if (salaryMin !== undefined && salaryMax !== undefined) {
+        // Fourchette de salaire : l'offre doit chevaucher avec la fourchette demandée
+        // L'offre est incluse si sa fourchette chevauche la fourchette demandée
+        where.AND = where.AND || [];
+        where.AND.push({
+          OR: [
+            // Cas 1: La fourchette de l'offre est complètement dans la fourchette demandée
+            {
+              AND: [
+                { salaryMin: { gte: salaryMin } },
+                { salaryMax: { lte: salaryMax } },
+              ],
+            },
+            // Cas 2: La fourchette de l'offre chevauche par le haut
+            {
+              AND: [
+                { salaryMin: { lte: salaryMax } },
+                { salaryMax: { gte: salaryMin } },
+                { salaryMin: { lt: salaryMin } },
+              ],
+            },
+            // Cas 3: La fourchette de l'offre chevauche par le bas
+            {
+              AND: [
+                { salaryMin: { lte: salaryMax } },
+                { salaryMax: { gte: salaryMin } },
+                { salaryMax: { gt: salaryMax } },
+              ],
+            },
+            // Cas 4: La fourchette de l'offre contient la fourchette demandée
+            {
+              AND: [
+                { salaryMin: { lte: salaryMin } },
+                { salaryMax: { gte: salaryMax } },
+              ],
+            },
+          ],
+        });
+      } else if (salaryMin !== undefined) {
+        // Salaire minimum : l'offre doit avoir un salaire max >= salaryMin
+        where.AND = where.AND || [];
+        where.AND.push({
+          OR: [
+            { salaryMax: { gte: salaryMin } },
+            { AND: [{ salaryMin: { gte: salaryMin } }, { salaryMax: null }] },
+          ],
+        });
+      } else if (salaryMax !== undefined) {
+        // Salaire maximum : l'offre doit avoir un salaire min <= salaryMax
+        where.AND = where.AND || [];
+        where.AND.push({
+          OR: [
+            { salaryMin: { lte: salaryMax } },
+            { AND: [{ salaryMax: { lte: salaryMax } }, { salaryMin: null }] },
+          ],
+        });
+      }
+    }
+
+    // Filtre par devise
+    if (salaryCurrency) {
+      where.salaryCurrency = salaryCurrency;
+    }
+
+    // Filtre par date de publication
+    if (datePosted && datePosted !== "N'importe quand") {
+      const now = new Date();
+      let startDate: Date;
+
+      switch (datePosted) {
+        case "Aujourd'hui": {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          startDate = today;
+          break;
+        }
+        case "3 jours":
+          startDate = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+          break;
+        case "1 semaine":
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case "1 mois":
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          startDate = new Date(0); // Toutes les dates
+      }
+
+      if (startDate && startDate.getTime() !== new Date(0).getTime()) {
+        where.createdAt = { gte: startDate };
+      }
+    }
+
+    // Filtre par expérience
+    if (experience && experience.length > 0) {
+      where.experience = { in: experience };
     }
 
     const [offres, total] = await Promise.all([

@@ -47,31 +47,25 @@ const STATUT_COLORS: Record<string, { bg: string; text: string }> = {
   Refusé: { bg: "bg-red-100", text: "text-red-800" },
 };
 
-export function CandidaturesSection({
-  candidatId,
-}: CandidaturesSectionProps) {
+export function CandidaturesSection({ candidatId }: CandidaturesSectionProps) {
   const { candidatures = [], isLoading } = useCandidatures(candidatId);
 
   const getStatutLabel = (status: string): string => {
     const mapping: Record<string, string> = {
-      "EN_ATTENTE": "En attente",
-      "EN_COURS": "En cours",
-      "ENTRETIEN": "Entretien",
-      "ACCEPTE": "Accepté",
-      "REFUSE": "Refusé",
+      EN_ATTENTE: "En attente",
+      EN_REVISION: "En révision",
+      ACCEPTE: "Accepté",
+      REFUSE: "Refusé",
     };
     return mapping[status] || status;
   };
 
-  const candidaturesEnAttente = candidatures?.filter(
-    (c: Candidature) => c.status === "EN_ATTENTE"
-  ) || [];
-  const candidaturesAcceptees = candidatures?.filter(
-    (c: Candidature) => c.status === "ACCEPTE"
-  ) || [];
-  const candidaturesRefusees = candidatures?.filter(
-    (c: Candidature) => c.status === "REFUSE"
-  ) || [];
+  const candidaturesEnAttente =
+    candidatures?.filter((c: Candidature) => c.status === "EN_ATTENTE") || [];
+  const candidaturesAcceptees =
+    candidatures?.filter((c: Candidature) => c.status === "ACCEPTE") || [];
+  const candidaturesRefusees =
+    candidatures?.filter((c: Candidature) => c.status === "REFUSE") || [];
 
   if (isLoading) {
     return <div className="text-center py-8">Chargement...</div>;
@@ -85,12 +79,12 @@ export function CandidaturesSection({
     };
 
     return (
-      <Card className="hover:shadow-md transition-shadow">
+      <Card className="shadow-none">
         <CardContent className="pt-6">
           <div className="flex items-start justify-between">
             <div className="flex-1 space-y-3">
               <div>
-                <h4 className="font-semibold text-lg">
+                <h4 className="font-semibold text-lg text-[#a590ff]">
                   {candidature.jobOffer.title}
                 </h4>
                 {candidature.jobOffer.company && (
@@ -112,20 +106,23 @@ export function CandidaturesSection({
                   <Calendar className="h-4 w-4" />
                   <span>
                     Candidature le{" "}
-                    {new Date(candidature.createdAt).toLocaleDateString("fr-FR", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}
+                    {new Date(candidature.createdAt).toLocaleDateString(
+                      "fr-FR",
+                      {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      }
+                    )}
                   </span>
                 </div>
               </div>
 
-              {candidature.message && (
+              {/* {candidature.message && (
                 <p className="text-sm text-muted-foreground border-l-2 border-primary pl-3 mt-2">
                   {candidature.message}
                 </p>
-              )}
+              )} */}
 
               <div className="flex gap-2 pt-2">
                 <Badge className={`${colors.bg} ${colors.text} border-0`}>
@@ -146,19 +143,24 @@ export function CandidaturesSection({
     <div className="space-y-6 pb-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-bold">Mes Candidatures</h3>
+          <h3 className="text-2xl font-bold text-[#a590ff]">
+            Mes Candidatures
+          </h3>
           <p className="text-muted-foreground">
             Suivez l&apos;état de vos candidatures
           </p>
         </div>
         <Badge variant="secondary" className="text-lg px-3 py-1">
-          {candidatures?.length || 0} candidature{(candidatures?.length || 0) > 1 ? "s" : ""}
+          {candidatures?.length || 0} candidature
+          {(candidatures?.length || 0) > 1 ? "s" : ""}
         </Badge>
       </div>
 
       <Tabs defaultValue="toutes" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="toutes">Toutes ({candidatures?.length || 0})</TabsTrigger>
+          <TabsTrigger value="toutes">
+            Toutes ({candidatures?.length || 0})
+          </TabsTrigger>
           <TabsTrigger value="en-attente">
             En attente ({candidaturesEnAttente.length})
           </TabsTrigger>
@@ -201,7 +203,7 @@ export function CandidaturesSection({
               </CardContent>
             </Card>
           ) : (
-            candidaturesEnAttente.map((candidature) => (
+            candidaturesEnAttente.map((candidature: Candidature) => (
               <CandidatureCard key={candidature.id} candidature={candidature} />
             ))
           )}
@@ -218,7 +220,7 @@ export function CandidaturesSection({
               </CardContent>
             </Card>
           ) : (
-            candidaturesAcceptees.map((candidature) => (
+            candidaturesAcceptees.map((candidature: Candidature) => (
               <CandidatureCard key={candidature.id} candidature={candidature} />
             ))
           )}
@@ -235,7 +237,7 @@ export function CandidaturesSection({
               </CardContent>
             </Card>
           ) : (
-            candidaturesRefusees.map((candidature) => (
+            candidaturesRefusees.map((candidature: Candidature) => (
               <CandidatureCard key={candidature.id} candidature={candidature} />
             ))
           )}
@@ -244,4 +246,3 @@ export function CandidaturesSection({
     </div>
   );
 }
-

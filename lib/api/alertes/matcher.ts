@@ -33,7 +33,7 @@ export class AlerteMatcher {
 
     // Recherche des offres (large au départ)
     let offres = await prisma.jobOffer.findMany({
-      where: conditions,
+      // where: conditions,
       include: {
         recruteur: {
           select: {
@@ -47,11 +47,11 @@ export class AlerteMatcher {
       take: 200, // Limite à 200 pour filtrer ensuite
     });
 
-    console.log("alerte", alerte);
-    console.log(
-      "offres filtered",
-      offres.filter((offre) => offre.title.includes(alerte.titre))
-    );
+    // console.log("alerte", alerte);
+    // console.log(
+    //   "offres filtered",
+    //   offres.filter((offre) => offre.title.includes(alerte.titre))
+    // );
     // Filtrage côté application (case-insensitive)
     offres = offres.filter((offre) => {
       // OBLIGATOIRE : Titre
@@ -125,6 +125,7 @@ export class AlerteMatcher {
 
   /**
    * Update all alerts with their matching offers count
+   * Optimisé pour gérer plusieurs alertes en parallèle
    */
   async updateAllAlertsCount(candidatId: string) {
     const alertes = await prisma.alerteEmploi.findMany({
@@ -132,26 +133,28 @@ export class AlerteMatcher {
       include: { alerteMotsCles: true },
     });
 
-    for (const alerte of alertes) {
-      const count = await this.getMatchingOffersCount(alerte);
-      await prisma.alerteEmploi.update({
-        where: { id: alerte.id },
-        data: {
-          nombreResultats: count,
-          derniereMiseAJour: new Date(),
-        },
-      });
-    }
+    // Paralléliser les calculs et mises à jour pour de meilleures performances
+    await Promise.all(
+      alertes.map(async (alerte) => {
+        try {
+          const count = await this.getMatchingOffersCount(alerte);
+          await prisma.alerteEmploi.update({
+            where: { id: alerte.id },
+            data: {
+              nombreResultats: count,
+              derniereMiseAJour: new Date(),
+            },
+          });
+        } catch (error) {
+          console.error(
+            `Erreur lors de la mise à jour de l'alerte ${alerte.id}:`,
+            error
+          );
+          // Continue avec les autres alertes même en cas d'erreur
+        }
+      })
+    );
   }
 }
 
 export const alerteMatcher = new AlerteMatcher();
-// if (alerte.titre && alerte.titre !== "") {
-//     const offreTitle = (offre.title || "").toLowerCase();
-//     const alerteTitre = alerte.titre.toLowerCase();
-//     return offreTitle.includes(alerteTitre);
-//   }
-
-//   if (alerte.typeContrat && alerte.typeContrat !== "") {
-//     return offre.type?.includes(alerte.typeContrat);
-//   }

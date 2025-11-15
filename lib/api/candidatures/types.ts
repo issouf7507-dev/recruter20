@@ -1,4 +1,8 @@
-export type ApplicationStatus = "EN_ATTENTE" | "EN_COURS" | "ENTRETIEN" | "ACCEPTE" | "REFUSE";
+export type ApplicationStatus =
+  | "EN_ATTENTE"
+  | "EN_REVISION"
+  | "ACCEPTE"
+  | "REFUSE";
 
 export interface Application {
   id: string;
@@ -50,4 +54,3 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
 }
-

@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+
 import AuthForm from "../../../components/AuthForm";
 import Link from "next/link";
 import { ArrowLeftIcon } from "lucide-react";
 import { signIn } from "@/lib/auth-client";
 import { toast } from "sonner";
+import { getRecruteur } from "@/action/getRecruteur";
 
 interface AuthFormData {
   email: string;
@@ -20,7 +21,6 @@ interface AuthFormData {
 
 export default function RecruiterLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
   const handleSubmit = async (data: AuthFormData) => {
     setIsLoading(true);
@@ -32,7 +32,13 @@ export default function RecruiterLoginPage() {
         password: data.password,
       });
       if (res.data) {
-        router.push("/recruteur/dashboard");
+        const recruteur = await getRecruteur(res.data.user.id);
+        if (recruteur?.user.type === "RECRUTEUR") {
+          window.location.href = "/recruteur/dashboard";
+        } else {
+          toast.error("Vous n'êtes pas un recruteur");
+          return;
+        }
       }
       if (res.error) {
         console.error(res.error);

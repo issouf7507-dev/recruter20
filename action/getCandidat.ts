@@ -8,6 +8,10 @@ export async function getCandidat(userId: string) {
     include: {
       candidatCompetences: true,
       competencesList: true,
+      certifications: true,
+      niveauEtude: true,
+
+      user: true,
     },
   });
 }

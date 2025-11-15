@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -57,7 +57,6 @@ import { ChevronDownIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 
 export default function MesOffresPage() {
-  const router = useRouter();
   const { data: session, isPending: isSessionLoading } = useSession();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatut, setFilterStatut] = useState("all");

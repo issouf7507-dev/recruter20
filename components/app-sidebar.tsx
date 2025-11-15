@@ -47,11 +47,7 @@ const data = {
       url: "/recruteur/dashboard",
       icon: IconDashboard,
     },
-    {
-      title: "Tableau Kanban",
-      url: "/recruteur/kanban",
-      icon: IconLayoutKanban,
-    },
+
     {
       title: "Offres d'emploi",
       url: "#",
@@ -59,8 +55,8 @@ const data = {
       subItems: [
         { label: "Créer une offre", url: "/recruteur/offres/creer" },
         { label: "Mes offres", url: "/recruteur/offres" },
-        { label: "Diffusion des offres", url: "#" },
-        { label: "Historique diffusion", url: "#" },
+        // { label: "Diffusion des offres", url: "#" },
+        // { label: "Historique diffusion", url: "#" },
       ],
     },
     {
@@ -77,6 +73,11 @@ const data = {
           url: "/recruteur/candidats-favoris",
         },
       ],
+    },
+    {
+      title: "Tableau Kanban",
+      url: "/recruteur/kanban",
+      icon: IconLayoutKanban,
     },
     {
       title: "Recherche de candidats",

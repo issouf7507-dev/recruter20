@@ -552,6 +552,7 @@ export default function OffreDetailPage({
     }
   };
 
+  // console.log("hasApplied", hasApplied(jobDetail?.id));
   const handlePostuler = async () => {
     if (!candidat?.id || !jobDetail?.id) {
       alert("Erreur lors de la postulation");
@@ -688,8 +689,11 @@ export default function OffreDetailPage({
                 <button
                   className="w-full md:w-auto bg-[#a590ff] hover:bg-[#9580ef] text-white px-8 py-2 rounded-full font-semibold text-lg transition-all cursor-pointer"
                   onClick={handlePostulerModal}
+                  disabled={hasApplied(jobDetail?.id)}
                 >
-                  {candidat
+                  {hasApplied(jobDetail?.id)
+                    ? "Candidature envoyée"
+                    : candidat
                     ? "Postuler maintenant"
                     : "Connectez-vous pour postuler"}
                 </button>
@@ -737,8 +741,11 @@ export default function OffreDetailPage({
               
               "
                 onClick={handlePostulerModal}
+                disabled={hasApplied(jobDetail?.id)}
               >
-                {candidat
+                {hasApplied(jobDetail?.id)
+                  ? "Candidature envoyée"
+                  : candidat
                   ? "Postuler maintenant"
                   : "Connectez-vous pour postuler"}
               </button>
