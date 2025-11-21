@@ -6,33 +6,55 @@ import type { JobOffer, CreateOfferData } from "@/lib/api/offres/types";
 /**
  * Hook to fetch all offers
  */
-export function useOffers(params?: {
-  page?: number;
-  limit?: number;
-  recruteurId?: string;
-  search?: string;
-  etat?: string;
-  location?: string;
-  types?: string[];
-  salaryMin?: number;
-  salaryMax?: number;
-  salaryCurrency?: string;
-  datePosted?: string;
-  experience?: string[];
-}) {
+export function useOffers(
+  params?: {
+    page?: number;
+    limit?: number;
+    recruteurId?: string;
+    search?: string;
+    etat?: string;
+    location?: string;
+    types?: string[];
+    salaryMin?: number;
+    salaryMax?: number;
+    salaryCurrency?: string;
+    datePosted?: string;
+    experience?: string[];
+  },
+  options?: {
+    enabled?: boolean;
+  }
+) {
   return useQuery({
     queryKey: ["offers", params],
     queryFn: () => offerService.fetchOffers(params),
+    enabled: options?.enabled !== false,
   });
 }
 
 /**
  * Hook to fetch a single offer
  */
-export function useOffer(id: string) {
+export function useOffer(
+  id: string,
+  params?: {
+    page?: number;
+    limit?: number;
+    recruteurId?: string;
+    search?: string;
+    etat?: string;
+    location?: string;
+    types?: string[];
+    salaryMin?: number;
+    salaryMax?: number;
+    salaryCurrency?: string;
+    datePosted?: string;
+    experience?: string[];
+  }
+) {
   return useQuery({
-    queryKey: ["offer", id],
-    queryFn: () => offerService.fetchOffer(id),
+    queryKey: ["offer", id, params],
+    queryFn: () => offerService.fetchOffer(id, params),
     enabled: !!id,
   });
 }

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { jobOfferRepository } from "@/lib/api/offres/repository";
 import { recruteurRepository } from "@/lib/api/recruteurs/repository";
+import { collaborateurRepository } from "@/lib/api/collaborateur";
 
 /**
  * GET /api/offres
@@ -93,18 +94,24 @@ export async function POST(request: NextRequest) {
 
     // Get recruteur info from the user using repository
     const recruteur = await recruteurRepository.findByUserId(session.user.id);
+    const collaborateur = await collaborateurRepository.findByUserId(
+      session.user.id
+    );
+    const recruteurId = recruteur
+      ? recruteur?.id
+      : collaborateur?.recruteurId || "";
 
-    if (!recruteur) {
+    if (!recruteurId) {
       return NextResponse.json(
-        { success: false, error: "User is not a recruiter" },
+        { success: false, error: "User is not a recruiter or collaborateur" },
         { status: 403 }
       );
     }
 
-    // Create the job offer using repository
+    // Create the job offer using repository with the correct recruteurId
     const offre = await jobOfferRepository.create({
       title,
-      company: company || recruteur.companyName || undefined,
+      company: company || recruteur?.companyName || undefined,
       location: location || undefined,
       type: type || undefined,
       salaryMin: salaryMin ? parseFloat(salaryMin) : undefined,
@@ -113,7 +120,7 @@ export async function POST(request: NextRequest) {
       requirements: body.requirements || undefined,
       benefits: body.benefits || undefined,
       skills: body.skills || undefined,
-      recruteurId: recruteur.id,
+      recruteurId: recruteurId || "",
       duedate: body.duedate ? new Date(body.duedate) : undefined,
       salaryCurrency: body.salaryCurrency || "",
     });

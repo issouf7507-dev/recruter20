@@ -34,13 +34,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useSession } from "@/lib/auth-client";
 
 const data = {
-  user: {
-    name: "Recruteur",
-    email: "recruteur@example.com",
-    avatar: "/avatars/recruteur.jpg",
-  },
+  // user: {
+  //   name: "Recruteur",
+  //   email: "recruteur@example.com",
+  //   avatar: "/avatars/recruteur.jpg",
+  // },
   navMain: [
     {
       title: "Tableau de bord",
@@ -79,13 +80,13 @@ const data = {
       url: "/recruteur/kanban",
       icon: IconLayoutKanban,
     },
+    // {
+    //   title: "Recherche de candidats",
+    //   url: "/recruteur/recherche-candidats",
+    //   icon: IconUsers,
+    // },
     {
       title: "Recherche de candidats",
-      url: "/recruteur/recherche-candidats",
-      icon: IconUsers,
-    },
-    {
-      title: "Recherche de CV",
       url: "/recruteur/recherche-cv",
       icon: IconFileDescription,
     },
@@ -114,7 +115,7 @@ const data = {
   navSecondary: [
     {
       title: "Paramètres",
-      url: "#",
+      url: "/recruteur/parametres",
       icon: IconSettings,
     },
     {
@@ -122,11 +123,11 @@ const data = {
       url: "#",
       icon: IconHelp,
     },
-    {
-      title: "Recherche",
-      url: "#",
-      icon: IconSearch,
-    },
+    // {
+    //   title: "Recherche",
+    //   url: "#",
+    //   icon: IconSearch,
+    // },
   ],
 };
 
@@ -136,6 +137,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
+
+  const { data: session } = useSession();
+
+  const user = {
+    name: session?.user?.name || "",
+    email: session?.user?.email || "",
+    avatar: session?.user?.image || "",
+  };
+  // console.log("sessionside", session);
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -176,7 +186,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </div>
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
   );

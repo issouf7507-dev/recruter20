@@ -35,7 +35,8 @@ export async function fetchOffers(params?: {
     queryParams.set("salaryMin", params.salaryMin.toString());
   if (params?.salaryMax !== undefined)
     queryParams.set("salaryMax", params.salaryMax.toString());
-  if (params?.salaryCurrency) queryParams.set("salaryCurrency", params.salaryCurrency);
+  if (params?.salaryCurrency)
+    queryParams.set("salaryCurrency", params.salaryCurrency);
   if (params?.datePosted) queryParams.set("datePosted", params.datePosted);
   if (params?.experience && params.experience.length > 0)
     queryParams.set("experience", params.experience.join(","));
@@ -54,12 +55,49 @@ export async function fetchOffers(params?: {
 /**
  * Fetch a single offer by ID
  */
-export async function fetchOffer(id: string): Promise<JobOffer> {
-  const response = await fetch(`/api/offres/${id}`);
-  const result: ApiResponse<JobOffer> = await response.json();
+export async function fetchOffer(
+  id: string,
+  params?: {
+    page?: number;
+    limit?: number;
+    recruteurId?: string;
+    search?: string;
+    etat?: string;
+    location?: string;
+    types?: string[];
+    salaryMin?: number;
+    salaryMax?: number;
+    salaryCurrency?: string;
+    datePosted?: string;
+    experience?: string[];
+  }
+): Promise<PaginatedResponse<JobOffer>> {
+  const queryParams = new URLSearchParams();
+  if (params?.page) queryParams.set("page", params.page.toString());
+  if (params?.limit) queryParams.set("limit", params.limit.toString());
+  if (params?.recruteurId) queryParams.set("recruteurId", params.recruteurId);
+  if (params?.search) queryParams.set("search", params.search);
+  if (params?.etat) queryParams.set("etat", params.etat);
+  if (params?.location) queryParams.set("location", params.location);
+  if (params?.types && params.types.length > 0)
+    queryParams.set("types", params.types.join(","));
+  if (params?.salaryMin !== undefined)
+    queryParams.set("salaryMin", params.salaryMin.toString());
+  if (params?.salaryMax !== undefined)
+    queryParams.set("salaryMax", params.salaryMax.toString());
+  if (params?.salaryCurrency)
+    queryParams.set("salaryCurrency", params.salaryCurrency);
+  if (params?.datePosted) queryParams.set("datePosted", params.datePosted);
+  if (params?.experience && params.experience.length > 0)
+    queryParams.set("experience", params.experience.join(","));
+
+  const queryString = queryParams.toString();
+  const response = await fetch(`/api/offres/${id}?${queryString.toString()}`);
+  const result: ApiResponse<PaginatedResponse<JobOffer>> =
+    await response.json();
 
   if (!result.success) {
-    throw new Error(result.error || "Failed to fetch offer");
+    throw new Error(result.error || "Failed to fetch offers");
   }
 
   return result.data;

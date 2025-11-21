@@ -27,9 +27,11 @@ import {
   useOffers,
   useDeleteOffer,
   useUpdateOffer,
-  useOffer,
 } from "@/lib/hooks/use-offers";
-import { useRecruteurByUserId } from "@/lib/hooks/use-recruteurs";
+import {
+  useCollaborateurByUserId,
+  useRecruteurByUserId,
+} from "@/lib/hooks/use-recruteurs";
 import type { JobOffer } from "@/lib/api/offres/types";
 import { toast } from "sonner";
 import {
@@ -70,23 +72,37 @@ export default function MesOffresPage() {
 
   // Fetch recruteur from session
   const { data: recruteur } = useRecruteurByUserId(session?.user?.id);
-  const recruteurId = recruteur?.id;
+  const { data: collaborateur } = useCollaborateurByUserId(session?.user?.id);
+
+  const recruteurId = recruteur ? recruteur?.id : collaborateur?.recruteurId;
 
   const { data, isLoading, error } = useOffers(
-    recruteurId
-      ? {
-          recruteurId,
-          page: currentPage,
-          limit: itemsPerPage,
-        }
-      : undefined
+    {
+      page: currentPage,
+      limit: itemsPerPage,
+      recruteurId: recruteurId || undefined,
+      search: searchTerm || undefined,
+      etat: filterStatut !== "all" ? filterStatut : undefined,
+    },
+    {
+      enabled: !!recruteurId,
+    }
   );
 
+  console.log("data", data);
   const deleteOffer = useDeleteOffer();
   const updateOffer = useUpdateOffer();
 
   const offres = data?.items || [];
   const pagination = data?.pagination;
+  const totalAll = data?.totalAll || [];
+
+  // console.log(
+  //   "totalAll",
+  //   totalAll.reduce((sum, o) => sum + (o.applications?.length || 0), 0)
+  // );
+  // console.log("pagination", data);
+  // const totalApplications =
 
   // Reset to page 1 when filter or search changes
   useEffect(() => {
@@ -218,7 +234,7 @@ export default function MesOffresPage() {
                       <div>
                         <p className="text-sm text-muted-foreground">Actives</p>
                         <p className="text-2xl font-bold">
-                          {offres.filter((o) => o.etat === "active").length}
+                          {totalAll.filter((o) => o.etat === "active").length}
                         </p>
                       </div>
                       <IconEye className="h-8 w-8 " />
@@ -233,8 +249,8 @@ export default function MesOffresPage() {
                           Candidatures
                         </p>
                         <p className="text-2xl font-bold ">
-                          {offres.reduce(
-                            (sum, o: any) => sum + (o.applicationCount || 0),
+                          {totalAll.reduce(
+                            (sum, o) => sum + (o.applications?.length || 0),
                             0
                           )}
                         </p>
@@ -420,7 +436,7 @@ export default function MesOffresPage() {
                               Candidatures
                             </p>
                             <p className="font-medium ">
-                              {(offre as any).applicationCount || 0}
+                              {offre.applications?.length || 0}
                             </p>
                           </div>
                           <div>

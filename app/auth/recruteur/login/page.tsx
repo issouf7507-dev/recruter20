@@ -32,8 +32,13 @@ export default function RecruiterLoginPage() {
         password: data.password,
       });
       if (res.data) {
+        console.log("res.data", res.data);
         const recruteur = await getRecruteur(res.data.user.id);
-        if (recruteur?.user.type === "RECRUTEUR") {
+        console.log("recruteur", recruteur);
+        if (
+          recruteur?.user.type === "RECRUTEUR" ||
+          recruteur?.user.type === "COLLABORATEUR"
+        ) {
           window.location.href = "/recruteur/dashboard";
         } else {
           toast.error("Vous n'êtes pas un recruteur");

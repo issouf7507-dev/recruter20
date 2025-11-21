@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -36,247 +36,157 @@ import {
   IconCalendar,
   IconBuilding,
 } from "@tabler/icons-react";
+import { useInvitations } from "@/lib/hooks/use-invitations";
+import { toast } from "sonner";
+import { useSession } from "@/lib/auth-client";
+import { useRecruteurByUserId } from "@/lib/hooks/use-recruteurs";
 
-// Données mockées pour les invitations
-const mockInvitations = [
-  {
-    id: 1,
-    type: "collaborateur",
-    email: "marie.dubois@techcorp.com",
-    nom: "Marie Dubois",
-    role: "Responsable RH",
-    entreprise: "TechCorp",
-    statut: "en-attente",
-    dateInvitation: "2024-01-20",
-    dateExpiration: "2024-01-27",
-    permissions: [
-      "Voir les candidatures",
-      "Gérer les offres",
-      "Accès aux statistiques",
-    ],
-    message:
-      "Bonjour Marie, je vous invite à rejoindre notre équipe de recrutement pour nous aider à gérer nos offres d'emploi.",
-    invitePar: "Jean Martin",
-  },
-  {
-    id: 2,
-    type: "collaborateur",
-    email: "pierre.martin@startupxyz.com",
-    nom: "Pierre Martin",
-    role: "CEO",
-    entreprise: "StartupXYZ",
-    statut: "acceptee",
-    dateInvitation: "2024-01-18",
-    dateAcceptation: "2024-01-19",
-    permissions: ["Administrateur complet"],
-    message:
-      "Pierre, nous aimerions vous inviter à collaborer sur nos projets de recrutement.",
-    invitePar: "Sophie Laurent",
-  },
-  {
-    id: 3,
-    type: "collaborateur",
-    email: "laura.moreau@creative.com",
-    nom: "Laura Moreau",
-    role: "Designer",
-    entreprise: "CreativeStudio",
-    statut: "refusee",
-    dateInvitation: "2024-01-15",
-    dateRefus: "2024-01-16",
-    permissions: ["Voir les candidatures"],
-    message:
-      "Laura, nous cherchons quelqu'un pour nous aider à évaluer les candidats créatifs.",
-    invitePar: "Thomas Bernard",
-  },
-  {
-    id: 4,
-    type: "collaborateur",
-    email: "nicolas.petit@datacorp.com",
-    nom: "Nicolas Petit",
-    role: "CTO",
-    entreprise: "DataCorp",
-    statut: "expiree",
-    dateInvitation: "2024-01-10",
-    dateExpiration: "2024-01-17",
-    permissions: ["Gérer les offres", "Accès aux statistiques"],
-    message:
-      "Nicolas, nous avons besoin de votre expertise technique pour nos recrutements IT.",
-    invitePar: "Julie Moreau",
-  },
-  {
-    id: 5,
-    type: "partenaire",
-    email: "contact@recrutement-pro.fr",
-    nom: "Recrutement Pro",
-    role: "Cabinet de recrutement",
-    entreprise: "Recrutement Pro",
-    statut: "en-attente",
-    dateInvitation: "2024-01-22",
-    dateExpiration: "2024-01-29",
-    permissions: [
-      "Accès partenaire",
-      "Voir les offres",
-      "Proposer des candidats",
-    ],
-    message:
-      "Nous souhaitons établir un partenariat pour mutualiser nos offres d'emploi.",
-    invitePar: "Alexandre Lefebvre",
-  },
-];
+interface Invitation {
+  id: string;
+  email: string;
+  role: string;
+  accepted: boolean;
+  createdAt: string;
+  expiresAt: string;
+  recruteur?: {
+    companyName: string | null;
+  };
+}
 
 export default function InvitationsPage() {
-  const [invitations, setInvitations] = useState(mockInvitations);
+  // const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatut, setFilterStatut] = useState("all");
   const [filterType, setFilterType] = useState("all");
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [inviteForm, setInviteForm] = useState({
     email: "",
-    nom: "",
-    role: "",
-    entreprise: "",
-    message: "",
-    permissions: [] as string[],
+    role: "USER" as "ADMIN" | "USER" | "MANAGER" | "VIEWER",
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { data: session, isPending: isSessionLoading } = useSession();
+  const { data: recruteur } = useRecruteurByUserId(session?.user?.id);
+  const recruteurId = recruteur?.id;
+  const {
+    invitations,
+    isLoadingInvitations,
+    errorInvitations,
+    refetchInvitations,
+    createAnInvitation,
+  } = useInvitations();
 
-  const getStatutBadge = (statut: string) => {
-    switch (statut) {
-      case "en-attente":
-        return (
-          <Badge className="bg-yellow-100 text-yellow-800">En attente</Badge>
-        );
-      case "acceptee":
-        return <Badge className="bg-green-100 text-green-800">Acceptée</Badge>;
-      case "refusee":
-        return <Badge className="bg-red-100 text-red-800">Refusée</Badge>;
-      case "expiree":
-        return <Badge className="bg-gray-100 text-gray-800">Expirée</Badge>;
-      default:
-        return <Badge variant="secondary">{statut}</Badge>;
+  console.log(invitations);
+
+  const getStatutBadge = (invitation: Invitation) => {
+    if (invitation.accepted) {
+      return <Badge className="bg-green-100 text-green-800">Acceptée</Badge>;
     }
+
+    if (new Date(invitation.expiresAt) < new Date()) {
+      return <Badge className="bg-gray-100 text-gray-800">Expirée</Badge>;
+    }
+
+    return <Badge className="bg-yellow-100 text-yellow-800">En attente</Badge>;
   };
 
-  const getInitials = (nom: string) => {
-    return nom
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
+  const getRoleLabel = (role: string) => {
+    const labels: Record<string, string> = {
+      ADMIN: "Administrateur",
+      MANAGER: "Manager",
+      USER: "Utilisateur",
+      VIEWER: "Observateur",
+    };
+    return labels[role] || role;
   };
 
-  const filteredInvitations = invitations.filter((invitation) => {
-    const matchesSearch =
-      invitation.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invitation.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invitation.entreprise.toLowerCase().includes(searchTerm.toLowerCase());
+  const getInitials = (email: string) => {
+    return email.split("@")[0].substring(0, 2).toUpperCase();
+  };
+
+  const filteredInvitations = invitations?.filter((invitation) => {
+    const matchesSearch = invitation?.email
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
     const matchesStatut =
-      filterStatut === "all" || invitation.statut === filterStatut;
-    const matchesType = filterType === "all" || invitation.type === filterType;
+      filterStatut === "all" ||
+      (filterStatut === "en-attente" &&
+        !invitation?.accepted &&
+        new Date(invitation?.expiresAt) >= new Date()) ||
+      (filterStatut === "acceptee" && invitation.accepted) ||
+      (filterStatut === "expiree" &&
+        !invitation?.accepted &&
+        new Date(invitation?.expiresAt) < new Date());
+
+    const matchesType =
+      filterType === "all" ||
+      invitation.role.toLowerCase() === filterType.toLowerCase();
+
     return matchesSearch && matchesStatut && matchesType;
   });
 
-  const handleAcceptInvitation = (id: number) => {
-    setInvitations(
-      invitations.map((inv) =>
-        inv.id === id
-          ? {
-              ...inv,
-              statut: "acceptee",
-              dateAcceptation: new Date().toISOString().split("T")[0],
-            }
-          : inv
-      )
-    );
-  };
+  const handleDeleteInvitation = async (id: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cette invitation ?")) {
+      return;
+    }
 
-  const handleRejectInvitation = (id: number) => {
-    setInvitations(
-      invitations.map((inv) =>
-        inv.id === id
-          ? {
-              ...inv,
-              statut: "refusee",
-              dateRefus: new Date().toISOString().split("T")[0],
-            }
-          : inv
-      )
-    );
-  };
+    try {
+      const response = await fetch(`/api/invitations/${id}`, {
+        method: "DELETE",
+      });
 
-  const handleDeleteInvitation = (id: number) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer cette invitation ?")) {
-      setInvitations(invitations.filter((inv) => inv.id !== id));
+      const data = await response.json();
+
+      if (data.success) {
+        invitations?.filter((inv) => inv?.id !== id);
+      } else {
+        alert(data.error || "Erreur lors de la suppression");
+      }
+    } catch (err) {
+      console.error("Error deleting invitation:", err);
+      alert("Erreur lors de la suppression");
     }
   };
 
-  const handleResendInvitation = (id: number) => {
-    setInvitations(
-      invitations.map((inv) =>
-        inv.id === id
-          ? {
-              ...inv,
-              statut: "en-attente",
-              dateInvitation: new Date().toISOString().split("T")[0],
-            }
-          : inv
-      )
-    );
+  const handleResendInvitation = async (id: string) => {
+    try {
+      const response = await fetch(`/api/invitations/${id}/resend`, {
+        method: "POST",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("Email renvoyé avec succès");
+      } else {
+        alert(data.error || "Erreur lors du renvoi de l'email");
+      }
+    } catch (err) {
+      console.error("Error resending invitation:", err);
+      alert("Erreur lors du renvoi de l'email");
+    }
   };
 
-  const handleInviteSubmit = (e: React.FormEvent) => {
+  const handleInviteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newInvitation = {
-      id: Math.max(...invitations.map((inv) => inv.id)) + 1,
-      type: "collaborateur",
-      email: inviteForm.email,
-      nom: inviteForm.nom,
-      role: inviteForm.role,
-      entreprise: inviteForm.entreprise,
-      statut: "en-attente",
-      dateInvitation: new Date().toISOString().split("T")[0],
-      dateExpiration: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
-      permissions: inviteForm.permissions,
-      message: inviteForm.message,
-      invitePar: "Vous",
-    };
-    setInvitations([...invitations, newInvitation]);
-    setInviteForm({
-      email: "",
-      nom: "",
-      role: "",
-      entreprise: "",
-      message: "",
-      permissions: [],
-    });
-    setShowInviteForm(false);
-  };
+    console.log(inviteForm);
+    // setSubmitting(true);
+    // setError(null);
 
-  const handleInputChange = (field: string, value: string) => {
-    setInviteForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    try {
+      await createAnInvitation.mutateAsync({
+        email: inviteForm.email,
+        role: inviteForm.role,
+        recruteurId: recruteurId || "",
+      });
+    } catch (error) {
+      toast.error(
+        (error as Error).message || "Erreur lors de la création de l'invitation"
+      );
+    }
   };
-
-  const handlePermissionToggle = (permission: string) => {
-    setInviteForm((prev) => ({
-      ...prev,
-      permissions: prev.permissions.includes(permission)
-        ? prev.permissions.filter((p) => p !== permission)
-        : [...prev.permissions, permission],
-    }));
-  };
-
-  const availablePermissions = [
-    "Voir les candidatures",
-    "Gérer les offres",
-    "Accès aux statistiques",
-    "Administrateur complet",
-    "Accès partenaire",
-    "Proposer des candidats",
-  ];
 
   return (
     <>
@@ -306,7 +216,7 @@ export default function InvitationsPage() {
                           Total invitations
                         </p>
                         <p className="text-2xl font-bold">
-                          {invitations.length}
+                          {loading ? "..." : invitations?.length}
                         </p>
                       </div>
                       <IconMail className="h-8 w-8 text-blue-500" />
@@ -322,8 +232,10 @@ export default function InvitationsPage() {
                         </p>
                         <p className="text-2xl font-bold text-yellow-600">
                           {
-                            invitations.filter(
-                              (inv) => inv.statut === "en-attente"
+                            invitations?.filter(
+                              (inv) =>
+                                !inv?.accepted &&
+                                new Date(inv?.expiresAt) >= new Date()
                             ).length
                           }
                         </p>
@@ -340,11 +252,7 @@ export default function InvitationsPage() {
                           Acceptées
                         </p>
                         <p className="text-2xl font-bold text-green-600">
-                          {
-                            invitations.filter(
-                              (inv) => inv.statut === "acceptee"
-                            ).length
-                          }
+                          {invitations?.filter((inv) => inv?.accepted).length}
                         </p>
                       </div>
                       <IconCheck className="h-8 w-8 text-green-500" />
@@ -360,8 +268,10 @@ export default function InvitationsPage() {
                         </p>
                         <p className="text-2xl font-bold text-purple-600">
                           {
-                            invitations.filter(
-                              (inv) => inv.type === "collaborateur"
+                            invitations?.filter(
+                              (inv) =>
+                                !inv?.accepted &&
+                                new Date(inv?.expiresAt) < new Date()
                             ).length
                           }
                         </p>
@@ -383,7 +293,11 @@ export default function InvitationsPage() {
                         <IconUserPlus className="h-4 w-4" />
                         Inviter un collaborateur
                       </Button>
-                      <Button variant="outline" size="icon">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => refetchInvitations()}
+                      >
                         <IconRefresh className="h-4 w-4" />
                       </Button>
                     </div>
@@ -408,7 +322,6 @@ export default function InvitationsPage() {
                           <SelectItem value="all">Tous les statuts</SelectItem>
                           <SelectItem value="en-attente">En attente</SelectItem>
                           <SelectItem value="acceptee">Acceptées</SelectItem>
-                          <SelectItem value="refusee">Refusées</SelectItem>
                           <SelectItem value="expiree">Expirées</SelectItem>
                         </SelectContent>
                       </Select>
@@ -418,12 +331,10 @@ export default function InvitationsPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Tous les types</SelectItem>
-                          <SelectItem value="collaborateur">
-                            Collaborateurs
-                          </SelectItem>
-                          <SelectItem value="partenaire">
-                            Partenaires
-                          </SelectItem>
+                          <SelectItem value="ADMIN">Administrateur</SelectItem>
+                          <SelectItem value="MANAGER">Manager</SelectItem>
+                          <SelectItem value="USER">Utilisateur</SelectItem>
+                          <SelectItem value="VIEWER">Observateur</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -446,105 +357,70 @@ export default function InvitationsPage() {
                   </CardHeader>
                   <CardContent>
                     <form onSubmit={handleInviteSubmit} className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Email *</label>
-                          <Input
-                            type="email"
-                            placeholder="collaborateur@entreprise.com"
-                            value={inviteForm.email}
-                            onChange={(e) =>
-                              handleInputChange("email", e.target.value)
-                            }
-                            required
-                          />
+                      {error && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                          <p className="text-sm text-red-600">{error}</p>
                         </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">
-                            Nom complet *
-                          </label>
-                          <Input
-                            placeholder="Prénom Nom"
-                            value={inviteForm.nom}
-                            onChange={(e) =>
-                              handleInputChange("nom", e.target.value)
-                            }
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Rôle *</label>
-                          <Input
-                            placeholder="Responsable RH, CEO, etc."
-                            value={inviteForm.role}
-                            onChange={(e) =>
-                              handleInputChange("role", e.target.value)
-                            }
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">
-                            Entreprise *
-                          </label>
-                          <Input
-                            placeholder="Nom de l'entreprise"
-                            value={inviteForm.entreprise}
-                            onChange={(e) =>
-                              handleInputChange("entreprise", e.target.value)
-                            }
-                            required
-                          />
-                        </div>
-                      </div>
+                      )}
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                          Permissions
-                        </label>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                          {availablePermissions.map((permission) => (
-                            <label
-                              key={permission}
-                              className="flex items-center space-x-2"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={inviteForm.permissions.includes(
-                                  permission
-                                )}
-                                onChange={() =>
-                                  handlePermissionToggle(permission)
-                                }
-                                className="rounded"
-                              />
-                              <span className="text-sm">{permission}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                          Message personnalisé
-                        </label>
+                        <label className="text-sm font-medium">Email *</label>
                         <Input
-                          placeholder="Message d'invitation personnalisé..."
-                          value={inviteForm.message}
+                          type="email"
+                          placeholder="collaborateur@entreprise.com"
+                          value={inviteForm.email}
                           onChange={(e) =>
-                            handleInputChange("message", e.target.value)
+                            setInviteForm((prev) => ({
+                              ...prev,
+                              email: e.target.value,
+                            }))
                           }
+                          required
                         />
                       </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Rôle *</label>
+                        <Select
+                          value={inviteForm.role}
+                          onValueChange={(
+                            value: "ADMIN" | "USER" | "MANAGER" | "VIEWER"
+                          ) =>
+                            setInviteForm((prev) => ({ ...prev, role: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner un rôle" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ADMIN">
+                              Administrateur
+                            </SelectItem>
+                            <SelectItem value="MANAGER">Manager</SelectItem>
+                            <SelectItem value="USER">Utilisateur</SelectItem>
+                            <SelectItem value="VIEWER">Observateur</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div className="flex gap-2">
-                        <Button type="submit">
-                          <IconSend className="h-4 w-4" />
-                          Envoyer l'invitation
+                        <Button type="submit" disabled={submitting}>
+                          {submitting ? (
+                            <>
+                              <IconRefresh className="h-4 w-4 animate-spin" />
+                              Envoi...
+                            </>
+                          ) : (
+                            <>
+                              <IconSend className="h-4 w-4" />
+                              Envoyer l'invitation
+                            </>
+                          )}
                         </Button>
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => setShowInviteForm(false)}
+                          onClick={() => {
+                            setShowInviteForm(false);
+                            setError(null);
+                          }}
                         >
                           Annuler
                         </Button>
@@ -556,7 +432,7 @@ export default function InvitationsPage() {
 
               {/* Liste des invitations */}
               <div className="space-y-4">
-                {filteredInvitations.length === 0 ? (
+                {filteredInvitations?.length === 0 ? (
                   <Card>
                     <CardContent className="p-8 text-center">
                       <IconMail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -577,173 +453,127 @@ export default function InvitationsPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  filteredInvitations.map((invitation) => (
-                    <Card
-                      key={invitation.id}
-                      className="hover:shadow-md transition-shadow"
-                    >
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-4">
-                            <Avatar className="h-12 w-12">
-                              <AvatarImage
-                                src={`/avatars/${invitation.nom
-                                  .toLowerCase()
-                                  .replace(" ", "-")}.jpg`}
-                              />
-                              <AvatarFallback>
-                                {getInitials(invitation.nom)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h3 className="text-lg font-semibold">
-                                  {invitation.nom}
-                                </h3>
-                                {getStatutBadge(invitation.statut)}
-                                <Badge variant="outline">
-                                  {invitation.type === "collaborateur"
-                                    ? "Collaborateur"
-                                    : "Partenaire"}
-                                </Badge>
-                              </div>
-                              <div className="space-y-1 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-4">
-                                  <span className="flex items-center gap-1">
-                                    <IconMail className="h-4 w-4" />
+                  filteredInvitations?.map((invitation) => {
+                    const isExpired =
+                      new Date(invitation?.expiresAt) < new Date();
+                    const isPending = !invitation.accepted && !isExpired;
+
+                    return (
+                      <Card
+                        key={invitation?.id}
+                        className="hover:shadow-md transition-shadow"
+                      >
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-4">
+                              <Avatar className="h-12 w-12">
+                                <AvatarFallback>
+                                  {getInitials(invitation.email)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h3 className="text-lg font-semibold">
                                     {invitation.email}
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    <IconBuilding className="h-4 w-4" />
-                                    {invitation.entreprise}
-                                  </span>
+                                  </h3>
+                                  {getStatutBadge(invitation as any)}
+                                  <Badge variant="outline">
+                                    {getRoleLabel(invitation.role)}
+                                  </Badge>
                                 </div>
-                                <div className="flex items-center gap-4">
-                                  <span>{invitation.role}</span>
-                                  <span className="flex items-center gap-1">
-                                    <IconCalendar className="h-4 w-4" />
-                                    Invité le {invitation.dateInvitation}
-                                  </span>
+                                <div className="space-y-1 text-sm text-muted-foreground">
+                                  <div className="flex items-center gap-4">
+                                    <span className="flex items-center gap-1">
+                                      <IconMail className="h-4 w-4" />
+                                      {invitation.email}
+                                    </span>
+                                    {invitation.recruteur?.companyName && (
+                                      <span className="flex items-center gap-1">
+                                        <IconBuilding className="h-4 w-4" />
+                                        {invitation.recruteur.companyName}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-4">
+                                    <span className="flex items-center gap-1">
+                                      <IconCalendar className="h-4 w-4" />
+                                      Invité le{" "}
+                                      {new Date(
+                                        invitation.createdAt
+                                      ).toLocaleDateString("fr-FR")}
+                                    </span>
+                                  </div>
                                 </div>
-                                {invitation.message && (
-                                  <p className="mt-2 italic">
-                                    "{invitation.message}"
-                                  </p>
-                                )}
                               </div>
                             </div>
-                          </div>
-                          <div className="flex gap-2">
-                            {invitation.statut === "en-attente" && (
-                              <>
+                            <div className="flex gap-2">
+                              {isPending && (
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() =>
-                                    handleAcceptInvitation(invitation.id)
+                                    handleResendInvitation(invitation.id)
                                   }
-                                  className="text-green-600 hover:text-green-700"
                                 >
-                                  <IconCheck className="h-4 w-4" />
+                                  <IconSend className="h-4 w-4" />
+                                  Renvoyer
                                 </Button>
+                              )}
+                              {isExpired && !invitation.accepted && (
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() =>
-                                    handleRejectInvitation(invitation.id)
+                                    handleResendInvitation(invitation.id)
                                   }
-                                  className="text-red-600 hover:text-red-700"
                                 >
-                                  <IconX className="h-4 w-4" />
+                                  <IconSend className="h-4 w-4" />
+                                  Renvoyer
                                 </Button>
-                              </>
-                            )}
-                            {invitation.statut === "expiree" && (
+                              )}
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() =>
-                                  handleResendInvitation(invitation.id)
+                                  handleDeleteInvitation(invitation.id)
                                 }
+                                className="text-red-600 hover:text-red-700"
                               >
-                                <IconSend className="h-4 w-4" />
-                                Renvoyer
+                                <IconTrash className="h-4 w-4" />
                               </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleDeleteInvitation(invitation.id)
-                              }
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <IconTrash className="h-4 w-4" />
-                            </Button>
+                            </div>
                           </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {/* Permissions */}
-                          <div>
-                            <h4 className="font-medium mb-2">
-                              Permissions accordées
-                            </h4>
-                            <div className="flex flex-wrap gap-2">
-                              {invitation.permissions.map(
-                                (permission, index) => (
-                                  <Badge key={index} variant="secondary">
-                                    {permission}
-                                  </Badge>
-                                )
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            {/* Informations supplémentaires */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">
+                                  Expire le:
+                                </span>
+                                <span className="ml-2 font-medium">
+                                  {new Date(
+                                    invitation.expiresAt
+                                  ).toLocaleDateString("fr-FR")}
+                                </span>
+                              </div>
+                              {invitation.accepted && (
+                                <div>
+                                  <span className="text-muted-foreground">
+                                    Statut:
+                                  </span>
+                                  <span className="ml-2 font-medium text-green-600">
+                                    Acceptée
+                                  </span>
+                                </div>
                               )}
                             </div>
                           </div>
-
-                          {/* Informations supplémentaires */}
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                            <div>
-                              <span className="text-muted-foreground">
-                                Invité par:
-                              </span>
-                              <span className="ml-2 font-medium">
-                                {invitation.invitePar}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">
-                                Expire le:
-                              </span>
-                              <span className="ml-2 font-medium">
-                                {invitation.dateExpiration}
-                              </span>
-                            </div>
-                            {invitation.dateAcceptation && (
-                              <div>
-                                <span className="text-muted-foreground">
-                                  Accepté le:
-                                </span>
-                                <span className="ml-2 font-medium">
-                                  {invitation.dateAcceptation}
-                                </span>
-                              </div>
-                            )}
-                            {invitation.dateRefus && (
-                              <div>
-                                <span className="text-muted-foreground">
-                                  Refusé le:
-                                </span>
-                                <span className="ml-2 font-medium">
-                                  {invitation.dateRefus}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
+                        </CardContent>
+                      </Card>
+                    );
+                  })
                 )}
               </div>
             </div>

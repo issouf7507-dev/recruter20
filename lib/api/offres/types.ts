@@ -44,6 +44,7 @@ export interface CreateOfferData {
 
 export interface PaginatedResponse<T> {
   items: T[];
+  totalAll: T[];
   pagination: {
     page: number;
     limit: number;

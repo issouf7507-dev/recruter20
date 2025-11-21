@@ -14,9 +14,9 @@ export function SiteHeader() {
         <h1 className="text-base font-medium">Tableau de bord</h1>
         <div className="ml-auto flex items-center gap-2">
           <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
-            <a href="/recruteur/profil" className="dark:text-foreground">
+            {/* <a href="/recruteur/profil" className="dark:text-foreground">
               Mon Profil
-            </a>
+            </a> */}
           </Button>
         </div>
       </div>

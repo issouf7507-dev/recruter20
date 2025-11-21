@@ -12,7 +12,67 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SiteHeader } from "@/components/site-header";
+import { useSession } from "@/lib/auth-client";
+import {
+  useRecruteurByUserId,
+  useCollaborateurByUserId,
+} from "@/lib/hooks/use-recruteurs";
+import {
+  useKanbanColumns,
+  useMoveApplication,
+  useReorderKanbanColumns,
+  useCreateKanbanColumn,
+  useUpdateKanbanColumn,
+  useDeleteKanbanColumn,
+  useCreateKanbanCard,
+  useUpdateKanbanCard,
+  useDeleteKanbanCard,
+  useMoveCard,
+  useAddCardMembers,
+  useRemoveCardMember,
+  useLabels,
+  useCreateLabel,
+  useUpdateLabel,
+  useDeleteLabel,
+  useAddCardLabel,
+  useRemoveCardLabel,
+} from "@/lib/hooks/use-kanban";
+import { useCollaborateurs } from "@/lib/hooks/use-collaborateurs";
+import { useOffers } from "@/lib/hooks/use-offers";
 import {
   IconLayoutKanban,
   IconPlus,
@@ -32,211 +92,167 @@ import {
   IconTrash,
   IconDots,
   IconGripVertical,
+  IconX,
+  IconTag,
+  IconListCheck,
+  IconMapPin,
+  IconDeviceDesktop,
+  IconSettings,
+  IconInfoCircle,
+  IconMenu2,
+  IconChevronDown,
 } from "@tabler/icons-react";
-
-// Données mockées pour le tableau Kanban
-const mockKanbanData = {
-  colonnes: [
-    {
-      id: "backlog",
-      titre: "Backlog",
-      couleur: "bg-gray-50 border-gray-200",
-      candidatures: [
-        {
-          id: 1,
-          titre: "Integrate Stripe payment gateway",
-          description:
-            "Compile competitor landing page designs for inspiration. G..",
-          progression: 10,
-          assignes: [
-            { nom: "Emma", avatar: "/images/avatars/01.png", initiales: "EM" },
-            {
-              nom: "Daniel",
-              avatar: "/images/avatars/02.png",
-              initiales: "DN",
-            },
-          ],
-          priorite: "High",
-          piecesJointes: 2,
-          commentaires: 4,
-          dateEcheance: "2024-02-15",
-          competences: ["React", "Stripe", "Payment"],
-        },
-        {
-          id: 2,
-          titre: "Redesign marketing homepage",
-          description:
-            "Compile competitor landing page designs for inspiration. G..",
-          progression: 0,
-          assignes: [
-            { nom: "Lucas", avatar: "/images/avatars/03.png", initiales: "LC" },
-            {
-              nom: "Sophia",
-              avatar: "/images/avatars/04.png",
-              initiales: "SP",
-            },
-          ],
-          priorite: "Medium",
-          piecesJointes: 1,
-          commentaires: 1,
-          dateEcheance: "2024-02-20",
-          competences: ["Design", "Marketing", "UI/UX"],
-        },
-        {
-          id: 3,
-          titre: "Set up automated backups",
-          description:
-            "Compile competitor landing page designs for inspiration. G..",
-          progression: 5,
-          assignes: [
-            { nom: "Mia", avatar: "/images/avatars/05.png", initiales: "MI" },
-            { nom: "Jack", avatar: "/images/avatars/06.png", initiales: "JK" },
-          ],
-          priorite: "Low",
-          piecesJointes: 0,
-          commentaires: 3,
-          dateEcheance: "2024-02-25",
-          competences: ["DevOps", "Backup", "Infrastructure"],
-        },
-        {
-          id: 4,
-          titre: "Implement blog search functionality",
-          description:
-            "Compile competitor landing page designs for inspiration. G..",
-          progression: 0,
-          assignes: [
-            {
-              nom: "Olivia",
-              avatar: "/images/avatars/07.png",
-              initiales: "OL",
-            },
-            { nom: "Henry", avatar: "/images/avatars/08.png", initiales: "HY" },
-          ],
-          priorite: "Medium",
-          piecesJointes: 1,
-          commentaires: 0,
-          dateEcheance: "2024-03-01",
-          competences: ["Search", "Blog", "Frontend"],
-        },
-      ],
-    },
-    {
-      id: "in-progress",
-      titre: "In Progress",
-      couleur: "bg-blue-50 border-blue-200",
-      candidatures: [
-        {
-          id: 5,
-          titre: "Dark mode toggle implementation",
-          description:
-            "Compile competitor landing page designs for inspiration. G..",
-          progression: 40,
-          assignes: [
-            {
-              nom: "Charlie",
-              avatar: "/images/avatars/09.png",
-              initiales: "CH",
-            },
-            { nom: "Ava", avatar: "/images/avatars/10.png", initiales: "AV" },
-          ],
-          priorite: "High",
-          piecesJointes: 2,
-          commentaires: 6,
-          dateEcheance: "2024-02-10",
-          competences: ["React", "CSS", "Theme"],
-        },
-        {
-          id: 6,
-          titre: "Database schema refactoring",
-          description:
-            "Compile competitor landing page designs for inspiration. G..",
-          progression: 55,
-          assignes: [
-            { nom: "Liam", avatar: "/images/avatars/11.png", initiales: "LM" },
-            {
-              nom: "Isabella",
-              avatar: "/images/avatars/12.png",
-              initiales: "IS",
-            },
-          ],
-          priorite: "Medium",
-          piecesJointes: 3,
-          commentaires: 2,
-          dateEcheance: "2024-02-18",
-          competences: ["Database", "SQL", "Optimization"],
-        },
-        {
-          id: 7,
-          titre: "Accessibility improvements",
-          description:
-            "Compile competitor landing page designs for inspiration. G..",
-          progression: 35,
-          assignes: [
-            { nom: "Noémie Thomas", avatar: "", initiales: "NT" },
-            { nom: "Elena Garcia", avatar: "", initiales: "EL" },
-          ],
-          priorite: "Low",
-          piecesJointes: 1,
-          commentaires: 1,
-          dateEcheance: "2024-02-28",
-          competences: ["Accessibility", "WCAG", "UX"],
-        },
-      ],
-    },
-    {
-      id: "done",
-      titre: "Done",
-      couleur: "bg-green-50 border-green-200",
-      candidatures: [
-        {
-          id: 8,
-          titre: "Set up CI/CD pipeline",
-          description:
-            "Compile competitor landing page designs for inspiration. G..",
-          progression: 100,
-          assignes: [
-            { nom: "Eric Chen", avatar: "", initiales: "EC" },
-            { nom: "Gabriel Rodriguez", avatar: "", initiales: "GR" },
-          ],
-          priorite: "High",
-          piecesJointes: 2,
-          commentaires: 4,
-          dateEcheance: "2024-01-30",
-          competences: ["CI/CD", "DevOps", "Deployment"],
-        },
-        {
-          id: 9,
-          titre: "Initial project setup",
-          description:
-            "Compile competitor landing page designs for inspiration. G..",
-          progression: 100,
-          assignes: [
-            { nom: "Hugo Lambert", avatar: "", initiales: "HL" },
-            { nom: "Baptiste Martin", avatar: "", initiales: "BM" },
-          ],
-          priorite: "Medium",
-          piecesJointes: 1,
-          commentaires: 2,
-          dateEcheance: "2024-01-15",
-          competences: ["Setup", "Configuration", "Initialization"],
-        },
-      ],
-    },
-  ],
-};
+import type {
+  KanbanColumn,
+  KanbanCard,
+  Application,
+  ApplicationStatus,
+} from "@/lib/api/kanban/types";
 
 export default function KanbanPage() {
-  const [kanbanData, setKanbanData] = useState(mockKanbanData);
+  const { data: session } = useSession();
+  const { data: recruteur } = useRecruteurByUserId(session?.user?.id);
+  const { data: collaborateur } = useCollaborateurByUserId(session?.user?.id);
+  const recruteurId = recruteur ? recruteur?.id : collaborateur?.recruteurId;
+
+  // Fetch kanban columns (independent of job offers)
+  const {
+    data: kanbanData,
+    isLoading,
+    error,
+  } = useKanbanColumns(recruteurId || undefined, {
+    enabled: !!recruteurId,
+  });
+
+  const columnsData = kanbanData?.columns || [];
+
+  // Fetch offers for card creation
+  const { data: offersData } = useOffers(
+    {
+      recruteurId: recruteurId || undefined,
+      limit: 100,
+    },
+    {
+      enabled: !!recruteurId,
+    }
+  );
+
+  const offers = offersData?.items || [];
+
+  const moveCard = useMoveCard();
+  const reorderColumns = useReorderKanbanColumns();
+  const createColumn = useCreateKanbanColumn();
+  const updateColumn = useUpdateKanbanColumn();
+  const deleteColumn = useDeleteKanbanColumn();
+  const createCard = useCreateKanbanCard();
+  const updateCard = useUpdateKanbanCard();
+  const deleteCard = useDeleteKanbanCard();
+
+  // Dialog state for creating a new column
+  const [isCreateColumnDialogOpen, setIsCreateColumnDialogOpen] =
+    useState(false);
+  const [newColumnName, setNewColumnName] = useState("");
+  const [newColumnColor, setNewColumnColor] = useState(
+    "bg-gray-50 border-gray-200"
+  );
+
+  // Dialog state for editing a column
+  const [isEditColumnDialogOpen, setIsEditColumnDialogOpen] = useState(false);
+  const [editingColumn, setEditingColumn] = useState<KanbanColumn | null>(null);
+  const [editColumnName, setEditColumnName] = useState("");
+  const [editColumnColor, setEditColumnColor] = useState(
+    "bg-gray-50 border-gray-200"
+  );
+
+  // Dialog state for deleting a column
+  const [isDeleteColumnDialogOpen, setIsDeleteColumnDialogOpen] =
+    useState(false);
+  const [columnToDelete, setColumnToDelete] = useState<KanbanColumn | null>(
+    null
+  );
+
+  // Dialog state for creating a card
+  const [isCreateCardDialogOpen, setIsCreateCardDialogOpen] = useState(false);
+  const [selectedColumnForCard, setSelectedColumnForCard] = useState<
+    string | null
+  >(null);
+  const [newCardTitle, setNewCardTitle] = useState("");
+  const [newCardDescription, setNewCardDescription] = useState("");
+  const [newCardPriority, setNewCardPriority] = useState<string>("medium");
+  const [newCardJobOfferIds, setNewCardJobOfferIds] = useState<string[]>([]);
+  const [isCardDetailsSheetOpen, setIsCardDetailsSheetOpen] = useState(false);
+  const [selectedCard, setSelectedCard] = useState<KanbanCard | null>(null);
+  const [selectedCardColumnId, setSelectedCardColumnId] = useState<
+    string | null
+  >(null);
+  const [cardDetailsTitle, setCardDetailsTitle] = useState("");
+  const [cardDetailsDescription, setCardDetailsDescription] = useState("");
+  const [cardDetailsPriority, setCardDetailsPriority] =
+    useState<string>("medium");
+  const [isAddMembersDialogOpen, setIsAddMembersDialogOpen] = useState(false);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+
+  const addCardMembers = useAddCardMembers();
+  const removeCardMember = useRemoveCardMember();
+  const { data: collaborateurs } = useCollaborateurs(recruteurId || undefined);
+
+  // Labels management
+  const { data: labels } = useLabels(recruteurId || undefined);
+  const createLabel = useCreateLabel();
+  const updateLabel = useUpdateLabel();
+  const deleteLabel = useDeleteLabel();
+  const addCardLabel = useAddCardLabel();
+  const removeCardLabel = useRemoveCardLabel();
+
+  // Dialog state for labels
+  const [isLabelsDialogOpen, setIsLabelsDialogOpen] = useState(false);
+  const [isCreateLabelDialogOpen, setIsCreateLabelDialogOpen] = useState(false);
+  const [isEditLabelDialogOpen, setIsEditLabelDialogOpen] = useState(false);
+  const [editingLabel, setEditingLabel] = useState<{
+    id: string;
+    name: string;
+    color: string;
+  } | null>(null);
+  const [newLabelName, setNewLabelName] = useState("");
+  const [newLabelColor, setNewLabelColor] = useState("#3b82f6");
+  const [editLabelName, setEditLabelName] = useState("");
+  const [editLabelColor, setEditLabelColor] = useState("#3b82f6");
+
+  console.log("collaborateurs", collaborateurs);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("board");
-  const [draggedItem, setDraggedItem] = useState<{
-    id: number;
+  const [draggedCard, setDraggedCard] = useState<{
+    id: string;
     fromColonne: string;
   } | null>(null);
   const [draggedColumn, setDraggedColumn] = useState<{
     id: string;
     index: number;
   } | null>(null);
+  // Helper function to map status to column
+  // For now, we'll use a simple mapping - you can enhance this
+  const getStatusFromColumn = (columnName: string): ApplicationStatus => {
+    const nameLower = columnName.toLowerCase();
+    if (nameLower.includes("accept") || nameLower.includes("accepté")) {
+      return "ACCEPTE" as ApplicationStatus;
+    }
+    if (nameLower.includes("refus") || nameLower.includes("refusé")) {
+      return "REFUSE" as ApplicationStatus;
+    }
+    if (nameLower.includes("revis") || nameLower.includes("révision")) {
+      return "EN_REVISION" as ApplicationStatus;
+    }
+    return "EN_ATTENTE" as ApplicationStatus;
+  };
+
+  // Transform columns to match UI structure - now includes cards
+  const kanbanColumns = columnsData.map((col: KanbanColumn) => ({
+    id: col.id,
+    titre: col.name,
+    couleur: col.color || "bg-gray-50 border-gray-200",
+    cards: col.cards || [],
+  }));
 
   const getInitials = (nom: string) => {
     return nom
@@ -247,15 +263,81 @@ export default function KanbanPage() {
   };
 
   const getPrioriteColor = (priorite: string) => {
-    switch (priorite) {
-      case "High":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "Medium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "Low":
-        return "bg-green-100 text-green-800 border-green-200";
+    switch (priorite?.toLowerCase()) {
+      case "high":
+      case "urgent":
+        return "bg-pink-100 text-pink-800 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-800";
+      case "medium":
+        return "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800";
+      case "low":
+        return "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700";
+    }
+  };
+
+  const getPrioriteLabel = (priorite: string) => {
+    switch (priorite?.toLowerCase()) {
+      case "high":
+        return "High";
+      case "urgent":
+        return "Urgent";
+      case "medium":
+        return "Medium";
+      case "low":
+        return "Low";
+      default:
+        return "Medium";
+    }
+  };
+
+  const formatDate = (date: Date | string) => {
+    if (!date) return "";
+    try {
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return "";
+      const months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
+      return `${months[d.getMonth()]} ${d.getDate()}`;
+    } catch {
+      return "";
+    }
+  };
+
+  const formatDateTime = (date: Date | string) => {
+    if (!date) return "";
+    try {
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return "";
+      const now = new Date();
+      const diff = now.getTime() - d.getTime();
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+      if (days === 0) return "today";
+      if (days === 1) return "yesterday";
+      if (days < 7) return `${days} days ago`;
+
+      const hours = d.getHours();
+      const minutes = d.getMinutes();
+      const ampm = hours >= 12 ? "PM" : "AM";
+      const displayHours = hours % 12 || 12;
+      const displayMinutes = minutes.toString().padStart(2, "0");
+
+      return `${formatDate(date)} at ${displayHours}:${displayMinutes} ${ampm}`;
+    } catch {
+      return "";
     }
   };
 
@@ -272,7 +354,14 @@ export default function KanbanPage() {
     }
   };
 
-  const filteredCandidatures = (candidatures: any[]) => {
+  const filteredCandidatures = (
+    candidatures: Array<{
+      id: string;
+      titre: string;
+      description: string;
+      [key: string]: any;
+    }>
+  ) => {
     if (!searchTerm) return candidatures;
     return candidatures.filter(
       (candidature) =>
@@ -282,80 +371,9 @@ export default function KanbanPage() {
   };
 
   // Fonctions de drag and drop
-  const handleDragStart = (
-    e: React.DragEvent,
-    candidatureId: number,
-    colonneId: string
-  ) => {
-    // Empêcher la propagation vers les colonnes
-    e.stopPropagation();
-    setDraggedItem({ id: candidatureId, fromColonne: colonneId });
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/html", "");
-    e.dataTransfer.setData(
-      "application/json",
-      JSON.stringify({
-        type: "task",
-        id: candidatureId,
-        fromColonne: colonneId,
-      })
-    );
-  };
-
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-  };
-
-  const handleDrop = (e: React.DragEvent, targetColonneId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    // Vérifier que c'est bien une tâche qui est déplacée
-    const dragData = e.dataTransfer.getData("application/json");
-    if (!dragData) return;
-
-    const { type } = JSON.parse(dragData);
-    if (type !== "task") return;
-
-    if (!draggedItem || draggedItem.fromColonne === targetColonneId) {
-      setDraggedItem(null);
-      return;
-    }
-
-    setKanbanData((prevData) => {
-      const newData = { ...prevData };
-
-      // Trouver la colonne source et la tâche
-      const sourceColonne = newData.colonnes.find(
-        (col) => col.id === draggedItem.fromColonne
-      );
-      const targetColonne = newData.colonnes.find(
-        (col) => col.id === targetColonneId
-      );
-
-      if (sourceColonne && targetColonne) {
-        const taskIndex = sourceColonne.candidatures.findIndex(
-          (task) => task.id === draggedItem.id
-        );
-
-        if (taskIndex !== -1) {
-          // Retirer la tâche de la colonne source
-          const [movedTask] = sourceColonne.candidatures.splice(taskIndex, 1);
-
-          // Ajouter la tâche à la colonne cible
-          targetColonne.candidatures.push(movedTask);
-        }
-      }
-
-      return newData;
-    });
-
-    setDraggedItem(null);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedItem(null);
   };
 
   // Fonctions de drag and drop pour les colonnes
@@ -397,35 +415,266 @@ export default function KanbanPage() {
       return;
     }
 
-    setKanbanData((prevData) => {
-      const newData = { ...prevData };
-      const columns = [...newData.colonnes];
+    if (!columnsData) {
+      setDraggedColumn(null);
+      return;
+    }
 
-      // Calculer la nouvelle position
-      let newIndex = targetIndex;
-
-      // Si on déplace vers la droite, ajuster l'index
-      if (draggedColumn.index < targetIndex) {
-        newIndex = targetIndex;
-      } else {
-        // Si on déplace vers la gauche, insérer avant
-        newIndex = targetIndex;
+    // Reorder columns via API
+    const updates = columnsData.map((col, index) => {
+      let newOrder = index;
+      if (index === draggedColumn.index) {
+        newOrder = targetIndex;
+      } else if (
+        draggedColumn.index < targetIndex &&
+        index > draggedColumn.index &&
+        index <= targetIndex
+      ) {
+        newOrder = index - 1;
+      } else if (
+        draggedColumn.index > targetIndex &&
+        index >= targetIndex &&
+        index < draggedColumn.index
+      ) {
+        newOrder = index + 1;
       }
-
-      // Retirer la colonne de sa position actuelle
-      const [movedColumn] = columns.splice(draggedColumn.index, 1);
-
-      // Insérer la colonne à sa nouvelle position
-      columns.splice(newIndex, 0, movedColumn);
-
-      return { ...newData, colonnes: columns };
+      return {
+        columnId: col.id,
+        newOrder,
+      };
     });
+
+    reorderColumns.mutate(updates);
 
     setDraggedColumn(null);
   };
 
   const handleColumnDragEnd = () => {
     setDraggedColumn(null);
+  };
+
+  // Handle create column
+  const handleCreateColumn = async () => {
+    if (!newColumnName.trim() || !recruteurId) {
+      return;
+    }
+
+    createColumn.mutate(
+      {
+        recruteurId,
+        data: {
+          name: newColumnName.trim(),
+          color: newColumnColor,
+          isDefault: false,
+        },
+      },
+      {
+        onSuccess: () => {
+          setIsCreateColumnDialogOpen(false);
+          setNewColumnName("");
+          setNewColumnColor("bg-gray-50 border-gray-200");
+        },
+      }
+    );
+  };
+
+  // Handle create card
+  const handleCreateCard = async () => {
+    if (!newCardTitle.trim() || !recruteurId || !selectedColumnForCard) {
+      return;
+    }
+
+    createCard.mutate(
+      {
+        recruteurId,
+        userId: session?.user?.id,
+        data: {
+          title: newCardTitle.trim(),
+          description: newCardDescription || undefined,
+          priority: newCardPriority,
+          columnId: selectedColumnForCard,
+          jobOfferIds:
+            newCardJobOfferIds.length > 0 ? newCardJobOfferIds : undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          setIsCreateCardDialogOpen(false);
+          setNewCardTitle("");
+          setNewCardDescription("");
+          setNewCardPriority("medium");
+          setNewCardJobOfferIds([]);
+          setSelectedColumnForCard(null);
+        },
+      }
+    );
+  };
+
+  // Handle opening create card dialog for a specific column
+  const handleOpenCreateCardDialog = (columnId: string) => {
+    setSelectedColumnForCard(columnId);
+    setIsCreateCardDialogOpen(true);
+  };
+
+  const handleOpenCardDetails = (card: KanbanCard, columnId: string) => {
+    setSelectedCard(card);
+    setSelectedCardColumnId(columnId);
+    setCardDetailsTitle(card.title || "");
+    setCardDetailsDescription(card.description || "");
+    setCardDetailsPriority(card.priority || "medium");
+    setIsCardDetailsSheetOpen(true);
+  };
+
+  const handleCloseCardDetails = () => {
+    setIsCardDetailsSheetOpen(false);
+    setSelectedCard(null);
+    setSelectedCardColumnId(null);
+  };
+
+  const handleUpdateCardDetails = () => {
+    if (!selectedCard || !recruteurId) {
+      return;
+    }
+
+    updateCard.mutate(
+      {
+        id: selectedCard.id,
+        recruteurId,
+        userId: session?.user?.id,
+        data: {
+          title: cardDetailsTitle.trim() || selectedCard.title,
+          description: cardDetailsDescription || undefined,
+          priority: cardDetailsPriority || undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          handleCloseCardDetails();
+        },
+      }
+    );
+  };
+
+  const handleDeleteCard = (card: KanbanCard) => {
+    if (!recruteurId) {
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `Supprimer définitivement la card "${card.title}" ?`
+    );
+    if (!confirmDelete) {
+      return;
+    }
+
+    deleteCard.mutate(
+      {
+        id: card.id,
+        recruteurId,
+      },
+      {
+        onSuccess: () => {
+          if (selectedCard?.id === card.id) {
+            handleCloseCardDetails();
+          }
+        },
+      }
+    );
+  };
+
+  // Card drag and drop handlers
+  const handleCardDragStart = (
+    e: React.DragEvent,
+    cardId: string,
+    fromColonneId: string
+  ) => {
+    setDraggedCard({
+      id: cardId,
+      fromColonne: fromColonneId,
+    });
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", cardId);
+  };
+
+  const handleCardDragEnd = () => {
+    setDraggedCard(null);
+  };
+
+  const handleCardDrop = async (
+    e: React.DragEvent,
+    targetColonneId: string
+  ) => {
+    e.preventDefault();
+    if (!draggedCard || draggedCard.fromColonne === targetColonneId) {
+      setDraggedCard(null);
+      return;
+    }
+
+    // Move card
+    try {
+      await moveCard.mutateAsync({
+        cardId: draggedCard.id,
+        targetColumnId: targetColonneId,
+        userId: session?.user?.id,
+      });
+    } catch (error) {
+      console.error("Error moving card:", error);
+    }
+
+    setDraggedCard(null);
+  };
+
+  // Handle edit column
+  const handleEditColumn = (column: KanbanColumn) => {
+    setEditingColumn(column);
+    setEditColumnName(column.name);
+    setEditColumnColor(column.color || "bg-gray-50 border-gray-200");
+    setIsEditColumnDialogOpen(true);
+  };
+
+  // Handle update column
+  const handleUpdateColumn = async () => {
+    if (!editColumnName.trim() || !editingColumn) {
+      return;
+    }
+
+    updateColumn.mutate(
+      {
+        id: editingColumn.id,
+        data: {
+          name: editColumnName.trim(),
+          color: editColumnColor,
+        },
+      },
+      {
+        onSuccess: () => {
+          setIsEditColumnDialogOpen(false);
+          setEditingColumn(null);
+          setEditColumnName("");
+          setEditColumnColor("bg-gray-50 border-gray-200");
+        },
+      }
+    );
+  };
+
+  // Handle delete column
+  const handleDeleteColumn = (column: KanbanColumn) => {
+    setColumnToDelete(column);
+    setIsDeleteColumnDialogOpen(true);
+  };
+
+  // Confirm delete column
+  const handleConfirmDeleteColumn = async () => {
+    if (!columnToDelete) {
+      return;
+    }
+
+    deleteColumn.mutate(columnToDelete.id, {
+      onSuccess: () => {
+        setIsDeleteColumnDialogOpen(false);
+        setColumnToDelete(null);
+      },
+    });
   };
 
   return (
@@ -437,8 +686,8 @@ export default function KanbanPage() {
             <div className="px-4 lg:px-6">
               {/* Header */}
               <div className="mb-6">
-                <h1 className="text-xl font-bold tracking-tight lg:text-2xl">
-                  Kanban Board
+                <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">
+                  Tasks
                 </h1>
               </div>
 
@@ -470,36 +719,50 @@ export default function KanbanPage() {
               </div>
 
               {/* Tabs */}
-              <div className="mb-2 flex justify-between gap-2">
+              <div className="mb-4 flex justify-between items-center gap-2">
                 <div className="bg-muted text-muted-foreground inline-flex h-9 w-fit items-center justify-center rounded-lg p-[3px]">
                   <Button
-                    variant={activeTab === "board" ? "default" : "ghost"}
-                    onClick={() => setActiveTab("board")}
-                    className="h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm"
+                    variant={activeTab === "overview" ? "default" : "ghost"}
+                    onClick={() => setActiveTab("overview")}
+                    className="h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm"
                   >
-                    Board
+                    Overview
                   </Button>
                   <Button
                     variant={activeTab === "list" ? "default" : "ghost"}
                     onClick={() => setActiveTab("list")}
-                    className="h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm"
+                    className="h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm"
                   >
-                    List
+                    Lists
                   </Button>
                   <Button
-                    variant={activeTab === "table" ? "default" : "ghost"}
-                    onClick={() => setActiveTab("table")}
-                    className="h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm"
+                    variant={activeTab === "board" ? "default" : "ghost"}
+                    onClick={() => setActiveTab("board")}
+                    className="h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm"
                   >
-                    Table
+                    Board
+                  </Button>
+                  <Button
+                    variant={activeTab === "timeline" ? "default" : "ghost"}
+                    onClick={() => setActiveTab("timeline")}
+                    className="h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm"
+                  >
+                    Timeline
+                  </Button>
+                  <Button
+                    variant={activeTab === "files" ? "default" : "ghost"}
+                    onClick={() => setActiveTab("files")}
+                    className="h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm"
+                  >
+                    Files
                   </Button>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
                   <div className="relative hidden w-auto lg:block">
                     <IconSearch className="absolute top-2.5 left-3 h-4 w-4 opacity-50" />
                     <Input
                       placeholder="Search tasks..."
-                      className="ps-8 h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                      className="ps-8 h-9 w-[200px] rounded-md border bg-transparent px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -509,205 +772,1901 @@ export default function KanbanPage() {
                       <IconSearch className="h-4 w-4" />
                     </Button>
                   </div>
+                  <Select defaultValue="all">
+                    <SelectTrigger className="h-9 w-[120px] text-sm">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="archived">Archived</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select defaultValue="newest">
+                    <SelectTrigger className="h-9 w-[120px] text-sm">
+                      <SelectValue placeholder="Sort" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Newest</SelectItem>
+                      <SelectItem value="oldest">Oldest</SelectItem>
+                      <SelectItem value="priority">Priority</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <Button variant="outline" size="sm">
                     <IconFilter className="h-4 w-4" />
                     <span className="hidden lg:inline">Filters</span>
                   </Button>
-                  <Button size="sm">
+                  <Button
+                    size="sm"
+                    onClick={() => setIsCreateColumnDialogOpen(true)}
+                    disabled={!recruteurId}
+                  >
                     <IconPlus className="h-4 w-4" />
-                    <span className="hidden lg:inline">Add Board</span>
+                    <span className="hidden lg:inline">
+                      Ajouter une colonne
+                    </span>
                   </Button>
                 </div>
               </div>
 
+              {/* Loading State */}
+              {isLoading && (
+                <div className="text-center py-8">Chargement...</div>
+              )}
+
+              {/* Error State */}
+              {error && (
+                <div className="text-center py-8 text-red-500">
+                  Erreur lors du chargement des données
+                </div>
+              )}
+
               {/* Tableau Kanban */}
-              <div className="size-full flex-row flex w-full gap-4 overflow-x-auto pb-4">
-                {kanbanData.colonnes.map((colonne, index) => (
-                  <div key={colonne.id} className="relative">
-                    {/* Colonne */}
-                    <div
-                      className={`bg-muted flex size-full flex-col gap-2 rounded-lg p-2.5 w-[340px] min-w-[340px] transition-all duration-200 ${
-                        draggedItem && draggedItem.fromColonne !== colonne.id
-                          ? "ring-2 ring-blue-500 ring-opacity-50 bg-blue-50"
-                          : ""
-                      } ${
-                        draggedColumn?.id === colonne.id
-                          ? "opacity-50 scale-95 shadow-lg"
-                          : ""
-                      } ${
-                        draggedColumn && draggedColumn.index !== index
-                          ? "ring-2 ring-blue-500 ring-opacity-70 bg-blue-100 transform scale-105"
-                          : ""
-                      }`}
-                      onDragOver={(e) => {
-                        handleDragOver(e);
-                        handleColumnDragOver(e);
-                      }}
-                      onDrop={(e) => {
-                        handleDrop(e, colonne.id);
-                        handleColumnDrop(e, index);
-                      }}
-                    >
+              {!isLoading && !error && (
+                <div className="size-full flex-row flex w-full gap-4 overflow-x-auto pb-4">
+                  {kanbanColumns.map((colonne, index) => (
+                    <div key={colonne.id} className="relative">
+                      {/* Colonne */}
                       <div
-                        className="flex items-center justify-between cursor-grab"
-                        draggable
-                        onDragStart={(e) =>
-                          handleColumnDragStart(e, colonne.id, index)
-                        }
-                        onDragEnd={handleColumnDragEnd}
+                        className={`bg-muted/50 flex size-full flex-col gap-3 rounded-lg p-3 w-[320px] min-w-[320px] transition-all duration-200 border border-border/50 ${
+                          draggedCard && draggedCard.fromColonne !== colonne.id
+                            ? "ring-2 ring-primary ring-opacity-50 bg-primary/5"
+                            : ""
+                        } ${
+                          draggedColumn?.id === colonne.id
+                            ? "opacity-50 scale-95 shadow-lg"
+                            : ""
+                        } ${
+                          draggedColumn && draggedColumn.index !== index
+                            ? "ring-2 ring-primary ring-opacity-70 bg-primary/10 transform scale-105"
+                            : ""
+                        }`}
+                        onDragOver={(e) => {
+                          handleDragOver(e);
+                          handleColumnDragOver(e);
+                        }}
+                        onDrop={(e) => {
+                          handleCardDrop(e, colonne.id);
+                          handleColumnDrop(e, index);
+                        }}
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold">
-                            {colonne.titre}
-                          </span>
-                          <Badge variant="secondary" className="text-xs">
-                            {filteredCandidatures(colonne.candidatures).length}
-                          </Badge>
-                          {draggedColumn && draggedColumn.index !== index && (
-                            <span className="text-xs text-blue-600 font-medium animate-pulse">
-                              Déposer ici
+                        <div
+                          className="flex items-center justify-between cursor-grab"
+                          draggable
+                          onDragStart={(e) =>
+                            handleColumnDragStart(e, colonne.id, index)
+                          }
+                          onDragEnd={handleColumnDragEnd}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-foreground">
+                              {colonne.titre}
                             </span>
-                          )}
-                        </div>
-                        <div className="flex">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="size-9 cursor-grab"
-                          >
-                            <IconGripVertical className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="size-9">
-                            <IconDots className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="size-9">
-                            <IconPlus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-2 p-0.5">
-                        {filteredCandidatures(colonne.candidatures).map(
-                          (candidature) => (
-                            <div
-                              key={candidature.id}
-                              className={`bg-card text-card-foreground flex flex-col gap-6 rounded-xl py-6 cursor-grab border-0 transition-all duration-200 ${
-                                draggedItem?.id === candidature.id
-                                  ? "opacity-50 scale-95 shadow-lg"
-                                  : "hover:shadow-md"
-                              }`}
-                              draggable
-                              onDragStart={(e) =>
-                                handleDragStart(e, candidature.id, colonne.id)
-                              }
-                              onDragEnd={handleDragEnd}
+                            <Badge
+                              variant="secondary"
+                              className="text-xs font-medium"
                             >
-                              <div className="grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6">
-                                <div className="text-base font-semibold">
-                                  {candidature.titre}
-                                </div>
-                                <div className="text-muted-foreground text-sm">
-                                  Compile competitor landing page designs for
-                                  inspiration. G..
-                                </div>
-                              </div>
-                              <div className="px-6 space-y-4">
-                                <div className="text-muted-foreground flex items-center justify-between text-sm">
-                                  <div className="flex -space-x-2 overflow-hidden">
-                                    {candidature.assignes.map(
-                                      (assignee: any, index: number) => (
-                                        <Avatar
-                                          key={index}
-                                          className="h-8 w-8 border-2 border-background"
-                                        >
-                                          <AvatarImage src={assignee.avatar} />
-                                          <AvatarFallback className="bg-muted text-xs">
-                                            {assignee.initiales}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                      )
+                              {colonne.cards?.length || 0}
+                            </Badge>
+                            {draggedColumn && draggedColumn.index !== index && (
+                              <span className="text-xs text-primary font-medium animate-pulse">
+                                Déposer ici
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="size-9 cursor-grab"
+                            >
+                              <IconGripVertical className="h-4 w-4" />
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="size-9 cursor-pointer border-0 bg-muted"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <IconDots className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Find the original column from columnsData
+                                    const originalColumn = columnsData.find(
+                                      (col) => col.id === colonne.id
+                                    );
+                                    if (originalColumn) {
+                                      handleEditColumn(originalColumn);
+                                    }
+                                  }}
+                                >
+                                  <IconEdit className="h-4 w-4" />
+                                  Modifier
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  variant="destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Find the original column from columnsData
+                                    const originalColumn = columnsData.find(
+                                      (col) => col.id === colonne.id
+                                    );
+                                    if (originalColumn) {
+                                      handleDeleteColumn(originalColumn);
+                                    }
+                                  }}
+                                >
+                                  <IconTrash className="h-4 w-4" />
+                                  Supprimer
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="size-9"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenCreateCardDialog(colonne.id);
+                              }}
+                            >
+                              <IconPlus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-2.5">
+                          {/* Cards */}
+                          {colonne.cards && colonne.cards.length > 0 ? (
+                            colonne.cards
+                              .filter((card: KanbanCard) => {
+                                if (!searchTerm) return true;
+                                const searchLower = searchTerm.toLowerCase();
+                                return (
+                                  card.title
+                                    .toLowerCase()
+                                    .includes(searchLower) ||
+                                  card.description
+                                    ?.toLowerCase()
+                                    .includes(searchLower) ||
+                                  false
+                                );
+                              })
+                              .map((card: KanbanCard) => (
+                                <div
+                                  key={card.id}
+                                  className={`bg-card text-card-foreground flex flex-col gap-3 rounded-lg p-3.5 cursor-grab border transition-all duration-200 shadow-sm ${
+                                    draggedCard?.id === card.id
+                                      ? "opacity-50 scale-95 shadow-lg"
+                                      : "hover:shadow-md hover:border-primary/20"
+                                  }`}
+                                  draggable
+                                  onDragStart={(e) =>
+                                    handleCardDragStart(e, card.id, colonne.id)
+                                  }
+                                  onDragEnd={handleCardDragEnd}
+                                  onClick={() =>
+                                    handleOpenCardDetails(card, colonne.id)
+                                  }
+                                >
+                                  {/* Tags de priorité et catégories */}
+                                  <div className="flex flex-wrap gap-1.5 items-start">
+                                    {card.priority && (
+                                      <Badge
+                                        variant="outline"
+                                        className={`text-xs font-medium px-2 py-0.5 border ${getPrioriteColor(
+                                          card.priority
+                                        )}`}
+                                      >
+                                        {getPrioriteLabel(card.priority)}
+                                      </Badge>
+                                    )}
+                                    {/* Labels comme catégories */}
+                                    {card.labels &&
+                                      card.labels
+                                        .slice(0, 3)
+                                        .map((labelPivot) => (
+                                          <Badge
+                                            key={labelPivot.id}
+                                            className="text-xs font-medium px-2 py-0.5 text-white border-0"
+                                            style={{
+                                              backgroundColor:
+                                                labelPivot.label?.color ||
+                                                "#3b82f6",
+                                            }}
+                                          >
+                                            {labelPivot.label?.name}
+                                          </Badge>
+                                        ))}
+                                    {card.labels && card.labels.length > 3 && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-xs font-medium px-2 py-0.5"
+                                      >
+                                        +{card.labels.length - 3}
+                                      </Badge>
                                     )}
                                   </div>
-                                  <div className="flex items-center gap-2 rounded-lg border p-1">
-                                    <div className="relative size-4">
-                                      <svg
-                                        className="size-full -rotate-90"
-                                        viewBox="0 0 36 36"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                      >
-                                        <circle
-                                          cx="18"
-                                          cy="18"
-                                          r="16"
-                                          fill="none"
-                                          className="stroke-current text-gray-200 dark:text-neutral-700"
-                                          strokeWidth="2"
-                                        ></circle>
-                                        <circle
-                                          cx="18"
-                                          cy="18"
-                                          r="16"
-                                          fill="none"
-                                          className={`stroke-current ${
-                                            candidature.progression === 100
-                                              ? "text-green-600"
-                                              : candidature.progression >= 50
-                                              ? "text-orange-500"
-                                              : "text-blue-500"
-                                          }`}
-                                          strokeWidth="2"
-                                          strokeDasharray="100.53096491487338"
-                                          strokeDashoffset={
-                                            100.53096491487338 -
-                                            (candidature.progression *
-                                              100.53096491487338) /
-                                              100
-                                          }
-                                          strokeLinecap="round"
-                                        ></circle>
-                                      </svg>
-                                    </div>
-                                    {candidature.progression}%
-                                  </div>
-                                </div>
-                                <div className="bg-border shrink-0 h-px w-full"></div>
-                                <div className="text-muted-foreground flex items-center justify-between text-sm">
-                                  <Badge
-                                    variant="outline"
-                                    className="text-xs capitalize"
-                                  >
-                                    {candidature.priorite.toLowerCase()}
-                                  </Badge>
-                                  <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-1">
-                                      <IconPaperclip className="h-4 w-4" />
-                                      <span>{candidature.piecesJointes}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <IconMessageCircle className="h-4 w-4" />
-                                      <span>{candidature.commentaires}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        )}
 
-                        {/* Zone de drop */}
-                        <div
-                          className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-sm text-muted-foreground hover:border-gray-400 transition-colors min-h-[60px] flex items-center justify-center"
-                          onDragOver={handleDragOver}
-                          onDrop={(e) => handleDrop(e, colonne.id)}
-                        >
-                          {draggedItem && draggedItem.fromColonne !== colonne.id
-                            ? "Déposer ici"
-                            : "Zone de drop"}
+                                  {/* Titre */}
+                                  <h3 className="font-semibold text-sm leading-tight line-clamp-2">
+                                    {card.title}
+                                  </h3>
+
+                                  {/* Description */}
+                                  {card.description && (
+                                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                                      {card.description}
+                                    </p>
+                                  )}
+
+                                  {/* Métadonnées en bas */}
+                                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50">
+                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                      {/* Avatars des membres */}
+                                      {card.members &&
+                                        card.members.length > 0 && (
+                                          <div className="flex -space-x-2 shrink-0">
+                                            {card.members
+                                              .slice(0, 3)
+                                              .map((member) => (
+                                                <Avatar
+                                                  key={member.id}
+                                                  className="h-6 w-6 border-2 border-background"
+                                                >
+                                                  <AvatarImage
+                                                    src={
+                                                      member.user?.image || ""
+                                                    }
+                                                  />
+                                                  <AvatarFallback className="text-[10px] bg-muted">
+                                                    {member.user?.name
+                                                      ?.split(" ")
+                                                      .map((n) => n[0])
+                                                      .join("")
+                                                      .toUpperCase()
+                                                      .slice(0, 2)}
+                                                  </AvatarFallback>
+                                                </Avatar>
+                                              ))}
+                                            {card.members.length > 3 && (
+                                              <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[10px] font-medium">
+                                                +{card.members.length - 3}
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+
+                                      {/* Date d'échéance */}
+                                      {card.dueDates &&
+                                        card.dueDates.length > 0 && (
+                                          <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                                            <IconCalendar className="h-3.5 w-3.5" />
+                                            <span>
+                                              {formatDate(
+                                                card.dueDates[0].dueAt
+                                              )}
+                                            </span>
+                                          </div>
+                                        )}
+
+                                      {/* Nombre de commentaires */}
+                                      {card.notes && card.notes.length > 0 && (
+                                        <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                                          <IconMessageCircle className="h-3.5 w-3.5" />
+                                          <span>{card.notes.length}</span>
+                                        </div>
+                                      )}
+
+                                      {/* Checklist progress */}
+                                      {card.checklist &&
+                                        card.checklist.length > 0 && (
+                                          <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                                            <IconCircleCheck className="h-3.5 w-3.5" />
+                                            <span>
+                                              {
+                                                card.checklist.filter(
+                                                  (c) => c.isDone
+                                                ).length
+                                              }
+                                              /{card.checklist.length}
+                                            </span>
+                                          </div>
+                                        )}
+                                    </div>
+
+                                    {/* Badge supplémentaire (sous-tâches ou autres) */}
+                                    {card.checklist &&
+                                      card.checklist.length > 0 &&
+                                      card.checklist.filter((c) => !c.isDone)
+                                        .length > 0 && (
+                                        <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                                          <IconPlus className="h-3.5 w-3.5" />
+                                          <span>
+                                            {
+                                              card.checklist.filter(
+                                                (c) => !c.isDone
+                                              ).length
+                                            }
+                                          </span>
+                                        </div>
+                                      )}
+
+                                    {/* Menu d'actions */}
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                          }}
+                                        >
+                                          <IconDots className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenCardDetails(
+                                              card,
+                                              colonne.id
+                                            );
+                                          }}
+                                        >
+                                          <IconEye className="h-4 w-4 mr-2" />
+                                          Voir les détails
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                          variant="destructive"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteCard(card);
+                                          }}
+                                        >
+                                          <IconTrash className="h-4 w-4 mr-2" />
+                                          Supprimer
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </div>
+                                </div>
+                              ))
+                          ) : (
+                            <div
+                              className="border-2 border-dashed border-border rounded-lg p-6 text-center text-sm text-muted-foreground hover:border-primary/30 transition-colors min-h-[80px] flex items-center justify-center bg-muted/30"
+                              onDragOver={handleDragOver}
+                              onDrop={(e) => handleCardDrop(e, colonne.id)}
+                            >
+                              {draggedCard &&
+                              draggedCard.fromColonne !== colonne.id
+                                ? "Déposer ici"
+                                : "Aucune card"}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Empty State */}
+              {!isLoading && !error && kanbanColumns.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  Aucune colonne Kanban trouvée. Créez-en une pour commencer.
+                </div>
+              )}
+
+              {/* Create Column Dialog */}
+              <Dialog
+                open={isCreateColumnDialogOpen}
+                onOpenChange={setIsCreateColumnDialogOpen}
+              >
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Créer une nouvelle colonne</DialogTitle>
+                    <DialogDescription>
+                      Ajoutez une nouvelle colonne au tableau Kanban
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="column-name">Nom de la colonne</Label>
+                      <Input
+                        id="column-name"
+                        placeholder="Ex: En attente, En cours, Accepté, Refusé"
+                        value={newColumnName}
+                        onChange={(e) => setNewColumnName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleCreateColumn();
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="column-color">Couleur</Label>
+                      <Select
+                        value={newColumnColor}
+                        onValueChange={setNewColumnColor}
+                      >
+                        <SelectTrigger id="column-color">
+                          <SelectValue placeholder="Sélectionner une couleur" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="bg-gray-50 border-gray-200">
+                            Gris
+                          </SelectItem>
+                          <SelectItem value="bg-blue-50 border-blue-200">
+                            Bleu
+                          </SelectItem>
+                          <SelectItem value="bg-green-50 border-green-200">
+                            Vert
+                          </SelectItem>
+                          <SelectItem value="bg-yellow-50 border-yellow-200">
+                            Jaune
+                          </SelectItem>
+                          <SelectItem value="bg-red-50 border-red-200">
+                            Rouge
+                          </SelectItem>
+                          <SelectItem value="bg-purple-50 border-purple-200">
+                            Violet
+                          </SelectItem>
+                          <SelectItem value="bg-pink-50 border-pink-200">
+                            Rose
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      <p>
+                        💡 Le statut sera automatiquement détecté depuis le nom
+                        de la colonne :
+                      </p>
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>Colonnes avec "accepté" → Statut ACCEPTE</li>
+                        <li>Colonnes avec "refusé" → Statut REFUSE</li>
+                        <li>Colonnes avec "révision" → Statut EN_REVISION</li>
+                        <li>Autres → Statut EN_ATTENTE</li>
+                      </ul>
+                    </div>
                   </div>
-                ))}
-              </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsCreateColumnDialogOpen(false)}
+                    >
+                      Annuler
+                    </Button>
+                    <Button
+                      onClick={handleCreateColumn}
+                      disabled={
+                        !newColumnName.trim() ||
+                        createColumn.isPending ||
+                        !recruteurId
+                      }
+                    >
+                      {createColumn.isPending ? "Création..." : "Créer"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Edit Column Dialog */}
+              <Dialog
+                open={isEditColumnDialogOpen}
+                onOpenChange={setIsEditColumnDialogOpen}
+              >
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Modifier la colonne</DialogTitle>
+                    <DialogDescription>
+                      Modifiez le nom et la couleur de la colonne
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="edit-column-name">
+                        Nom de la colonne
+                      </Label>
+                      <Input
+                        id="edit-column-name"
+                        placeholder="Ex: En attente, En cours, Accepté, Refusé"
+                        value={editColumnName}
+                        onChange={(e) => setEditColumnName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleUpdateColumn();
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="edit-column-color">Couleur</Label>
+                      <Select
+                        value={editColumnColor}
+                        onValueChange={setEditColumnColor}
+                      >
+                        <SelectTrigger id="edit-column-color">
+                          <SelectValue placeholder="Sélectionner une couleur" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="bg-gray-50 border-gray-200">
+                            Gris
+                          </SelectItem>
+                          <SelectItem value="bg-blue-50 border-blue-200">
+                            Bleu
+                          </SelectItem>
+                          <SelectItem value="bg-green-50 border-green-200">
+                            Vert
+                          </SelectItem>
+                          <SelectItem value="bg-yellow-50 border-yellow-200">
+                            Jaune
+                          </SelectItem>
+                          <SelectItem value="bg-red-50 border-red-200">
+                            Rouge
+                          </SelectItem>
+                          <SelectItem value="bg-purple-50 border-purple-200">
+                            Violet
+                          </SelectItem>
+                          <SelectItem value="bg-pink-50 border-pink-200">
+                            Rose
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsEditColumnDialogOpen(false);
+                        setEditingColumn(null);
+                        setEditColumnName("");
+                        setEditColumnColor("bg-gray-50 border-gray-200");
+                      }}
+                    >
+                      Annuler
+                    </Button>
+                    <Button
+                      onClick={handleUpdateColumn}
+                      disabled={
+                        !editColumnName.trim() ||
+                        updateColumn.isPending ||
+                        !editingColumn
+                      }
+                    >
+                      {updateColumn.isPending ? "Modification..." : "Modifier"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Delete Column Dialog */}
+              <Dialog
+                open={isDeleteColumnDialogOpen}
+                onOpenChange={setIsDeleteColumnDialogOpen}
+              >
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Supprimer la colonne</DialogTitle>
+                    <DialogDescription>
+                      Êtes-vous sûr de vouloir supprimer la colonne{" "}
+                      <strong>&quot;{columnToDelete?.name}&quot;</strong> ?
+                      Cette action est irréversible.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsDeleteColumnDialogOpen(false);
+                        setColumnToDelete(null);
+                      }}
+                    >
+                      Annuler
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleConfirmDeleteColumn}
+                      disabled={deleteColumn.isPending || !columnToDelete}
+                    >
+                      {deleteColumn.isPending ? "Suppression..." : "Supprimer"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Create Card Dialog */}
+              <Dialog
+                open={isCreateCardDialogOpen}
+                onOpenChange={setIsCreateCardDialogOpen}
+              >
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Créer une nouvelle card</DialogTitle>
+                    <DialogDescription>
+                      Créez une nouvelle card pour suivre votre processus de
+                      recrutement
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="card-title">
+                        Titre <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="card-title"
+                        placeholder="Ex: Candidature de John Doe"
+                        value={newCardTitle}
+                        onChange={(e) => setNewCardTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && e.ctrlKey) {
+                            handleCreateCard();
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="card-description">Description</Label>
+                      <Textarea
+                        id="card-description"
+                        placeholder="Détails sur la candidature, notes, etc."
+                        value={newCardDescription}
+                        onChange={(e) => setNewCardDescription(e.target.value)}
+                        rows={3}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="card-priority">Priorité</Label>
+                      <Select
+                        value={newCardPriority}
+                        onValueChange={setNewCardPriority}
+                      >
+                        <SelectTrigger id="card-priority">
+                          <SelectValue placeholder="Sélectionner une priorité" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Basse</SelectItem>
+                          <SelectItem value="medium">Moyenne</SelectItem>
+                          <SelectItem value="high">Haute</SelectItem>
+                          <SelectItem value="urgent">Urgente</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {offers.length > 0 && (
+                      <div className="grid gap-2">
+                        <Label>Offres d&apos;emploi associées</Label>
+                        <div className="border rounded-lg p-4 max-h-48 overflow-y-auto">
+                          {offers.map((offer) => (
+                            <div
+                              key={offer.id}
+                              className="flex items-center space-x-2 py-2"
+                            >
+                              <Checkbox
+                                id={`offer-${offer.id}`}
+                                checked={newCardJobOfferIds.includes(offer.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setNewCardJobOfferIds([
+                                      ...newCardJobOfferIds,
+                                      offer.id,
+                                    ]);
+                                  } else {
+                                    setNewCardJobOfferIds(
+                                      newCardJobOfferIds.filter(
+                                        (id) => id !== offer.id
+                                      )
+                                    );
+                                  }
+                                }}
+                              />
+                              <label
+                                htmlFor={`offer-${offer.id}`}
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                              >
+                                {offer.title}
+                                {offer.company && (
+                                  <span className="text-muted-foreground ml-2">
+                                    - {offer.company}
+                                  </span>
+                                )}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Vous pourrez ajouter d&apos;autres éléments (membres,
+                          notes, checklist, etc.) après la création de la card
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsCreateCardDialogOpen(false);
+                        setNewCardTitle("");
+                        setNewCardDescription("");
+                        setNewCardPriority("medium");
+                        setNewCardJobOfferIds([]);
+                        setSelectedColumnForCard(null);
+                      }}
+                    >
+                      Annuler
+                    </Button>
+                    <Button
+                      onClick={handleCreateCard}
+                      disabled={
+                        !newCardTitle.trim() ||
+                        createCard.isPending ||
+                        !recruteurId ||
+                        !selectedColumnForCard
+                      }
+                    >
+                      {createCard.isPending ? "Création..." : "Créer la card"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Card Details Sheet */}
+              <Sheet
+                open={isCardDetailsSheetOpen}
+                onOpenChange={(open) => {
+                  if (!open) {
+                    handleCloseCardDetails();
+                  }
+                }}
+              >
+                <SheetContent
+                  side="right"
+                  className="w-full max-w-5xl p-0 overflow-hidden"
+                >
+                  {selectedCard ? (
+                    <div className="flex h-full">
+                      {/* Main Content Area - Left Side */}
+                      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                        {/* Header */}
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <Input
+                              value={cardDetailsTitle}
+                              onChange={(e) =>
+                                setCardDetailsTitle(e.target.value)
+                              }
+                              className="text-xl font-semibold border-none shadow-none p-0 h-auto focus-visible:ring-0 mb-1"
+                              placeholder="Card title"
+                            />
+                            <p className="text-sm text-muted-foreground">
+                              in list{" "}
+                              <button className="text-primary hover:underline">
+                                {kanbanColumns.find(
+                                  (col) => col.id === selectedCardColumnId
+                                )?.titre || "Unknown"}
+                              </button>
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleCloseCardDetails}
+                            className="h-8 w-8"
+                          >
+                            <IconX className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        {/* Members Section */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                              Membres
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {selectedCard.members &&
+                            selectedCard.members.length > 0 ? (
+                              <>
+                                {selectedCard.members.map((member) => (
+                                  <Avatar
+                                    key={member.id}
+                                    className="h-8 w-8 cursor-pointer hover:opacity-80 transition-opacity"
+                                  >
+                                    <AvatarImage
+                                      src={member.user?.image || ""}
+                                    />
+                                    <AvatarFallback className="text-xs">
+                                      {member.user?.name
+                                        ?.split(" ")
+                                        .map((n) => n[0])
+                                        .join("")
+                                        .toUpperCase()
+                                        .slice(0, 2)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                ))}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full border-2 border-dashed"
+                                  onClick={() => {
+                                    setSelectedMemberIds(
+                                      selectedCard.members?.map(
+                                        (m) => m.userId
+                                      ) || []
+                                    );
+                                    setIsAddMembersDialogOpen(true);
+                                  }}
+                                >
+                                  <IconPlus className="h-4 w-4" />
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full border-2 border-dashed"
+                                onClick={() => {
+                                  setSelectedMemberIds([]);
+                                  setIsAddMembersDialogOpen(true);
+                                }}
+                              >
+                                <IconPlus className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Labels Section */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                              Labels
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {selectedCard.labels &&
+                            selectedCard.labels.length > 0 ? (
+                              <>
+                                {selectedCard.labels.map((labelPivot) => (
+                                  <Badge
+                                    key={labelPivot.id}
+                                    className="px-3 py-1 text-xs font-medium text-white cursor-pointer hover:opacity-80 transition-opacity"
+                                    style={{
+                                      backgroundColor:
+                                        labelPivot.label?.color || "#3b82f6",
+                                    }}
+                                    onClick={() => {
+                                      if (
+                                        confirm(
+                                          `Retirer le label "${labelPivot.label?.name}" de cette card ?`
+                                        )
+                                      ) {
+                                        removeCardLabel.mutate({
+                                          cardId: selectedCard.id,
+                                          labelId: labelPivot.labelId,
+                                          recruteurId: recruteurId!,
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    {labelPivot.label?.name}
+                                  </Badge>
+                                ))}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2 text-xs border-dashed"
+                                  onClick={() => setIsLabelsDialogOpen(true)}
+                                >
+                                  <IconPlus className="h-3.5 w-3.5 mr-1" />
+                                  Ajouter un label
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs border-dashed"
+                                onClick={() => setIsLabelsDialogOpen(true)}
+                              >
+                                <IconPlus className="h-3.5 w-3.5 mr-1" />
+                                Ajouter un label
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Due Date Section */}
+                        {selectedCard.dueDates &&
+                          selectedCard.dueDates.length > 0 && (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                  Due Date
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  checked={
+                                    new Date(selectedCard.dueDates[0].dueAt) <
+                                    new Date()
+                                  }
+                                  className="h-4 w-4"
+                                />
+                                <div className="flex items-center gap-2">
+                                  <IconCalendar className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm">
+                                    {formatDateTime(
+                                      selectedCard.dueDates[0].dueAt
+                                    )}
+                                  </span>
+                                  {new Date(selectedCard.dueDates[0].dueAt) <
+                                    new Date() && (
+                                    <Badge className="bg-green-500 text-white text-xs px-2 py-0.5">
+                                      COMPLETE
+                                      <IconChevronDown className="h-3 w-3 ml-1 inline" />
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                        {/* Description Section */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <IconMenu2 className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-semibold">
+                              Description
+                            </span>
+                          </div>
+                          <Textarea
+                            value={cardDetailsDescription}
+                            onChange={(e) =>
+                              setCardDetailsDescription(e.target.value)
+                            }
+                            placeholder="Add a more detailed description..."
+                            className="min-h-[100px] resize-none"
+                          />
+                        </div>
+
+                        {/* Checklist Section */}
+                        {selectedCard.checklist &&
+                          selectedCard.checklist.length > 0 && (
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <IconListCheck className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm font-semibold">
+                                    Checklist
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 text-xs"
+                                  >
+                                    Hide completed items
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 text-xs text-destructive"
+                                  >
+                                    Delete
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="space-y-1">
+                                {/* Progress Bar */}
+                                <div className="w-full bg-muted rounded-full h-2">
+                                  <div
+                                    className="bg-primary h-2 rounded-full transition-all"
+                                    style={{
+                                      width: `${
+                                        (selectedCard.checklist.filter(
+                                          (c) => c.isDone
+                                        ).length /
+                                          selectedCard.checklist.length) *
+                                        100
+                                      }%`,
+                                    }}
+                                  />
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  {Math.round(
+                                    (selectedCard.checklist.filter(
+                                      (c) => c.isDone
+                                    ).length /
+                                      selectedCard.checklist.length) *
+                                      100
+                                  )}
+                                  %
+                                </p>
+                              </div>
+                              <div className="space-y-2">
+                                {selectedCard.checklist.map((item) => (
+                                  <label
+                                    key={item.id}
+                                    className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 p-2 rounded"
+                                  >
+                                    <Checkbox checked={item.isDone} />
+                                    <span
+                                      className={`flex-1 ${
+                                        item.isDone
+                                          ? "text-muted-foreground line-through"
+                                          : ""
+                                      }`}
+                                    >
+                                      {item.label}
+                                    </span>
+                                  </label>
+                                ))}
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start text-xs"
+                              >
+                                <IconPlus className="h-3.5 w-3.5 mr-1" />
+                                Ajouter une tâche
+                              </Button>
+                            </div>
+                          )}
+
+                        {/* Activity Section */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <IconDots className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-semibold">
+                                Activités
+                              </span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs"
+                            >
+                              Masquer les détails
+                            </Button>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={session?.user?.image || ""} />
+                              <AvatarFallback className="text-xs">
+                                {session?.user?.name
+                                  ?.split(" ")
+                                  .map((n) => n[0])
+                                  .join("")
+                                  .toUpperCase()
+                                  .slice(0, 2)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <Input
+                              placeholder="Write a comment..."
+                              className="flex-1"
+                            />
+                          </div>
+                          {selectedCard.notes &&
+                            selectedCard.notes.length > 0 && (
+                              <div className="space-y-3 mt-4">
+                                {selectedCard.notes.map((note) => (
+                                  <div
+                                    key={note.id}
+                                    className="flex items-start gap-3"
+                                  >
+                                    <Avatar className="h-8 w-8">
+                                      <AvatarImage
+                                        src={note.author?.image || ""}
+                                      />
+                                      <AvatarFallback className="text-xs">
+                                        {note.author?.name
+                                          ?.split(" ")
+                                          .map((n) => n[0])
+                                          .join("")
+                                          .toUpperCase()
+                                          .slice(0, 2)}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                      <p className="text-sm">{note.content}</p>
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        {note.author?.name ||
+                                          note.author?.email}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                        </div>
+
+                        {/* Footer with Save Button */}
+                        <div className="pt-4 border-t flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={handleCloseCardDetails}
+                          >
+                            Fermer
+                          </Button>
+                          <Button
+                            onClick={handleUpdateCardDetails}
+                            disabled={
+                              updateCard.isPending ||
+                              !selectedCard ||
+                              !recruteurId ||
+                              !cardDetailsTitle.trim()
+                            }
+                          >
+                            {updateCard.isPending
+                              ? "Enregistrement..."
+                              : "Enregistrer"}
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Add Members Dialog */}
+                      <Dialog
+                        open={isAddMembersDialogOpen}
+                        onOpenChange={setIsAddMembersDialogOpen}
+                      >
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Gérer les membres</DialogTitle>
+                            <DialogDescription>
+                              Ajoutez ou retirez des collaborateurs de cette
+                              card. Cliquez sur un membre existant pour le
+                              retirer.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4 max-h-[400px] overflow-y-auto">
+                            {collaborateurs && collaborateurs.length > 0 ? (
+                              collaborateurs
+                                .filter(
+                                  (collaborateur) =>
+                                    collaborateur.invitation?.accepted
+                                )
+                                .map((collaborateur) => {
+                                  const isSelected = selectedMemberIds.includes(
+                                    collaborateur.userId
+                                  );
+                                  const isAlreadyMember =
+                                    selectedCard.members?.some(
+                                      (m) => m.userId === collaborateur.userId
+                                    ) || false;
+
+                                  return (
+                                    <div
+                                      key={collaborateur.id}
+                                      className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted cursor-pointer"
+                                      onClick={() => {
+                                        if (isAlreadyMember) {
+                                          // Permettre de retirer un membre existant
+                                          if (
+                                            confirm(
+                                              `Retirer ${
+                                                collaborateur.user?.name ||
+                                                `${collaborateur.prenom} ${collaborateur.nom}`
+                                              } de cette card ?`
+                                            )
+                                          ) {
+                                            removeCardMember.mutate(
+                                              {
+                                                cardId: selectedCard.id,
+                                                userId: collaborateur.userId,
+                                                recruteurId: recruteurId!,
+                                              },
+                                              {
+                                                onSuccess: () => {
+                                                  // Mettre à jour la liste des membres sélectionnés
+                                                  handleCloseCardDetails();
+                                                  setSelectedMemberIds(
+                                                    selectedMemberIds.filter(
+                                                      (id) =>
+                                                        id !==
+                                                        collaborateur.userId
+                                                    )
+                                                  );
+                                                },
+                                              }
+                                            );
+                                          }
+                                          return;
+                                        }
+                                        // Pour les non-membres, toggle la sélection
+                                        if (isSelected) {
+                                          setSelectedMemberIds(
+                                            selectedMemberIds.filter(
+                                              (id) =>
+                                                id !== collaborateur.userId
+                                            )
+                                          );
+                                        } else {
+                                          setSelectedMemberIds([
+                                            ...selectedMemberIds,
+                                            collaborateur.userId,
+                                          ]);
+                                        }
+                                      }}
+                                    >
+                                      <Checkbox
+                                        checked={isSelected || isAlreadyMember}
+                                        disabled={false}
+                                        className={
+                                          isAlreadyMember ? "opacity-50" : ""
+                                        }
+                                      />
+                                      <Avatar className="h-10 w-10">
+                                        <AvatarImage
+                                          src={collaborateur.user?.image || ""}
+                                        />
+                                        <AvatarFallback>
+                                          {collaborateur.user?.name
+                                            ?.split(" ")
+                                            .map((n) => n[0])
+                                            .join("")
+                                            .toUpperCase()
+                                            .slice(0, 2) ||
+                                            `${collaborateur.prenom[0]}${collaborateur.nom[0]}`.toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="flex-1">
+                                        <p className="text-sm font-medium">
+                                          {collaborateur.user?.name ||
+                                            `${collaborateur.prenom} ${collaborateur.nom}`}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {collaborateur.user?.email ||
+                                            collaborateur.email}
+                                        </p>
+                                      </div>
+                                      {isAlreadyMember && (
+                                        <Badge
+                                          variant="secondary"
+                                          className="text-xs"
+                                        >
+                                          Membre actuel
+                                        </Badge>
+                                      )}
+                                      {isAlreadyMember && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (
+                                              confirm(
+                                                `Retirer ${
+                                                  collaborateur.user?.name ||
+                                                  `${collaborateur.prenom} ${collaborateur.nom}`
+                                                } de cette card ?`
+                                              )
+                                            ) {
+                                              removeCardMember.mutate(
+                                                {
+                                                  cardId: selectedCard.id,
+                                                  userId: collaborateur.userId,
+                                                  recruteurId: recruteurId!,
+                                                },
+                                                {
+                                                  onSuccess: () => {
+                                                    handleCloseCardDetails();
+                                                    setSelectedMemberIds(
+                                                      selectedMemberIds.filter(
+                                                        (id) =>
+                                                          id !==
+                                                          collaborateur.userId
+                                                      )
+                                                    );
+                                                  },
+                                                }
+                                              );
+                                            }
+                                          }}
+                                          title="Retirer ce membre"
+                                        >
+                                          <IconX className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                    </div>
+                                  );
+                                })
+                            ) : (
+                              <p className="text-sm text-muted-foreground text-center py-4">
+                                Aucun collaborateur disponible. Invitez des
+                                personnes pour les ajouter comme membres.
+                              </p>
+                            )}
+                          </div>
+                          <DialogFooter>
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsAddMembersDialogOpen(false)}
+                            >
+                              Annuler
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                if (
+                                  selectedCard &&
+                                  recruteurId &&
+                                  selectedMemberIds.length > 0
+                                ) {
+                                  // Filtrer les membres déjà présents
+                                  const newMemberIds = selectedMemberIds.filter(
+                                    (userId) =>
+                                      !selectedCard.members?.some(
+                                        (m) => m.userId === userId
+                                      )
+                                  );
+
+                                  if (newMemberIds.length > 0) {
+                                    addCardMembers.mutate(
+                                      {
+                                        cardId: selectedCard.id,
+                                        userIds: newMemberIds,
+                                        recruteurId,
+                                      },
+                                      {
+                                        onSuccess: () => {
+                                          setIsAddMembersDialogOpen(false);
+                                          setSelectedMemberIds([]);
+                                          handleCloseCardDetails();
+                                        },
+                                      }
+                                    );
+                                  } else {
+                                    setIsAddMembersDialogOpen(false);
+                                  }
+                                }
+                              }}
+                              disabled={
+                                !selectedCard ||
+                                !recruteurId ||
+                                selectedMemberIds.length === 0 ||
+                                addCardMembers.isPending
+                              }
+                            >
+                              {addCardMembers.isPending
+                                ? "Ajout..."
+                                : "Ajouter les membres"}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+
+                      {/* Labels Management Dialog */}
+                      <Dialog
+                        open={isLabelsDialogOpen}
+                        onOpenChange={setIsLabelsDialogOpen}
+                      >
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Gérer les labels</DialogTitle>
+                            <DialogDescription>
+                              Ajoutez ou retirez des labels de cette card
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4 max-h-[400px] overflow-y-auto">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium">
+                                Labels disponibles
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setIsCreateLabelDialogOpen(true)}
+                              >
+                                <IconPlus className="h-4 w-4 mr-1" />
+                                Créer un label
+                              </Button>
+                            </div>
+                            {labels && labels.length > 0 ? (
+                              <div className="space-y-2">
+                                {labels.map((label) => {
+                                  const isOnCard =
+                                    selectedCard.labels?.some(
+                                      (lp) => lp.labelId === label.id
+                                    ) || false;
+
+                                  return (
+                                    <div
+                                      key={label.id}
+                                      className="flex items-center justify-between p-2 rounded-lg hover:bg-muted"
+                                    >
+                                      <div className="flex items-center gap-2 flex-1">
+                                        <div
+                                          className="w-4 h-4 rounded"
+                                          style={{
+                                            backgroundColor: label.color,
+                                          }}
+                                        />
+                                        <span className="text-sm">
+                                          {label.name}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-7 w-7 p-0"
+                                          onClick={() => {
+                                            setEditingLabel(label);
+                                            setEditLabelName(label.name);
+                                            setEditLabelColor(label.color);
+                                            setIsEditLabelDialogOpen(true);
+                                          }}
+                                        >
+                                          <IconEdit className="h-3.5 w-3.5" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                          onClick={() => {
+                                            if (
+                                              confirm(
+                                                `Supprimer le label "${label.name}" ? Cette action est irréversible.`
+                                              )
+                                            ) {
+                                              deleteLabel.mutate(label.id);
+                                            }
+                                          }}
+                                        >
+                                          <IconTrash className="h-3.5 w-3.5" />
+                                        </Button>
+                                        {isOnCard ? (
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-7 text-xs"
+                                            onClick={() => {
+                                              removeCardLabel.mutate({
+                                                cardId: selectedCard.id,
+                                                labelId: label.id,
+                                                recruteurId: recruteurId!,
+                                              });
+
+                                              handleCloseCardDetails();
+                                            }}
+                                          >
+                                            Retirer
+                                          </Button>
+                                        ) : (
+                                          <Button
+                                            variant="default"
+                                            size="sm"
+                                            className="h-7 text-xs"
+                                            onClick={() => {
+                                              addCardLabel.mutate(
+                                                {
+                                                  cardId: selectedCard.id,
+                                                  labelId: label.id,
+                                                  recruteurId: recruteurId!,
+                                                },
+                                                {
+                                                  onSuccess: () => {
+                                                    setIsLabelsDialogOpen(
+                                                      false
+                                                    );
+                                                    handleCloseCardDetails();
+                                                  },
+                                                }
+                                              );
+                                            }}
+                                          >
+                                            Ajouter
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-muted-foreground text-center py-4">
+                                Aucun label disponible. Créez-en un pour
+                                commencer.
+                              </p>
+                            )}
+                          </div>
+                          <DialogFooter>
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsLabelsDialogOpen(false)}
+                            >
+                              Fermer
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+
+                      {/* Create Label Dialog */}
+                      <Dialog
+                        open={isCreateLabelDialogOpen}
+                        onOpenChange={setIsCreateLabelDialogOpen}
+                      >
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Créer un label</DialogTitle>
+                            <DialogDescription>
+                              Créez un nouveau label pour vos cards
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="label-name">Nom</Label>
+                              <Input
+                                id="label-name"
+                                placeholder="Ex: Urgent, Design, Backend..."
+                                value={newLabelName}
+                                onChange={(e) =>
+                                  setNewLabelName(e.target.value)
+                                }
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="label-color">Couleur</Label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  id="label-color"
+                                  value={newLabelColor}
+                                  onChange={(e) =>
+                                    setNewLabelColor(e.target.value)
+                                  }
+                                  className="h-10 w-20 rounded border cursor-pointer"
+                                />
+                                <Input
+                                  value={newLabelColor}
+                                  onChange={(e) =>
+                                    setNewLabelColor(e.target.value)
+                                  }
+                                  placeholder="#3b82f6"
+                                  className="flex-1"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setIsCreateLabelDialogOpen(false);
+                                setNewLabelName("");
+                                setNewLabelColor("#3b82f6");
+                              }}
+                            >
+                              Annuler
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                if (!newLabelName.trim() || !recruteurId)
+                                  return;
+                                createLabel.mutate(
+                                  {
+                                    name: newLabelName.trim(),
+                                    color: newLabelColor,
+                                    recruteurId,
+                                  },
+                                  {
+                                    onSuccess: () => {
+                                      setIsCreateLabelDialogOpen(false);
+                                      setNewLabelName("");
+                                      setNewLabelColor("#3b82f6");
+                                    },
+                                  }
+                                );
+                              }}
+                              disabled={
+                                !newLabelName.trim() ||
+                                createLabel.isPending ||
+                                !recruteurId
+                              }
+                            >
+                              {createLabel.isPending ? "Création..." : "Créer"}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+
+                      {/* Edit Label Dialog */}
+                      <Dialog
+                        open={isEditLabelDialogOpen}
+                        onOpenChange={setIsEditLabelDialogOpen}
+                      >
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Modifier le label</DialogTitle>
+                            <DialogDescription>
+                              Modifiez le nom et la couleur du label
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="edit-label-name">Nom</Label>
+                              <Input
+                                id="edit-label-name"
+                                value={editLabelName}
+                                onChange={(e) =>
+                                  setEditLabelName(e.target.value)
+                                }
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="edit-label-color">Couleur</Label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  id="edit-label-color"
+                                  value={editLabelColor}
+                                  onChange={(e) =>
+                                    setEditLabelColor(e.target.value)
+                                  }
+                                  className="h-10 w-20 rounded border cursor-pointer"
+                                />
+                                <Input
+                                  value={editLabelColor}
+                                  onChange={(e) =>
+                                    setEditLabelColor(e.target.value)
+                                  }
+                                  placeholder="#3b82f6"
+                                  className="flex-1"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setIsEditLabelDialogOpen(false);
+                                setEditingLabel(null);
+                                setEditLabelName("");
+                                setEditLabelColor("#3b82f6");
+                              }}
+                            >
+                              Annuler
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                if (!editingLabel || !editLabelName.trim())
+                                  return;
+                                updateLabel.mutate(
+                                  {
+                                    id: editingLabel.id,
+                                    data: {
+                                      name: editLabelName.trim(),
+                                      color: editLabelColor,
+                                    },
+                                  },
+                                  {
+                                    onSuccess: () => {
+                                      setIsEditLabelDialogOpen(false);
+                                      setEditingLabel(null);
+                                      setEditLabelName("");
+                                      setEditLabelColor("#3b82f6");
+                                    },
+                                  }
+                                );
+                              }}
+                              disabled={
+                                !editingLabel ||
+                                !editLabelName.trim() ||
+                                updateLabel.isPending
+                              }
+                            >
+                              {updateLabel.isPending
+                                ? "Modification..."
+                                : "Modifier"}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+
+                      {/* Sidebar - Right Side */}
+                      <div className="w-64 border-l bg-muted/30 p-4 space-y-4 overflow-y-auto">
+                        {/* Suggested Section */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                              Suggested
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                            >
+                              <IconSettings className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full justify-start"
+                          >
+                            <IconUserPlus className="h-4 w-4 mr-2" />
+                            Join
+                          </Button>
+                        </div>
+
+                        {/* Add to Card Section */}
+                        <div>
+                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">
+                            Add to Card
+                          </span>
+                          <div className="space-y-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start"
+                            >
+                              <IconUserPlus className="h-4 w-4 mr-2" />
+                              Members
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start"
+                            >
+                              <IconTag className="h-4 w-4 mr-2" />
+                              Labels
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start"
+                            >
+                              <IconListCheck className="h-4 w-4 mr-2" />
+                              Checklist
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start"
+                            >
+                              <IconClock className="h-4 w-4 mr-2" />
+                              Due date
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start"
+                            >
+                              <IconPaperclip className="h-4 w-4 mr-2" />
+                              Attachment
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start"
+                            >
+                              <IconMapPin className="h-4 w-4 mr-2" />
+                              Location
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start"
+                            >
+                              <IconDeviceDesktop className="h-4 w-4 mr-2" />
+                              Cover
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Power-Ups Section */}
+                        <div>
+                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">
+                            Power-Ups
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full justify-start mb-1"
+                          >
+                            <span className="text-xs font-semibold mr-2">
+                              G
+                            </span>
+                            Google Drive
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start"
+                          >
+                            <IconPlus className="h-4 w-4 mr-2" />
+                            Add Power-Ups
+                          </Button>
+                        </div>
+
+                        {/* Butler Section */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                              Butler
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                            >
+                              <IconInfoCircle className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start"
+                          >
+                            <IconPlus className="h-4 w-4 mr-2" />
+                            Add button
+                          </Button>
+                        </div>
+
+                        {/* Actions Section */}
+                        <div>
+                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">
+                            Actions
+                          </span>
+                          <div className="space-y-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-destructive"
+                            >
+                              <IconTrash className="h-4 w-4 mr-2" />
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-6">
+                      <p className="text-sm text-muted-foreground">
+                        Sélectionnez une card pour afficher ses détails.
+                      </p>
+                    </div>
+                  )}
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </div>

@@ -17,6 +17,20 @@ export interface Recruteur {
   updatedAt: Date;
 }
 
+export interface RecruteurInformation {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+}
+
+export interface RecruteurInformationEntreprise {
+  companyName?: string;
+  description?: string;
+  industry?: string;
+  size?: string;
+  location?: string;
+  website?: string;
+}
 export interface ApiResponse<T> {
   success: boolean;
   data: T;

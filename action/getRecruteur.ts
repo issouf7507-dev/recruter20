@@ -3,8 +3,19 @@
 import prisma from "@/lib/prisma";
 
 export async function getRecruteur(userId: string) {
-  return await prisma.recruteur.findUnique({
+  const recruteur = await prisma.recruteur.findUnique({
     where: { userId },
     include: { user: true },
   });
+
+  const collaborateur = await prisma.collaborateur.findUnique({
+    where: { userId },
+    include: { user: true },
+  });
+
+  if (collaborateur) {
+    return collaborateur;
+  }
+
+  return recruteur;
 }

@@ -38,7 +38,10 @@ import {
   IconMessage,
 } from "@tabler/icons-react";
 import { useSession } from "@/lib/auth-client";
-import { useRecruteurByUserId } from "@/lib/hooks/use-recruteurs";
+import {
+  useCollaborateurByUserId,
+  useRecruteurByUserId,
+} from "@/lib/hooks/use-recruteurs";
 import { useCandidatures } from "@/lib/hooks/use-candidatures";
 import { toast } from "sonner";
 import { Star } from "lucide-react";
@@ -129,7 +132,8 @@ export default function CandidaturesRecuesPage() {
   const router = useRouter();
   const { data: session, isPending: isSessionLoading } = useSession();
   const { data: recruteur } = useRecruteurByUserId(session?.user?.id);
-  const recruteurId = recruteur?.id;
+  const { data: collaborateur } = useCollaborateurByUserId(session?.user?.id);
+  const recruteurId = recruteur ? recruteur?.id : collaborateur?.recruteurId;
 
   // console.log("recruteurId", recruteurId);
 

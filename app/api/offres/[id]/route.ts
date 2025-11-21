@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { recruteurRepository } from "@/lib/api/recruteurs/repository";
+import { collaborateurRepository } from "@/lib/api/collaborateur";
 
 /**
  * GET /api/offres/[id]
@@ -16,12 +18,7 @@ export async function GET(
     const offre = await prisma.jobOffer.findUnique({
       where: { id },
       include: {
-        recruteur: {
-          select: {
-            id: true,
-            companyName: true,
-          },
-        },
+        recruteur: true,
         applications: {
           include: {
             candidat: {
@@ -102,12 +99,27 @@ export async function PUT(
       );
     }
 
-    if (existingOffre.recruteur.userId !== session.user.id) {
+    const recruteur = await recruteurRepository.findByUserId(session.user.id);
+    const collaborateur = await collaborateurRepository.findByUserId(
+      session.user.id
+    );
+    const recruteurId = recruteur
+      ? recruteur?.id
+      : collaborateur?.recruteurId || "";
+
+    if (!recruteurId) {
       return NextResponse.json(
-        { success: false, error: "Forbidden" },
+        { success: false, error: "User is not a recruiter or collaborateur" },
         { status: 403 }
       );
     }
+
+    // if (existingOffre.recruteur.userId !== session.user.id) {
+    //   return NextResponse.json(
+    //     { success: false, error: "Forbidden" },
+    //     { status: 403 }
+    //   );
+    // }
 
     // Update the job offer
     const offre = await prisma.jobOffer.update({
@@ -184,9 +196,17 @@ export async function DELETE(
       );
     }
 
-    if (existingOffre.recruteur.userId !== session.user.id) {
+    const recruteur = await recruteurRepository.findByUserId(session.user.id);
+    const collaborateur = await collaborateurRepository.findByUserId(
+      session.user.id
+    );
+    const recruteurId = recruteur
+      ? recruteur?.id
+      : collaborateur?.recruteurId || "";
+
+    if (!recruteurId) {
       return NextResponse.json(
-        { success: false, error: "Forbidden" },
+        { success: false, error: "User is not a recruiter or collaborateur" },
         { status: 403 }
       );
     }

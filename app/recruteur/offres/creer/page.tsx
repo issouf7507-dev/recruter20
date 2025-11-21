@@ -226,7 +226,7 @@ export default function CreerOffrePage() {
                         <Select
                           value={formData.salaryCurrency}
                           onValueChange={(value) =>
-                            handleInputChange("typeContrat", value)
+                            handleInputChange("salaryCurrency", value)
                           }
                         >
                           <SelectTrigger className="w-full">

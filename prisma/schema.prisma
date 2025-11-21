@@ -25,6 +25,11 @@ model User {
   accounts            Account[]
   sessions            Session[]
   notifications       Notification[]
+  CardMember          CardMember[]
+  CardNote            CardNote[]
+  CardAttachment      CardAttachment[]
+
+  CardActivity        CardActivity[]
 
   @@map("user")
 }
@@ -97,6 +102,7 @@ model Recruteur {
   firstName           String?
   lastName            String?
   companyName         String?
+  widthTeam           String?
   logo                String?
   industry            String?
   size                String?
@@ -107,12 +113,11 @@ model Recruteur {
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
   collaborateurs      Collaborateur[]
-  CollaborateurCustom CollaborateurCustom[]
   social              CompanySocial?
   conversations       Conversation[]
   invitations         Invitation[]
   JobOffer            JobOffer[]
-  KanbanColumnCustom  KanbanColumnCustom[]
+  KanbanColumns       KanbanColumn[]
   OfferTemplate       OfferTemplate[]
   user                User                  @relation("UserAsRecruteur", fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -131,6 +136,15 @@ model CompanySocial {
   id          String    @id @default(cuid())
   linkedin    String?
   twitter     String?
+  facebook    String?
+  instagram   String?
+  youtube     String?
+  tiktok      String?
+  pinterest   String?
+  reddit      String?
+  discord     String?
+  telegram    String?
+  whatsapp    String?
   recruteurId String    @unique
   recruteur   Recruteur @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
 }
@@ -210,10 +224,11 @@ model JobOffer {
   deletedAt           DateTime?
   applications        Application[]
   conversations       Conversation[]
+  jobOfferCompetences JobOfferCompetence[]
+  CardJobOffer        CardJobOffer[]
   recruteur           Recruteur            @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
   template            OfferTemplate?       @relation(fields: [templateId], references: [id])
-  jobOfferCompetences JobOfferCompetence[]
-  kanbanColumns       KanbanColumn[]
+  
 
   // ✅ Index composites pour les requêtes fréquentes
   @@index([recruteurId, etat]) // Récupérer les offres actives d'un recruteur
@@ -244,7 +259,7 @@ model OfferTemplate {
 
   @@index([recruteurId], map: "OfferTemplate_recruteurId_fkey")
 }
-
+///
 model Application {
   id         String @id @default(cuid())
   candidatId String
@@ -292,20 +307,7 @@ model ApplicationNote {
   @@index([applicationId], map: "ApplicationNote_applicationId_fkey")
 }
 
-model ChecklistItem {
-  id            String      @id @default(cuid())
-  applicationId String
-  title         String
-  description   String?
-  isCompleted   Boolean     @default(false)
-  createdById   String
-  createdByType String
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
-  @@index([applicationId], map: "ChecklistItem_applicationId_fkey")
-}
 
 model ApplicationFile {
   id             String      @id @default(cuid())
@@ -323,20 +325,7 @@ model ApplicationFile {
   @@index([applicationId], map: "ApplicationFile_applicationId_fkey")
 }
 
-model KanbanColumn {
-  id         String   @id @default(cuid())
-  color      String
-  name       String
-  order      Int
-  isDefault  Boolean  @default(false)
-  jobOfferId String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
 
-  jobOffer JobOffer @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
-
-  @@index([jobOfferId], map: "KanbanColumn_jobOfferId_fkey")
-}
 
 model Session {
   id        String   @id
@@ -592,84 +581,188 @@ model Message {
   @@index([conversationId], map: "Message_conversationId_fkey")
 }
 
-model KanbanColumnCustom {
+model KanbanColumn {
   id                   String              @id @default(cuid())
   color                String
   name                 String
   order                Int
   isDefault            Boolean             @default(false)
-  jobOfferId           String
+  // jobOfferId           String
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
   recruteurId          String
-  applicationsCustomid String
-  applicationsCustom   ApplicationCustom[]
+  // applicationsCustomid String
+  // applicationsCustom   ApplicationCustom[]
   recruteur            Recruteur           @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
 
-  @@index([recruteurId], map: "KanbanColumnCustom_recruteurId_fkey")
+ cards       KanbanCard[]
+
+  @@index([recruteurId], map: "KanbanColumn_recruteurId_fkey")
 }
 
-model CollaborateurCustom {
-  id           String                           @id @default(cuid())
-  email        String                           @unique
-  nom          String
-  prenom       String
-  role         Role
-  recruteurId  String
-  invitationId String?                          @unique
-  userId       String                           @unique
-  createdAt    DateTime                         @default(now())
-  updatedAt    DateTime                         @updatedAt
-  applications ApplicationCollaborateurCustom[]
-  recruteur    Recruteur                        @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
 
-  @@index([recruteurId], map: "CollaborateurCustom_recruteurId_fkey")
+model KanbanCard {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  priority    String?       // low | medium | high | urgent
+  order       Int
+  isArchived  Boolean       @default(false)
+  archivedAt  DateTime?
+  
+  columnId    String
+  createdByRecruteurId String
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  column      KanbanColumn @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  // createdBy   Recruteur         @relation("CardCreator", fields: [createdByRecruteurId], references: [id])
+
+
+// JobOffers liées à une card
+  offers      CardJobOffer[]
+  // Collaborateurs assignés à une card
+  members     CardMember[]
+  // Notes liées à une card
+  notes       CardNote[]
+  checklist   CheckItem[]
+  attachments CardAttachment[]
+  labels      CardLabelPivot[]
+  activities  CardActivity[]
+  dueDates    CardDueDate[]
 }
 
-model ApplicationFileCustom {
-  id             String            @id @default(cuid())
-  applicationId  String
-  fileName       String
-  fileUrl        String
-  fileType       String
-  fileSize       Int
-  uploadedById   String
-  uploadedByType String
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  application    ApplicationCustom @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+model CardMember {
+  id      String @id @default(cuid())
+  cardId  String
+  userId  String
 
-  @@index([applicationId], map: "ApplicationFileCustom_applicationId_fkey")
+  card    KanbanCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user    User       @relation(fields: [userId], references: [id])
+
+  @@unique([cardId, userId])
 }
 
-model ApplicationCollaborateurCustom {
-  id              String              @id @default(cuid())
-  applicationId   String
-  collaborateurId String
-  assignedAt      DateTime            @default(now())
-  assignedBy      String
-  application     ApplicationCustom   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  collaborateur   CollaborateurCustom @relation(fields: [collaborateurId], references: [id], onDelete: Cascade)
+model CardJobOffer {
+  id         String   @id @default(cuid())
+  cardId     String
+  jobOfferId String
 
-  @@unique([applicationId, collaborateurId])
-  @@index([collaborateurId], map: "ApplicationCollaborateurCustom_collaborateurId_fkey")
+  card       KanbanCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  jobOffer   JobOffer   @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, jobOfferId])
 }
 
-model ApplicationNoteCustom {
-  id            String            @id @default(cuid())
-  applicationId String
-  content       String
-  authorId      String
-  authorName    String?
-  authorType    String
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  application   ApplicationCustom @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+model CardNote {
+  id        String   @id @default(cuid())
+  content   String
+  cardId    String
+  authorId  String
+  createdAt DateTime @default(now())
 
-  @@index([applicationId], map: "ApplicationNoteCustom_applicationId_fkey")
+  card      KanbanCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  author    User       @relation(fields: [authorId], references: [id])
 }
 
-model ChecklistItemCustom {
+model CheckItem {
+  id        String   @id @default(cuid())
+  label     String
+  isDone    Boolean  @default(false)
+
+  order     Int       // pour organiser les checkboxes dans la card
+
+  cardId    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  card      KanbanCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+}
+
+model CardAttachment {
+  id           String   @id @default(cuid())
+  url          String
+  filename     String?
+  fileType     String?    // pdf, png, etc.
+  uploadedById String
+  cardId       String
+
+  createdAt    DateTime @default(now())
+
+  card        KanbanCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  uploadedBy  User       @relation(fields: [uploadedById], references: [id])
+}
+
+model CardLabel {
+  id          String @id @default(cuid())
+  name        String
+  color       String
+  cards       CardLabelPivot[]
+}
+
+model CardLabelPivot {
+  id      String @id @default(cuid())
+  cardId  String
+  labelId String
+
+  card    KanbanCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  label   CardLabel  @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, labelId])
+}
+
+model CardActivity {
+  id        String   @id @default(cuid())
+  cardId    String
+  userId    String?
+  action    String     // "moved_column" | "added_offer" | "updated_note" etc.
+  meta      Json?
+
+  createdAt DateTime @default(now())
+
+  card      KanbanCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user      User?      @relation(fields: [userId], references: [id])
+}
+
+model CardDueDate {
+  id        String   @id @default(cuid())
+  cardId    String
+  dueAt     DateTime
+  createdAt DateTime @default(now())
+
+  card      KanbanCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+}
+
+// model ApplicationCollaborateurCustom {
+//   id              String              @id @default(cuid())
+//   applicationId   String
+//   collaborateurId String
+//   assignedAt      DateTime            @default(now())
+//   assignedBy      String
+//     application     Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+//     collaborateur   Collaborateur @relation(fields: [collaborateurId], references: [id], onDelete: Cascade)
+
+//   @@unique([applicationId, collaborateurId])
+//   @@index([collaborateurId], map: "ApplicationCollaborateurCustom_collaborateurId_fkey")
+// }
+
+// model ApplicationNote {
+//   id            String            @id @default(cuid())
+//   applicationId String
+//   content       String
+//   authorId      String
+//   authorName    String?
+//   authorType    String
+//   createdAt     DateTime          @default(now())
+//   updatedAt     DateTime          @updatedAt
+//   application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+//   @@index([applicationId], map: "ApplicationNote_applicationId_fkey")
+// }
+
+model ChecklistItem {
   id            String            @id @default(cuid())
   applicationId String
   title         String
@@ -679,59 +772,40 @@ model ChecklistItemCustom {
   createdByType String
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
-  application   ApplicationCustom @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@index([applicationId], map: "ChecklistItem_applicationId_fkey")
 }
 
-model CandidatCustom {
-  id            String             @id @unique @default(cuid())
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  userId        String
-  cv            String?
-  cvUrl         String?            @unique
-  applicationId String
-  application   ApplicationCustom  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  documents     CandidatDocument[]
+// model CandidatCustom {
+//   id            String             @id @unique @default(cuid())
+//   createdAt     DateTime           @default(now())
+//   updatedAt     DateTime           @updatedAt
+//   userId        String
+//   cv            String?
+//   cvUrl         String?            @unique
+//   applicationId String
+//   application   Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+//   documents     CandidatDocument[]
 
-  @@index([applicationId], map: "CandidatCustom_applicationId_fkey")
-}
+//   @@index([applicationId], map: "CandidatCustom_applicationId_fkey")
+// }
 
-model CandidatDocument {
-  id         String         @id @default(cuid())
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-  fileName   String
-  fileUrl    String
-  fileType   String
-  fileSize   Int
-  candidatId String
-  candidat   CandidatCustom @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+// model CandidatDocument {
+//   id         String         @id @default(cuid())
+//   createdAt  DateTime       @default(now())
+//   updatedAt  DateTime       @updatedAt
+//   fileName   String
+//   fileUrl    String
+//   fileType   String
+//   fileSize   Int
+//   candidatId String
+//   candidat   CandidatCustom @relation(fields: [candidatId], references: [id], onDelete: Cascade)
 
-  @@index([candidatId], map: "CandidatDocument_candidatId_fkey")
-}
+//   @@index([candidatId], map: "CandidatDocument_candidatId_fkey")
+// }
 
-model ApplicationCustom {
-  id    String @id @default(cuid())
-  title String
 
-  description          String                           @db.Text
-  company              String
-  location             String
-  duedate              DateTime?
-  createdAt            DateTime                         @default(now())
-  updatedAt            DateTime                         @updatedAt
-  kanbanColumnCustomid String
-  collaborateurs       ApplicationCollaborateurCustom[]
-  recruteur            KanbanColumnCustom               @relation(fields: [kanbanColumnCustomid], references: [id], onDelete: Cascade)
-  files                ApplicationFileCustom[]
-  notes                ApplicationNoteCustom[]
-  candidatCustom       CandidatCustom[]
-  checklist            ChecklistItemCustom[]
-
-  @@index([kanbanColumnCustomid], map: "ApplicationCustom_kanbanColumnCustomid_fkey")
-}
 
 model Verification {
   id         String    @id
