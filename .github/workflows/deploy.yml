@@ -19,6 +19,17 @@ jobs:
           node-version: "18"
           cache: ""
 
+      - name: Enable pnpm via Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm prisma generate
+
       - name: Build application
         run: pnpm run build
 
