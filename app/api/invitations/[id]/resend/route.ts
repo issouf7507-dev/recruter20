@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 
 /**
  * POST /api/invitations/[id]/resend
- * Renvoyer l'email d'invitationa
+ * Renvoyer l'email d'invitationaa
  */
 export async function POST(
   request: NextRequest,
