@@ -25,13 +25,13 @@ jobs:
           corepack prepare pnpm@latest --activate
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: /root/.nvm/versions/node/v22.17.0/bin/pnpm install --frozen-lockfile install --frozen-lockfile
 
       - name: Generate Prisma client
-        run: pnpm prisma generate
+        run: /root/.nvm/versions/node/v22.17.0/bin/pnpm install --frozen-lockfile prisma generate
 
       - name: Build application
-        run: pnpm run build
+        run: /root/.nvm/versions/node/v22.17.0/bin/pnpm install --frozen-lockfile run build
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
@@ -67,11 +67,11 @@ jobs:
             cd current
 
             # Installer les dépendances
-            pnpm install --frozen-lockfile
+            /root/.nvm/versions/node/v22.17.0/bin/pnpm install --frozen-lockfile install --frozen-lockfile
 
 
             # Construire l'application
-            pnpm run build
+            /root/.nvm/versions/node/v22.17.0/bin/pnpm install --frozen-lockfile run build
 
             # Vérifier que le build existe
             if [ ! -d ".next" ]; then
@@ -87,7 +87,7 @@ jobs:
             lsof -ti:3000 | xargs kill -9 2>/dev/null || true
 
             # Démarrer le service PM2 sur le port 3000
-            pm2 start "pnpm start -- -p 3000" --name recruter
+            pm2 start "/root/.nvm/versions/node/v22.17.0/bin/pnpm install --frozen-lockfile start -- -p 3000" --name recruter
 
             # Sauvegarder la configuration PM2
             pm2 save
