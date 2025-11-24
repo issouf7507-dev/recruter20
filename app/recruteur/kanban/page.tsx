@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -70,9 +70,19 @@ import {
   useDeleteLabel,
   useAddCardLabel,
   useRemoveCardLabel,
+  useCreateCardNote,
+  useCreateCheckItem,
+  useUpdateCheckItem,
+  useDeleteCheckItem,
+  useCreateCardDueDate,
+  useUpdateCardDueDate,
+  useDeleteCardDueDate,
+  useCreateCardAttachment,
+  useDeleteCardAttachment,
 } from "@/lib/hooks/use-kanban";
 import { useCollaborateurs } from "@/lib/hooks/use-collaborateurs";
 import { useOffers } from "@/lib/hooks/use-offers";
+import { useEdgeStore } from "@/lib/edgestore";
 import {
   IconLayoutKanban,
   IconPlus,
@@ -101,6 +111,7 @@ import {
   IconInfoCircle,
   IconMenu2,
   IconChevronDown,
+  IconSend,
 } from "@tabler/icons-react";
 import type {
   KanbanColumn,
@@ -191,9 +202,41 @@ export default function KanbanPage() {
     useState<string>("medium");
   const [isAddMembersDialogOpen, setIsAddMembersDialogOpen] = useState(false);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [noteContent, setNoteContent] = useState("");
+  const [newCheckItemLabel, setNewCheckItemLabel] = useState("");
+  const [editingCheckItemId, setEditingCheckItemId] = useState<string | null>(
+    null
+  );
+  const [editingCheckItemLabel, setEditingCheckItemLabel] = useState("");
+  const [hideCompletedItems, setHideCompletedItems] = useState(false);
+
+  // Ref for checklist section
+  const checklistSectionRef = useRef<HTMLDivElement>(null);
+  // Ref for due date section
+  const dueDateSectionRef = useRef<HTMLDivElement>(null);
+  // Ref for attachment section
+  const attachmentSectionRef = useRef<HTMLDivElement>(null);
+
+  // Due date state
+  const [newDueDate, setNewDueDate] = useState("");
+  const [editingDueDateId, setEditingDueDateId] = useState<string | null>(null);
+  const [editingDueDate, setEditingDueDate] = useState("");
+
+  // Attachment state
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
 
   const addCardMembers = useAddCardMembers();
   const removeCardMember = useRemoveCardMember();
+  const createCardNote = useCreateCardNote();
+  const createCheckItem = useCreateCheckItem();
+  const updateCheckItem = useUpdateCheckItem();
+  const deleteCheckItem = useDeleteCheckItem();
+  const createCardDueDate = useCreateCardDueDate();
+  const updateCardDueDate = useUpdateCardDueDate();
+  const deleteCardDueDate = useDeleteCardDueDate();
+  const createCardAttachment = useCreateCardAttachment();
+  const deleteCardAttachment = useDeleteCardAttachment();
+  const { edgestore } = useEdgeStore();
   const { data: collaborateurs } = useCollaborateurs(recruteurId || undefined);
 
   // Labels management
@@ -522,6 +565,7 @@ export default function KanbanPage() {
     setCardDetailsTitle(card.title || "");
     setCardDetailsDescription(card.description || "");
     setCardDetailsPriority(card.priority || "medium");
+    setNoteContent("");
     setIsCardDetailsSheetOpen(true);
   };
 
@@ -529,7 +573,219 @@ export default function KanbanPage() {
     setIsCardDetailsSheetOpen(false);
     setSelectedCard(null);
     setSelectedCardColumnId(null);
+    setNoteContent("");
   };
+
+  // Handle scrolling to checklist section
+  const handleScrollToChecklist = () => {
+    if (checklistSectionRef.current) {
+      checklistSectionRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
+  // Handle scrolling to due date section
+  const handleScrollToDueDate = () => {
+    if (dueDateSectionRef.current) {
+      dueDateSectionRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
+  // Handle adding a due date
+  const handleAddDueDate = () => {
+    if (!selectedCard || !recruteurId || !newDueDate.trim()) {
+      return;
+    }
+
+    createCardDueDate.mutate(
+      {
+        cardId: selectedCard.id,
+        dueAt: newDueDate,
+        recruteurId,
+      },
+      {
+        onSuccess: () => {
+          setNewDueDate("");
+        },
+      }
+    );
+  };
+
+  // Handle updating a due date
+  const handleUpdateDueDate = () => {
+    if (!editingDueDateId || !recruteurId || !editingDueDate.trim()) {
+      return;
+    }
+
+    updateCardDueDate.mutate(
+      {
+        dueDateId: editingDueDateId,
+        dueAt: editingDueDate,
+        recruteurId,
+      },
+      {
+        onSuccess: () => {
+          setEditingDueDateId(null);
+          setEditingDueDate("");
+        },
+      }
+    );
+  };
+
+  // Handle deleting a due date
+  const handleDeleteDueDate = (dueDateId: string) => {
+    if (!recruteurId) {
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      "Êtes-vous sûr de vouloir supprimer cette date d'échéance ?"
+    );
+    if (!confirmDelete) {
+      return;
+    }
+
+    deleteCardDueDate.mutate({
+      dueDateId,
+      recruteurId,
+    });
+  };
+
+  // Handle starting to edit a due date
+  const handleStartEditDueDate = (dueDate: {
+    id: string;
+    dueAt: Date | string;
+  }) => {
+    setEditingDueDateId(dueDate.id);
+    // Format date for input (YYYY-MM-DDTHH:mm)
+    const date = new Date(dueDate.dueAt);
+    const formattedDate = date.toISOString().slice(0, 16);
+    setEditingDueDate(formattedDate);
+  };
+
+  // Handle scrolling to attachment section
+  const handleScrollToAttachment = () => {
+    if (attachmentSectionRef.current) {
+      attachmentSectionRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
+  // Handle uploading an attachment
+  const handleUploadAttachment = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (!selectedCard || !recruteurId || !session?.user?.id) {
+      return;
+    }
+
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      alert("Le fichier est trop volumineux (max 10MB)");
+      return;
+    }
+
+    setUploadingAttachment(true);
+    try {
+      // 1. Upload vers EdgeStore
+      const res = await edgestore.publicFiles.upload({
+        file,
+        onProgressChange: (progress) => {
+          console.log("Upload progress:", progress);
+        },
+      });
+
+      // 2. Create attachment record with EdgeStore URL
+      createCardAttachment.mutate({
+        cardId: selectedCard.id,
+        url: res.url,
+        filename: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        recruteurId,
+        uploadedById: session.user.id,
+      });
+
+      // Reset file input
+      event.target.value = "";
+    } catch (error: any) {
+      console.error("Error uploading attachment:", error);
+      alert(error.message || "Erreur lors de l'upload du fichier");
+    } finally {
+      setUploadingAttachment(false);
+    }
+  };
+
+  // Handle deleting an attachment
+  const handleDeleteAttachment = async (
+    attachmentId: string,
+    fileUrl: string
+  ) => {
+    if (!recruteurId) {
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      "Êtes-vous sûr de vouloir supprimer cette pièce jointe ?"
+    );
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      // 1. Supprimer d'EdgeStore
+      try {
+        await edgestore.publicFiles.delete({
+          url: fileUrl,
+        });
+      } catch (edgeStoreError) {
+        console.error(
+          "Erreur lors de la suppression sur EdgeStore:",
+          edgeStoreError
+        );
+        // Continue même si la suppression EdgeStore échoue
+      }
+
+      // 2. Supprimer l'enregistrement de la base de données
+      deleteCardAttachment.mutate({
+        attachmentId,
+        recruteurId,
+      });
+    } catch (error: any) {
+      console.error("Error deleting attachment:", error);
+      alert(
+        error.message || "Erreur lors de la suppression de la pièce jointe"
+      );
+    }
+  };
+
+  // Synchroniser selectedCard avec les données mises à jour
+  useEffect(() => {
+    if (selectedCard && columnsData && isCardDetailsSheetOpen) {
+      // Trouver la carte mise à jour dans les données
+      for (const col of columnsData) {
+        const updatedCard = col.cards?.find((c) => c.id === selectedCard.id);
+        if (updatedCard) {
+          // Mettre à jour selectedCard avec les données fraîches
+          setSelectedCard(updatedCard);
+          break;
+        }
+      }
+    }
+  }, [columnsData, selectedCard?.id, isCardDetailsSheetOpen]);
 
   const handleUpdateCardDetails = () => {
     if (!selectedCard || !recruteurId) {
@@ -577,6 +833,104 @@ export default function KanbanPage() {
           if (selectedCard?.id === card.id) {
             handleCloseCardDetails();
           }
+        },
+      }
+    );
+  };
+
+  // Handle adding a note to a card
+  const handleAddNote = () => {
+    if (!selectedCard || !recruteurId || !noteContent.trim()) {
+      return;
+    }
+
+    createCardNote.mutate(
+      {
+        cardId: selectedCard.id,
+        content: noteContent.trim(),
+        recruteurId,
+      },
+      {
+        onSuccess: () => {
+          setNoteContent("");
+        },
+      }
+    );
+  };
+
+  // Handle adding a checklist item
+  const handleAddCheckItem = () => {
+    if (!selectedCard || !recruteurId || !newCheckItemLabel.trim()) {
+      return;
+    }
+
+    createCheckItem.mutate(
+      {
+        cardId: selectedCard.id,
+        label: newCheckItemLabel.trim(),
+        recruteurId,
+      },
+      {
+        onSuccess: () => {
+          setNewCheckItemLabel("");
+        },
+      }
+    );
+  };
+
+  // Handle toggling a checklist item
+  const handleToggleCheckItem = (checkItemId: string, isDone: boolean) => {
+    if (!selectedCard || !recruteurId) {
+      return;
+    }
+
+    updateCheckItem.mutate({
+      checkItemId,
+      data: { isDone: !isDone },
+      recruteurId,
+    });
+  };
+
+  // Handle deleting a checklist item
+  const handleDeleteCheckItem = (checkItemId: string) => {
+    if (!selectedCard || !recruteurId) {
+      return;
+    }
+
+    if (confirm("Supprimer cette tâche ?")) {
+      deleteCheckItem.mutate({
+        checkItemId,
+        recruteurId,
+      });
+    }
+  };
+
+  // Handle editing a checklist item
+  const handleStartEditCheckItem = (item: { id: string; label: string }) => {
+    setEditingCheckItemId(item.id);
+    setEditingCheckItemLabel(item.label);
+  };
+
+  const handleSaveEditCheckItem = () => {
+    if (
+      !selectedCard ||
+      !recruteurId ||
+      !editingCheckItemId ||
+      !editingCheckItemLabel.trim()
+    ) {
+      return;
+    }
+
+    updateCheckItem.mutate(
+      {
+        checkItemId: editingCheckItemId,
+        data: { label: editingCheckItemLabel.trim() },
+        recruteurId,
+      },
+      {
+        onSuccess: () => {
+          setEditingCheckItemId(null);
+          setEditingCheckItemLabel("");
         },
       }
     );
@@ -687,7 +1041,7 @@ export default function KanbanPage() {
               {/* Header */}
               <div className="mb-6">
                 <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">
-                  Tasks
+                  Tableau Kanban
                 </h1>
               </div>
 
@@ -1710,40 +2064,287 @@ export default function KanbanPage() {
                         </div>
 
                         {/* Due Date Section */}
-                        {selectedCard.dueDates &&
-                          selectedCard.dueDates.length > 0 && (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                  Due Date
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Checkbox
-                                  checked={
-                                    new Date(selectedCard.dueDates[0].dueAt) <
-                                    new Date()
-                                  }
-                                  className="h-4 w-4"
-                                />
-                                <div className="flex items-center gap-2">
-                                  <IconCalendar className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm">
-                                    {formatDateTime(
-                                      selectedCard.dueDates[0].dueAt
-                                    )}
-                                  </span>
-                                  {new Date(selectedCard.dueDates[0].dueAt) <
-                                    new Date() && (
-                                    <Badge className="bg-green-500 text-white text-xs px-2 py-0.5">
-                                      COMPLETE
-                                      <IconChevronDown className="h-3 w-3 ml-1 inline" />
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
+                        <div ref={dueDateSectionRef} className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <IconClock className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-semibold">
+                                Date d'échéance
+                              </span>
                             </div>
+                          </div>
+                          {selectedCard.dueDates &&
+                            selectedCard.dueDates.length > 0 && (
+                              <div className="space-y-2">
+                                {selectedCard.dueDates.map((dueDate) => (
+                                  <div
+                                    key={dueDate.id}
+                                    className="flex items-center gap-2 p-2 rounded-lg border hover:bg-muted/50 group"
+                                  >
+                                    {editingDueDateId === dueDate.id ? (
+                                      <div className="flex-1 flex items-center gap-2">
+                                        <Input
+                                          type="datetime-local"
+                                          value={editingDueDate}
+                                          onChange={(e) =>
+                                            setEditingDueDate(e.target.value)
+                                          }
+                                          className="h-8 text-sm"
+                                          autoFocus
+                                        />
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-7 w-7 p-0"
+                                          onClick={handleUpdateDueDate}
+                                          disabled={
+                                            updateCardDueDate.isPending ||
+                                            !editingDueDate.trim()
+                                          }
+                                        >
+                                          <IconCircleCheck className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-7 w-7 p-0"
+                                          onClick={() => {
+                                            setEditingDueDateId(null);
+                                            setEditingDueDate("");
+                                          }}
+                                        >
+                                          <IconX className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <div className="flex-1 flex items-center gap-2">
+                                          <IconCalendar className="h-4 w-4 text-muted-foreground" />
+                                          <span
+                                            className={`text-sm cursor-pointer ${
+                                              new Date(dueDate.dueAt) <
+                                              new Date()
+                                                ? "text-green-600 font-semibold"
+                                                : new Date(dueDate.dueAt) <
+                                                  new Date(
+                                                    Date.now() +
+                                                      24 * 60 * 60 * 1000
+                                                  )
+                                                ? "text-orange-600 font-semibold"
+                                                : ""
+                                            }`}
+                                            onClick={() =>
+                                              handleStartEditDueDate(dueDate)
+                                            }
+                                          >
+                                            {formatDateTime(dueDate.dueAt)}
+                                          </span>
+                                          {new Date(dueDate.dueAt) <
+                                            new Date() && (
+                                            <Badge className="bg-green-500 text-white text-xs px-2 py-0.5">
+                                              ÉCHU
+                                            </Badge>
+                                          )}
+                                          {new Date(dueDate.dueAt) >=
+                                            new Date() &&
+                                            new Date(dueDate.dueAt) <
+                                              new Date(
+                                                Date.now() + 24 * 60 * 60 * 1000
+                                              ) && (
+                                              <Badge className="bg-orange-500 text-white text-xs px-2 py-0.5">
+                                                Bientôt
+                                              </Badge>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-7 w-7 p-0"
+                                            onClick={() =>
+                                              handleStartEditDueDate(dueDate)
+                                            }
+                                          >
+                                            <IconEdit className="h-3.5 w-3.5" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                            onClick={() =>
+                                              handleDeleteDueDate(dueDate.id)
+                                            }
+                                            disabled={
+                                              deleteCardDueDate.isPending
+                                            }
+                                          >
+                                            <IconTrash className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          {selectedCard.dueDates &&
+                            selectedCard.dueDates.length === 0 && (
+                              <>
+                                <p className="text-sm text-muted-foreground">
+                                  Aucune date d'échéance définie
+                                </p>
+                                <div className="flex items-center gap-2 pt-2 border-t">
+                                  <Input
+                                    type="datetime-local"
+                                    placeholder="Ajouter une date d'échéance"
+                                    value={newDueDate}
+                                    onChange={(e) =>
+                                      setNewDueDate(e.target.value)
+                                    }
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter" && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleAddDueDate();
+                                      }
+                                    }}
+                                    className="flex-1 h-8 text-sm"
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 px-2"
+                                    onClick={handleAddDueDate}
+                                    disabled={
+                                      !newDueDate.trim() ||
+                                      createCardDueDate.isPending
+                                    }
+                                  >
+                                    <IconPlus className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </>
+                            )}
+                          {selectedCard.dueDates &&
+                            selectedCard.dueDates.length > 0 && (
+                              <div className="pt-2 border-t">
+                                <p className="text-xs text-muted-foreground italic">
+                                  Supprimez la date d'échéance existante pour en
+                                  ajouter une nouvelle
+                                </p>
+                              </div>
+                            )}
+                        </div>
+
+                        {/* Attachment Section */}
+                        <div ref={attachmentSectionRef} className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <IconPaperclip className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-semibold">
+                                Pièces jointes
+                              </span>
+                            </div>
+                          </div>
+                          {selectedCard.attachments &&
+                          selectedCard.attachments.length > 0 ? (
+                            <div className="space-y-2">
+                              {selectedCard.attachments.map((attachment) => (
+                                <div
+                                  key={attachment.id}
+                                  className="flex items-center gap-2 p-2 rounded-lg border hover:bg-muted/50 group"
+                                >
+                                  <div className="flex-1 flex items-center gap-2">
+                                    <IconPaperclip className="h-4 w-4 text-muted-foreground" />
+                                    <a
+                                      href={attachment.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-sm text-primary hover:underline flex-1 truncate"
+                                    >
+                                      {attachment.filename || "Fichier"}
+                                    </a>
+                                    {attachment.fileType && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-xs"
+                                      >
+                                        {attachment.fileType
+                                          .split("/")[1]
+                                          ?.toUpperCase() ||
+                                          attachment.fileType}
+                                      </Badge>
+                                    )}
+                                    {attachment.uploadedBy && (
+                                      <span className="text-xs text-muted-foreground">
+                                        par{" "}
+                                        {attachment.uploadedBy.name ||
+                                          attachment.uploadedBy.email}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                      onClick={() =>
+                                        handleDeleteAttachment(
+                                          attachment.id,
+                                          attachment.url
+                                        )
+                                      }
+                                      disabled={deleteCardAttachment.isPending}
+                                    >
+                                      <IconTrash className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">
+                              Aucune pièce jointe
+                            </p>
                           )}
+                          <div className="pt-2 border-t">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <Input
+                                type="file"
+                                className="hidden"
+                                id="attachment-upload"
+                                onChange={handleUploadAttachment}
+                                disabled={uploadingAttachment}
+                              />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full"
+                                asChild
+                                disabled={uploadingAttachment}
+                              >
+                                <label
+                                  htmlFor="attachment-upload"
+                                  className="cursor-pointer flex items-center justify-center gap-2"
+                                >
+                                  {uploadingAttachment ? (
+                                    <>
+                                      <IconClock className="h-4 w-4 animate-spin" />
+                                      Upload en cours...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <IconPlus className="h-4 w-4" />
+                                      Ajouter une pièce jointe
+                                    </>
+                                  )}
+                                </label>
+                              </Button>
+                            </label>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Taille maximale : 10MB
+                            </p>
+                          </div>
+                        </div>
 
                         {/* Description Section */}
                         <div className="space-y-2">
@@ -1764,89 +2365,186 @@ export default function KanbanPage() {
                         </div>
 
                         {/* Checklist Section */}
-                        {selectedCard.checklist &&
-                          selectedCard.checklist.length > 0 && (
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <IconListCheck className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm font-semibold">
-                                    Checklist
-                                  </span>
-                                </div>
+                        <div
+                          ref={checklistSectionRef}
+                          className="space-y-3"
+                          data-checklist-section
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <IconListCheck className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-semibold">
+                                Checklist
+                              </span>
+                            </div>
+                            {selectedCard.checklist &&
+                              selectedCard.checklist.length > 0 && (
                                 <div className="flex items-center gap-2">
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     className="h-7 text-xs"
+                                    onClick={() =>
+                                      setHideCompletedItems(!hideCompletedItems)
+                                    }
                                   >
-                                    Hide completed items
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-7 text-xs text-destructive"
-                                  >
-                                    Delete
+                                    {hideCompletedItems
+                                      ? "Afficher les tâches complétées"
+                                      : "Masquer les tâches complétées"}
                                   </Button>
                                 </div>
-                              </div>
-                              <div className="space-y-1">
-                                {/* Progress Bar */}
-                                <div className="w-full bg-muted rounded-full h-2">
-                                  <div
-                                    className="bg-primary h-2 rounded-full transition-all"
-                                    style={{
-                                      width: `${
-                                        (selectedCard.checklist.filter(
-                                          (c) => c.isDone
-                                        ).length /
-                                          selectedCard.checklist.length) *
+                              )}
+                          </div>
+                          {selectedCard.checklist &&
+                            selectedCard.checklist.length > 0 && (
+                              <>
+                                <div className="space-y-1">
+                                  {/* Progress Bar */}
+                                  <div className="w-full bg-muted rounded-full h-2">
+                                    <div
+                                      className="bg-primary h-2 rounded-full transition-all"
+                                      style={{
+                                        width: `${
+                                          (selectedCard.checklist.filter(
+                                            (c) => c.isDone
+                                          ).length /
+                                            selectedCard.checklist.length) *
+                                          100
+                                        }%`,
+                                      }}
+                                    />
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">
+                                    {Math.round(
+                                      (selectedCard.checklist.filter(
+                                        (c) => c.isDone
+                                      ).length /
+                                        selectedCard.checklist.length) *
                                         100
-                                      }%`,
-                                    }}
-                                  />
+                                    )}
+                                    %
+                                  </p>
                                 </div>
-                                <p className="text-xs text-muted-foreground">
-                                  {Math.round(
-                                    (selectedCard.checklist.filter(
-                                      (c) => c.isDone
-                                    ).length /
-                                      selectedCard.checklist.length) *
-                                      100
-                                  )}
-                                  %
-                                </p>
-                              </div>
-                              <div className="space-y-2">
-                                {selectedCard.checklist.map((item) => (
-                                  <label
-                                    key={item.id}
-                                    className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 p-2 rounded"
-                                  >
-                                    <Checkbox checked={item.isDone} />
-                                    <span
-                                      className={`flex-1 ${
-                                        item.isDone
-                                          ? "text-muted-foreground line-through"
-                                          : ""
-                                      }`}
-                                    >
-                                      {item.label}
-                                    </span>
-                                  </label>
-                                ))}
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full justify-start text-xs"
-                              >
-                                <IconPlus className="h-3.5 w-3.5 mr-1" />
-                                Ajouter une tâche
-                              </Button>
-                            </div>
-                          )}
+                                <div className="space-y-2">
+                                  {selectedCard.checklist
+                                    .filter(
+                                      (item) =>
+                                        !hideCompletedItems || !item.isDone
+                                    )
+                                    .map((item) => (
+                                      <div
+                                        key={item.id}
+                                        className="flex items-center gap-2 text-sm hover:bg-muted/50 p-2 rounded group"
+                                      >
+                                        <Checkbox
+                                          checked={item.isDone}
+                                          onCheckedChange={() =>
+                                            handleToggleCheckItem(
+                                              item.id,
+                                              item.isDone
+                                            )
+                                          }
+                                        />
+                                        {editingCheckItemId === item.id ? (
+                                          <div className="flex-1 flex items-center gap-2">
+                                            <Input
+                                              value={editingCheckItemLabel}
+                                              onChange={(e) =>
+                                                setEditingCheckItemLabel(
+                                                  e.target.value
+                                                )
+                                              }
+                                              onKeyDown={(e) => {
+                                                if (e.key === "Enter") {
+                                                  handleSaveEditCheckItem();
+                                                } else if (e.key === "Escape") {
+                                                  setEditingCheckItemId(null);
+                                                  setEditingCheckItemLabel("");
+                                                }
+                                              }}
+                                              className="h-7 text-sm"
+                                              autoFocus
+                                            />
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-7 w-7 p-0"
+                                              onClick={handleSaveEditCheckItem}
+                                            >
+                                              <IconCircleCheck className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-7 w-7 p-0"
+                                              onClick={() => {
+                                                setEditingCheckItemId(null);
+                                                setEditingCheckItemLabel("");
+                                              }}
+                                            >
+                                              <IconX className="h-4 w-4" />
+                                            </Button>
+                                          </div>
+                                        ) : (
+                                          <>
+                                            <span
+                                              className={`flex-1 cursor-pointer ${
+                                                item.isDone
+                                                  ? "text-muted-foreground line-through"
+                                                  : ""
+                                              }`}
+                                              onClick={() =>
+                                                handleStartEditCheckItem(item)
+                                              }
+                                            >
+                                              {item.label}
+                                            </span>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                                              onClick={() =>
+                                                handleDeleteCheckItem(item.id)
+                                              }
+                                            >
+                                              <IconTrash className="h-3.5 w-3.5" />
+                                            </Button>
+                                          </>
+                                        )}
+                                      </div>
+                                    ))}
+                                </div>
+                              </>
+                            )}
+                          <div className="flex items-center gap-2">
+                            <Input
+                              placeholder="Ajouter une tâche..."
+                              value={newCheckItemLabel}
+                              onChange={(e) =>
+                                setNewCheckItemLabel(e.target.value)
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleAddCheckItem();
+                                }
+                              }}
+                              className="flex-1 h-8 text-sm"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-2"
+                              onClick={handleAddCheckItem}
+                              disabled={
+                                !newCheckItemLabel.trim() ||
+                                createCheckItem.isPending
+                              }
+                            >
+                              <IconPlus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
 
                         {/* Activity Section */}
                         <div className="space-y-3">
@@ -1878,9 +2576,27 @@ export default function KanbanPage() {
                               </AvatarFallback>
                             </Avatar>
                             <Input
-                              placeholder="Write a comment..."
+                              placeholder="Tapez votre message..."
                               className="flex-1"
+                              value={noteContent}
+                              onChange={(e) => setNoteContent(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleAddNote();
+                                }
+                              }}
                             />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={handleAddNote}
+                              disabled={
+                                !noteContent.trim() || createCardNote.isPending
+                              }
+                            >
+                              <IconSend className="h-4 w-4" />
+                            </Button>
                           </div>
                           {selectedCard.notes &&
                             selectedCard.notes.length > 0 && (
@@ -1908,6 +2624,11 @@ export default function KanbanPage() {
                                       <p className="text-xs text-muted-foreground mt-1">
                                         {note.author?.name ||
                                           note.author?.email}
+                                        {note.createdAt && (
+                                          <span className="ml-2">
+                                            • {formatDateTime(note.createdAt)}
+                                          </span>
+                                        )}
                                       </p>
                                     </div>
                                   </div>
@@ -1994,7 +2715,6 @@ export default function KanbanPage() {
                                               {
                                                 onSuccess: () => {
                                                   // Mettre à jour la liste des membres sélectionnés
-                                                  handleCloseCardDetails();
                                                   setSelectedMemberIds(
                                                     selectedMemberIds.filter(
                                                       (id) =>
@@ -2086,7 +2806,6 @@ export default function KanbanPage() {
                                                 },
                                                 {
                                                   onSuccess: () => {
-                                                    handleCloseCardDetails();
                                                     setSelectedMemberIds(
                                                       selectedMemberIds.filter(
                                                         (id) =>
@@ -2147,7 +2866,6 @@ export default function KanbanPage() {
                                         onSuccess: () => {
                                           setIsAddMembersDialogOpen(false);
                                           setSelectedMemberIds([]);
-                                          handleCloseCardDetails();
                                         },
                                       }
                                     );
@@ -2201,7 +2919,7 @@ export default function KanbanPage() {
                               <div className="space-y-2">
                                 {labels.map((label) => {
                                   const isOnCard =
-                                    selectedCard.labels?.some(
+                                    selectedCard?.labels?.some(
                                       (lp) => lp.labelId === label.id
                                     ) || false;
 
@@ -2257,13 +2975,13 @@ export default function KanbanPage() {
                                             size="sm"
                                             className="h-7 text-xs"
                                             onClick={() => {
-                                              removeCardLabel.mutate({
-                                                cardId: selectedCard.id,
-                                                labelId: label.id,
-                                                recruteurId: recruteurId!,
-                                              });
-
-                                              handleCloseCardDetails();
+                                              if (selectedCard) {
+                                                removeCardLabel.mutate({
+                                                  cardId: selectedCard.id,
+                                                  labelId: label.id,
+                                                  recruteurId: recruteurId!,
+                                                });
+                                              }
                                             }}
                                           >
                                             Retirer
@@ -2274,21 +2992,22 @@ export default function KanbanPage() {
                                             size="sm"
                                             className="h-7 text-xs"
                                             onClick={() => {
-                                              addCardLabel.mutate(
-                                                {
-                                                  cardId: selectedCard.id,
-                                                  labelId: label.id,
-                                                  recruteurId: recruteurId!,
-                                                },
-                                                {
-                                                  onSuccess: () => {
-                                                    setIsLabelsDialogOpen(
-                                                      false
-                                                    );
-                                                    handleCloseCardDetails();
+                                              if (selectedCard) {
+                                                addCardLabel.mutate(
+                                                  {
+                                                    cardId: selectedCard.id,
+                                                    labelId: label.id,
+                                                    recruteurId: recruteurId!,
                                                   },
-                                                }
-                                              );
+                                                  {
+                                                    onSuccess: () => {
+                                                      setIsLabelsDialogOpen(
+                                                        false
+                                                      );
+                                                    },
+                                                  }
+                                                );
+                                              }
                                             }}
                                           >
                                             Ajouter
@@ -2506,7 +3225,7 @@ export default function KanbanPage() {
                         <div>
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                              Suggested
+                              suggéré
                             </span>
                             <Button
                               variant="ghost"
@@ -2522,7 +3241,7 @@ export default function KanbanPage() {
                             className="w-full justify-start"
                           >
                             <IconUserPlus className="h-4 w-4 mr-2" />
-                            Join
+                            Members
                           </Button>
                         </div>
 
@@ -2536,6 +3255,16 @@ export default function KanbanPage() {
                               variant="ghost"
                               size="sm"
                               className="w-full justify-start"
+                              onClick={() => {
+                                if (selectedCard) {
+                                  setSelectedMemberIds(
+                                    selectedCard.members?.map(
+                                      (m) => m.userId
+                                    ) || []
+                                  );
+                                  setIsAddMembersDialogOpen(true);
+                                }
+                              }}
                             >
                               <IconUserPlus className="h-4 w-4 mr-2" />
                               Members
@@ -2544,6 +3273,15 @@ export default function KanbanPage() {
                               variant="ghost"
                               size="sm"
                               className="w-full justify-start"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log("Labels button clicked", {
+                                  isLabelsDialogOpen,
+                                  selectedCard,
+                                });
+                                setIsLabelsDialogOpen(true);
+                              }}
                             >
                               <IconTag className="h-4 w-4 mr-2" />
                               Labels
@@ -2552,6 +3290,11 @@ export default function KanbanPage() {
                               variant="ghost"
                               size="sm"
                               className="w-full justify-start"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleScrollToChecklist();
+                              }}
                             >
                               <IconListCheck className="h-4 w-4 mr-2" />
                               Checklist
@@ -2560,6 +3303,11 @@ export default function KanbanPage() {
                               variant="ghost"
                               size="sm"
                               className="w-full justify-start"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleScrollToDueDate();
+                              }}
                             >
                               <IconClock className="h-4 w-4 mr-2" />
                               Due date
@@ -2568,18 +3316,16 @@ export default function KanbanPage() {
                               variant="ghost"
                               size="sm"
                               className="w-full justify-start"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleScrollToAttachment();
+                              }}
                             >
                               <IconPaperclip className="h-4 w-4 mr-2" />
                               Attachment
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full justify-start"
-                            >
-                              <IconMapPin className="h-4 w-4 mr-2" />
-                              Location
-                            </Button>
+
                             <Button
                               variant="ghost"
                               size="sm"

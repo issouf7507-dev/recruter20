@@ -660,7 +660,9 @@ model CardNote {
   content   String
   cardId    String
   authorId  String
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now())  
+  //a migrer 
+  updatedAt DateTime @updatedAt
 
   card      KanbanCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
   author    User       @relation(fields: [authorId], references: [id])

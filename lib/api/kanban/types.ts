@@ -275,3 +275,23 @@ export interface AddCardLabelData {
   labelId: string;
   recruteurId: string;
 }
+
+export interface CreateCardDueDateData {
+  cardId: string;
+  dueAt: Date | string;
+  recruteurId: string;
+}
+
+export interface UpdateCardDueDateData {
+  dueAt: Date | string;
+}
+
+export interface CreateCardAttachmentData {
+  cardId: string;
+  url: string;
+  filename?: string;
+  fileType?: string;
+  fileSize?: number;
+  recruteurId: string;
+  uploadedById: string;
+}
