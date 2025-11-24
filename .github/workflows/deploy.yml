@@ -2,7 +2,7 @@ name: Deploy to VPS
 
 on:
   push:
-    branches: [dev-issouf-secure]
+    branches: [dev-issouf]
   workflow_dispatch:
 
 jobs:
