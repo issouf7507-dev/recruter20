@@ -59,7 +59,7 @@ jobs:
             cd current
 
             # Installer les dépendances
-            npm install --production
+            npm ci
 
             # Construire l'application
             npm run build
