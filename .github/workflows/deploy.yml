@@ -42,6 +42,13 @@ jobs:
           port: 22
 
           script: |
+            # --- CORRECTION DE L'ERREUR PNPM: COMMAND NOT FOUND ---
+            # Ajoute le chemin d'accès global de pnpm (où il a été installé via nvm) au PATH.
+            # C'est nécessaire car l'environnement SSH non-interactif n'a pas ce PATH par défaut.
+            export PATH="/root/.nvm/versions/node/v22.17.0/bin:$PATH"
+            # Si le chemin ci-dessus ne fonctionne pas, utilisez l'option 1 à la place.
+            # -----------------------------------------------------
+
             # Naviguer vers le répertoire du projet
             cd /var/www/webapp/recruter
 
