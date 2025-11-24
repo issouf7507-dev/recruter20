@@ -1,6 +1,14 @@
 import { initEdgeStore } from "@edgestore/server";
 import { createEdgeStoreNextHandler } from "@edgestore/server/adapters/next/app";
 
+// Set default values for EdgeStore during build if not provided
+if (!process.env.EDGE_STORE_ACCESS_KEY) {
+  process.env.EDGE_STORE_ACCESS_KEY = "build-time-placeholder";
+}
+if (!process.env.EDGE_STORE_SECRET_KEY) {
+  process.env.EDGE_STORE_SECRET_KEY = "build-time-placeholder";
+}
+
 const es = initEdgeStore.create();
 
 /**
