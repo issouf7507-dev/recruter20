@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { resendInvitationEmail } from "@/lib/api/invitation/service";
+import { resendInvitationEmail } from "@/lib/api/invitation/service.server";
 import prisma from "@/lib/prisma";
 
 /**

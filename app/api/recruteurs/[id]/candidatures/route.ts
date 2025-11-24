@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { applicationService } from "@/lib/api/candidatures/service";
 
-export async function GET({ params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const recruteurId = (await params)?.id;
     // if (!recruteurId) {

@@ -71,7 +71,7 @@ export async function fetchOffer(
     datePosted?: string;
     experience?: string[];
   }
-): Promise<PaginatedResponse<JobOffer>> {
+): Promise<JobOffer> {
   const queryParams = new URLSearchParams();
   if (params?.page) queryParams.set("page", params.page.toString());
   if (params?.limit) queryParams.set("limit", params.limit.toString());
@@ -93,11 +93,10 @@ export async function fetchOffer(
 
   const queryString = queryParams.toString();
   const response = await fetch(`/api/offres/${id}?${queryString.toString()}`);
-  const result: ApiResponse<PaginatedResponse<JobOffer>> =
-    await response.json();
+  const result: ApiResponse<JobOffer> = await response.json();
 
   if (!result.success) {
-    throw new Error(result.error || "Failed to fetch offers");
+    throw new Error(result.error || "Failed to fetch offer");
   }
 
   return result.data;

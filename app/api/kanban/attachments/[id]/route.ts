@@ -8,7 +8,7 @@ import type { ApiResponse } from "@/lib/api/kanban/types";
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -19,7 +19,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { recruteurId }: { recruteurId: string } = body;
 
@@ -49,4 +49,3 @@ export async function DELETE(
     );
   }
 }
-
