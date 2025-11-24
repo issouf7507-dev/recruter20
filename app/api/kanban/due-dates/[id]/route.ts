@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { kanbanRepository } from "@/lib/api/kanban/repository";
-import type { UpdateCardDueDateData, ApiResponse } from "@/lib/api/kanban/types";
+import type {
+  UpdateCardDueDateData,
+  ApiResponse,
+} from "@/lib/api/kanban/types";
 
 /**
  * PATCH /api/kanban/due-dates/[id] - Update a due date
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -19,9 +22,12 @@ export async function PATCH(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
-    const { dueAt, recruteurId }: UpdateCardDueDateData & {
+    const {
+      dueAt,
+      recruteurId,
+    }: UpdateCardDueDateData & {
       recruteurId: string;
     } = body;
 
@@ -61,7 +67,7 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -72,7 +78,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { recruteurId }: { recruteurId: string } = body;
 
@@ -102,4 +108,3 @@ export async function DELETE(
     );
   }
 }
-
