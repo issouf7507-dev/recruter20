@@ -14,6 +14,9 @@ import type {
   CardLabel,
   CreateCardLabelData,
   UpdateCardLabelData,
+  CreateCardDueDateData,
+  UpdateCardDueDateData,
+  CreateCardAttachmentData,
 } from "./types";
 import { kanbanRepository } from "./repository";
 
@@ -406,6 +409,233 @@ export async function removeCardLabel(
 
   if (!result.success) {
     throw new Error(result.error || "Failed to remove card label");
+  }
+
+  return result.data;
+}
+
+/**
+ * Create a note for a card
+ */
+export async function createCardNote(
+  cardId: string,
+  content: string,
+  recruteurId: string
+): Promise<KanbanCard> {
+  const response = await fetch(`/api/kanban/cards/${cardId}/notes`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ content, recruteurId }),
+  });
+
+  const result: ApiResponse<KanbanCard> = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.error || "Failed to create card note");
+  }
+
+  return result.data;
+}
+
+/**
+ * Create a checklist item for a card
+ */
+export async function createCheckItem(
+  cardId: string,
+  label: string,
+  recruteurId: string
+): Promise<KanbanCard> {
+  const response = await fetch(`/api/kanban/cards/${cardId}/checklist`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ label, recruteurId }),
+  });
+
+  const result: ApiResponse<KanbanCard> = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.error || "Failed to create check item");
+  }
+
+  return result.data;
+}
+
+/**
+ * Update a checklist item
+ */
+export async function updateCheckItem(
+  checkItemId: string,
+  data: { label?: string; isDone?: boolean },
+  recruteurId: string
+): Promise<KanbanCard> {
+  const response = await fetch(`/api/kanban/checklist/${checkItemId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ ...data, recruteurId }),
+  });
+
+  const result: ApiResponse<KanbanCard> = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.error || "Failed to update check item");
+  }
+
+  return result.data;
+}
+
+/**
+ * Delete a checklist item
+ */
+export async function deleteCheckItem(
+  checkItemId: string,
+  recruteurId: string
+): Promise<KanbanCard> {
+  const response = await fetch(`/api/kanban/checklist/${checkItemId}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ recruteurId }),
+  });
+
+  const result: ApiResponse<KanbanCard> = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.error || "Failed to delete check item");
+  }
+
+  return result.data;
+}
+
+/**
+ * Create a due date for a card
+ */
+export async function createCardDueDate(
+  cardId: string,
+  dueAt: Date | string,
+  recruteurId: string
+): Promise<KanbanCard> {
+  const response = await fetch("/api/kanban/due-dates", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      cardId,
+      dueAt,
+      recruteurId,
+    }),
+  });
+
+  const result: ApiResponse<KanbanCard> = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.error || "Failed to create due date");
+  }
+
+  return result.data;
+}
+
+/**
+ * Update a due date
+ */
+export async function updateCardDueDate(
+  dueDateId: string,
+  dueAt: Date | string,
+  recruteurId: string
+): Promise<KanbanCard> {
+  const response = await fetch(`/api/kanban/due-dates/${dueDateId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      dueAt,
+      recruteurId,
+    }),
+  });
+
+  const result: ApiResponse<KanbanCard> = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.error || "Failed to update due date");
+  }
+
+  return result.data;
+}
+
+/**
+ * Delete a due date
+ */
+export async function deleteCardDueDate(
+  dueDateId: string,
+  recruteurId: string
+): Promise<KanbanCard> {
+  const response = await fetch(`/api/kanban/due-dates/${dueDateId}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ recruteurId }),
+  });
+
+  const result: ApiResponse<KanbanCard> = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.error || "Failed to delete due date");
+  }
+
+  return result.data;
+}
+
+/**
+ * Create an attachment for a card
+ */
+export async function createCardAttachment(
+  data: CreateCardAttachmentData
+): Promise<KanbanCard> {
+  const response = await fetch("/api/kanban/attachments", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  const result: ApiResponse<KanbanCard> = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.error || "Failed to create attachment");
+  }
+
+  return result.data;
+}
+
+/**
+ * Delete an attachment
+ */
+export async function deleteCardAttachment(
+  attachmentId: string,
+  recruteurId: string
+): Promise<KanbanCard> {
+  const response = await fetch(`/api/kanban/attachments/${attachmentId}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ recruteurId }),
+  });
+
+  const result: ApiResponse<KanbanCard> = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.error || "Failed to delete attachment");
   }
 
   return result.data;

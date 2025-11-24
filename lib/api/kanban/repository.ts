@@ -993,6 +993,334 @@ export class KanbanRepository {
     // Return updated card
     return this.findCardById(cardId, recruteurId);
   }
+
+  /**
+   * Create a note for a card
+   */
+  async createCardNote(
+    cardId: string,
+    content: string,
+    authorId: string,
+    recruteurId: string
+  ): Promise<KanbanCard> {
+    // Verify card ownership
+    const card = await prisma.kanbanCard.findFirst({
+      where: {
+        id: cardId,
+        createdByRecruteurId: recruteurId,
+      },
+    });
+
+    if (!card) {
+      throw new Error("Card not found or access denied");
+    }
+
+    // Create note
+    await prisma.cardNote.create({
+      data: {
+        cardId,
+        content,
+        authorId,
+      },
+    });
+
+    // Log activity
+    await prisma.cardActivity.create({
+      data: {
+        cardId,
+        userId: authorId,
+        action: "note_added",
+        meta: JSON.parse(JSON.stringify({ content: content.substring(0, 50) })),
+      },
+    });
+
+    // Return updated card
+    return this.findCardById(cardId, recruteurId);
+  }
+
+  /**
+   * Create a checklist item for a card
+   */
+  async createCheckItem(
+    cardId: string,
+    label: string,
+    recruteurId: string
+  ): Promise<KanbanCard> {
+    // Verify card ownership
+    const card = await prisma.kanbanCard.findFirst({
+      where: {
+        id: cardId,
+        createdByRecruteurId: recruteurId,
+      },
+      include: {
+        checklist: true,
+      },
+    });
+
+    if (!card) {
+      throw new Error("Card not found or access denied");
+    }
+
+    // Get the max order value
+    const maxOrder = card.checklist.length > 0
+      ? Math.max(...card.checklist.map((item) => item.order))
+      : -1;
+
+    // Create check item
+    await prisma.checkItem.create({
+      data: {
+        cardId,
+        label,
+        isDone: false,
+        order: maxOrder + 1,
+      },
+    });
+
+    // Return updated card
+    return this.findCardById(cardId, recruteurId);
+  }
+
+  /**
+   * Update a checklist item
+   */
+  async updateCheckItem(
+    checkItemId: string,
+    data: { label?: string; isDone?: boolean },
+    recruteurId: string
+  ): Promise<KanbanCard> {
+    // Find the check item and verify card ownership
+    const checkItem = await prisma.checkItem.findUnique({
+      where: { id: checkItemId },
+      include: {
+        card: true,
+      },
+    });
+
+    if (!checkItem) {
+      throw new Error("Check item not found");
+    }
+
+    if (checkItem.card.createdByRecruteurId !== recruteurId) {
+      throw new Error("Access denied");
+    }
+
+    // Update check item
+    await prisma.checkItem.update({
+      where: { id: checkItemId },
+      data: {
+        ...(data.label !== undefined && { label: data.label }),
+        ...(data.isDone !== undefined && { isDone: data.isDone }),
+      },
+    });
+
+    // Return updated card
+    return this.findCardById(checkItem.cardId, recruteurId);
+  }
+
+  /**
+   * Delete a checklist item
+   */
+  async deleteCheckItem(
+    checkItemId: string,
+    recruteurId: string
+  ): Promise<KanbanCard> {
+    // Find the check item and verify card ownership
+    const checkItem = await prisma.checkItem.findUnique({
+      where: { id: checkItemId },
+      include: {
+        card: true,
+      },
+    });
+
+    if (!checkItem) {
+      throw new Error("Check item not found");
+    }
+
+    if (checkItem.card.createdByRecruteurId !== recruteurId) {
+      throw new Error("Access denied");
+    }
+
+    // Delete check item
+    await prisma.checkItem.delete({
+      where: { id: checkItemId },
+    });
+
+    // Return updated card
+    return this.findCardById(checkItem.cardId, recruteurId);
+  }
+
+  /**
+   * Create a due date for a card
+   */
+  async createCardDueDate(
+    cardId: string,
+    dueAt: Date,
+    recruteurId: string
+  ): Promise<KanbanCard> {
+    // Verify card ownership
+    const card = await prisma.kanbanCard.findFirst({
+      where: {
+        id: cardId,
+        createdByRecruteurId: recruteurId,
+      },
+    });
+
+    if (!card) {
+      throw new Error("Card not found or access denied");
+    }
+
+    // Create due date
+    await prisma.cardDueDate.create({
+      data: {
+        cardId,
+        dueAt,
+      },
+    });
+
+    // Return updated card
+    return this.findCardById(cardId, recruteurId);
+  }
+
+  /**
+   * Update a due date
+   */
+  async updateCardDueDate(
+    dueDateId: string,
+    dueAt: Date,
+    recruteurId: string
+  ): Promise<KanbanCard> {
+    // Find the due date and verify card ownership
+    const dueDate = await prisma.cardDueDate.findUnique({
+      where: { id: dueDateId },
+      include: {
+        card: true,
+      },
+    });
+
+    if (!dueDate) {
+      throw new Error("Due date not found");
+    }
+
+    if (dueDate.card.createdByRecruteurId !== recruteurId) {
+      throw new Error("Access denied");
+    }
+
+    // Update due date
+    await prisma.cardDueDate.update({
+      where: { id: dueDateId },
+      data: {
+        dueAt,
+      },
+    });
+
+    // Return updated card
+    return this.findCardById(dueDate.cardId, recruteurId);
+  }
+
+  /**
+   * Delete a due date
+   */
+  async deleteCardDueDate(
+    dueDateId: string,
+    recruteurId: string
+  ): Promise<KanbanCard> {
+    // Find the due date and verify card ownership
+    const dueDate = await prisma.cardDueDate.findUnique({
+      where: { id: dueDateId },
+      include: {
+        card: true,
+      },
+    });
+
+    if (!dueDate) {
+      throw new Error("Due date not found");
+    }
+
+    if (dueDate.card.createdByRecruteurId !== recruteurId) {
+      throw new Error("Access denied");
+    }
+
+    // Delete due date
+    await prisma.cardDueDate.delete({
+      where: { id: dueDateId },
+    });
+
+    // Return updated card
+    return this.findCardById(dueDate.cardId, recruteurId);
+  }
+
+  /**
+   * Create an attachment for a card
+   */
+  async createCardAttachment(
+    cardId: string,
+    data: {
+      url: string;
+      filename?: string;
+      fileType?: string;
+      fileSize?: number;
+      uploadedById: string;
+    },
+    recruteurId: string
+  ): Promise<KanbanCard> {
+    // Verify card ownership
+    const card = await prisma.kanbanCard.findFirst({
+      where: {
+        id: cardId,
+        createdByRecruteurId: recruteurId,
+      },
+    });
+
+    if (!card) {
+      throw new Error("Card not found or access denied");
+    }
+
+    // Create attachment
+    await prisma.cardAttachment.create({
+      data: {
+        cardId,
+        url: data.url,
+        filename: data.filename || null,
+        fileType: data.fileType || null,
+        uploadedById: data.uploadedById,
+      },
+    });
+
+    // Return updated card
+    return this.findCardById(cardId, recruteurId);
+  }
+
+  /**
+   * Delete an attachment
+   */
+  async deleteCardAttachment(
+    attachmentId: string,
+    recruteurId: string
+  ): Promise<KanbanCard> {
+    // Find the attachment and verify card ownership
+    const attachment = await prisma.cardAttachment.findUnique({
+      where: { id: attachmentId },
+      include: {
+        card: true,
+      },
+    });
+
+    if (!attachment) {
+      throw new Error("Attachment not found");
+    }
+
+    if (attachment.card.createdByRecruteurId !== recruteurId) {
+      throw new Error("Access denied");
+    }
+
+    // Delete attachment
+    await prisma.cardAttachment.delete({
+      where: { id: attachmentId },
+    });
+
+    // Return updated card
+    return this.findCardById(attachment.cardId, recruteurId);
+  }
 }
 
 export const kanbanRepository = new KanbanRepository();

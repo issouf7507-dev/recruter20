@@ -425,6 +425,243 @@ export function useRemoveCardLabel() {
   });
 }
 
+/**
+ * Hook to create a note for a card
+ */
+export function useCreateCardNote() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      cardId,
+      content,
+      recruteurId,
+    }: {
+      cardId: string;
+      content: string;
+      recruteurId: string;
+    }) => kanbanService.createCardNote(cardId, content, recruteurId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kanban-columns"] });
+      toast.success("Note ajoutée avec succès");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Erreur lors de l'ajout de la note");
+    },
+  });
+}
+
+/**
+ * Hook to create a checklist item
+ */
+export function useCreateCheckItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      cardId,
+      label,
+      recruteurId,
+    }: {
+      cardId: string;
+      label: string;
+      recruteurId: string;
+    }) => kanbanService.createCheckItem(cardId, label, recruteurId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kanban-columns"] });
+      toast.success("Tâche ajoutée avec succès");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Erreur lors de l'ajout de la tâche");
+    },
+  });
+}
+
+/**
+ * Hook to update a checklist item
+ */
+export function useUpdateCheckItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      checkItemId,
+      data,
+      recruteurId,
+    }: {
+      checkItemId: string;
+      data: { label?: string; isDone?: boolean };
+      recruteurId: string;
+    }) => kanbanService.updateCheckItem(checkItemId, data, recruteurId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kanban-columns"] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Erreur lors de la mise à jour de la tâche");
+    },
+  });
+}
+
+/**
+ * Hook to delete a checklist item
+ */
+export function useDeleteCheckItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      checkItemId,
+      recruteurId,
+    }: {
+      checkItemId: string;
+      recruteurId: string;
+    }) => kanbanService.deleteCheckItem(checkItemId, recruteurId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kanban-columns"] });
+      toast.success("Tâche supprimée avec succès");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Erreur lors de la suppression de la tâche");
+    },
+  });
+}
+
+/**
+ * Hook to create a due date for a card
+ */
+export function useCreateCardDueDate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      cardId,
+      dueAt,
+      recruteurId,
+    }: {
+      cardId: string;
+      dueAt: Date | string;
+      recruteurId: string;
+    }) => kanbanService.createCardDueDate(cardId, dueAt, recruteurId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kanban-columns"] });
+      toast.success("Date d'échéance ajoutée avec succès");
+    },
+    onError: (error: Error) => {
+      toast.error(
+        error.message || "Erreur lors de l'ajout de la date d'échéance"
+      );
+    },
+  });
+}
+
+/**
+ * Hook to update a due date
+ */
+export function useUpdateCardDueDate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      dueDateId,
+      dueAt,
+      recruteurId,
+    }: {
+      dueDateId: string;
+      dueAt: Date | string;
+      recruteurId: string;
+    }) => kanbanService.updateCardDueDate(dueDateId, dueAt, recruteurId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kanban-columns"] });
+      toast.success("Date d'échéance mise à jour avec succès");
+    },
+    onError: (error: Error) => {
+      toast.error(
+        error.message || "Erreur lors de la mise à jour de la date d'échéance"
+      );
+    },
+  });
+}
+
+/**
+ * Hook to delete a due date
+ */
+export function useDeleteCardDueDate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      dueDateId,
+      recruteurId,
+    }: {
+      dueDateId: string;
+      recruteurId: string;
+    }) => kanbanService.deleteCardDueDate(dueDateId, recruteurId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kanban-columns"] });
+      toast.success("Date d'échéance supprimée avec succès");
+    },
+    onError: (error: Error) => {
+      toast.error(
+        error.message || "Erreur lors de la suppression de la date d'échéance"
+      );
+    },
+  });
+}
+
+/**
+ * Hook to create an attachment for a card
+ */
+export function useCreateCardAttachment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: {
+      cardId: string;
+      url: string;
+      filename?: string;
+      fileType?: string;
+      fileSize?: number;
+      recruteurId: string;
+      uploadedById: string;
+    }) => kanbanService.createCardAttachment(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kanban-columns"] });
+      toast.success("Pièce jointe ajoutée avec succès");
+    },
+    onError: (error: Error) => {
+      toast.error(
+        error.message || "Erreur lors de l'ajout de la pièce jointe"
+      );
+    },
+  });
+}
+
+/**
+ * Hook to delete an attachment
+ */
+export function useDeleteCardAttachment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      attachmentId,
+      recruteurId,
+    }: {
+      attachmentId: string;
+      recruteurId: string;
+    }) => kanbanService.deleteCardAttachment(attachmentId, recruteurId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kanban-columns"] });
+      toast.success("Pièce jointe supprimée avec succès");
+    },
+    onError: (error: Error) => {
+      toast.error(
+        error.message || "Erreur lors de la suppression de la pièce jointe"
+      );
+    },
+  });
+}
+
 // Re-export types
 export type {
   KanbanColumn,
