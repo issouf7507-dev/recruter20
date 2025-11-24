@@ -46,7 +46,7 @@ jobs:
             mkdir -p current
 
             # Cloner le code depuis GitHub
-            git clone -b dev-issouf-secure https://github.com/${{ github.repository }}.git temp-deploy
+            git clone -b dev-issouf https://github.com/${{ github.repository }}.git temp-deploy
 
             # Copier les fichiers nécessaires
             cp -r temp-deploy/* current/
