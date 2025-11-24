@@ -23,10 +23,17 @@ export async function POST(
       );
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+    });
+
     // Vérifier que l'utilisateur est bien un recruteur
-    if (session.user.type !== "RECRUTEUR") {
+    if (user?.type !== "RECRUTEUR") {
       return NextResponse.json(
-        { success: false, error: "Seuls les recruteurs peuvent renvoyer des invitations" },
+        {
+          success: false,
+          error: "Seuls les recruteurs peuvent renvoyer des invitations",
+        },
         { status: 403 }
       );
     }
@@ -59,7 +66,10 @@ export async function POST(
 
     if (invitation.recruteurId !== recruteur.id) {
       return NextResponse.json(
-        { success: false, error: "Vous n'avez pas le droit de renvoyer cette invitation" },
+        {
+          success: false,
+          error: "Vous n'avez pas le droit de renvoyer cette invitation",
+        },
         { status: 403 }
       );
     }
@@ -81,4 +91,3 @@ export async function POST(
     );
   }
 }
-
