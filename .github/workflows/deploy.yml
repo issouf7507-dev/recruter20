@@ -20,10 +20,10 @@ jobs:
           cache: ""
 
       - name: Install dependencies
-        run: npm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build application
-        run: npm run build
+        run: pnpm run build
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
@@ -59,10 +59,11 @@ jobs:
             cd current
 
             # Installer les dépendances
-            npm ci
+            pnpm install --frozen-lockfile
+
 
             # Construire l'application
-            npm run build
+            pnpm run build
 
             # Vérifier que le build existe
             if [ ! -d ".next" ]; then
@@ -78,7 +79,7 @@ jobs:
             lsof -ti:3000 | xargs kill -9 2>/dev/null || true
 
             # Démarrer le service PM2 sur le port 3000
-            pm2 start npm --name "recruter" -- start -- -p 3000
+            pm2 start "pnpm start -- -p 3000" --name recruter
 
             # Sauvegarder la configuration PM2
             pm2 save
