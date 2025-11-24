@@ -27,7 +27,7 @@ export async function POST(
       where: { id: session.user.id },
     });
 
-    // Vérifier que l'utilisateur est bien un recruteur
+    // Vérifier que l'utilisateur est bien un recruteurss
     if (user?.type !== "RECRUTEUR") {
       return NextResponse.json(
         {
