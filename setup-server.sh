@@ -16,7 +16,7 @@ sudo apt-get install -y nodejs
 
 # Installer PM2 globalement
 echo "📦 Installation de PM2..."
-sudo npm install -g pm2
+sudo pnpm install -g pm2
 
 # Installer Git
 echo "📦 Installation de Git..."
