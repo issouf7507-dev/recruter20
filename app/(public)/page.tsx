@@ -225,26 +225,26 @@ export default function LandingPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
-        className="h-[600px] md:h-[800px] bg-center bg-no-repeat bg-cover rounded-lg relative flex items-center justify-start"
+        className="min-h-[500px] sm:min-h-[550px] md:min-h-[600px] lg:h-[800px] bg-center bg-no-repeat bg-cover rounded-lg relative flex items-center justify-start"
         style={{ backgroundImage: "url('/img/hero-image.jpg')" }}
       >
-        <div className="absolute bottom-0 left-0 w-full h-full bg-black opacity-50 rounded-lg"></div>
+        <div className="absolute inset-0 bg-black/50 rounded-lg"></div>
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="text-white z-30 px-6 md:px-20"
+          className="text-white z-30 px-4 sm:px-6 md:px-12 lg:px-20 pb-32 sm:pb-40 md:pb-48 lg:pb-0"
         >
-          <p className="text-base md:text-lg">
+          <p className="text-sm sm:text-base md:text-lg">
             Recrutez des talents ou trouvez votre prochain emploi.
           </p>
-          <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold text-[#a590ff] mt-4">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-7xl font-bold text-[#a590ff] mt-3 md:mt-4">
             Trouvez le candidat idéal
             <br /> pour votre entreprise
           </h1>
-          <Link href="/recruteur/dashboard">
-            <button className="mt-6 md:mt-10 btn liquid">
+          <Link href="/auth/recruteur/login">
+            <button className="mt-4 sm:mt-6 md:mt-10 btn liquid">
               Commencer maintenant
             </button>
           </Link>
@@ -254,58 +254,59 @@ export default function LandingPage() {
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="backdrop-blur-custom shadow-lg absolute w-[95%] md:w-[90%] -bottom-48 md:-bottom-36 left-1/2 -translate-x-1/2 min-h-[300px] md:h-[220px] rounded-lg z-30"
+          className="backdrop-blur-custom shadow-lg absolute w-[92%] sm:w-[90%] -bottom-[280px] sm:-bottom-[240px] md:-bottom-44 lg:-bottom-36 left-1/2 -translate-x-1/2 rounded-xl z-30"
         >
-          <div className="w-full h-full px-6 md:px-30 py-8 md:py-10">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-4">
-              <div className="flex items-center gap-2">
-                <UserIcon className="w-12 h-12 opacity-50" />
+          <div className="w-full h-full px-4 sm:px-6 md:px-8 lg:px-12 py-6 sm:py-8 md:py-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+              <div className="flex items-center gap-3">
+                <UserIcon className="w-10 h-10 sm:w-12 sm:h-12 opacity-50 shrink-0" />
                 <div>
-                  <p className="text-xl font-bold">Recrutez des talents</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-base sm:text-lg md:text-xl font-bold">
+                    Recrutez des talents
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-500">
                     Trouvez le candidat idéal
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <BriefcaseIcon className="w-12 h-12 opacity-50" />
+              <div className="flex items-center gap-3">
+                <BriefcaseIcon className="w-10 h-10 sm:w-12 sm:h-12 opacity-50 shrink-0" />
                 <div>
-                  <p className="text-xl font-bold">
+                  <p className="text-base sm:text-lg md:text-xl font-bold">
                     Collaborez avec vos équipes
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-xs sm:text-sm text-gray-500">
                     Facilitez la collaboration
                   </p>
                 </div>
               </div>
-
-              <div className="flex items-center gap-2">
-                <ShieldCheckIcon className="w-12 h-12 opacity-50" />
+              <div className="flex items-center gap-3 sm:col-span-2 lg:col-span-1">
+                <ShieldCheckIcon className="w-10 h-10 sm:w-12 sm:h-12 opacity-50 shrink-0" />
                 <div>
-                  <p className="text-xl font-bold">
+                  <p className="text-base sm:text-lg md:text-xl font-bold">
                     Simplifiez votre quotidien
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-xs sm:text-sm text-gray-500">
                     Gagnez du temps et de l'argent
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="grid w-full mt-8 md:mt-16">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between w-full gap-4">
+            <div className="mt-6 sm:mt-8 md:mt-10 lg:mt-12 pt-4 sm:pt-6 border-t border-gray-200">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between w-full gap-3 md:gap-4">
                 <div className="flex-1">
-                  <h1 className="text-lg md:text-2xl font-bold text-black">
+                  <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-black">
                     Diffusez vos offres sur plus de 160 jobboards simultanément
-                  </h1>
-                  <p className="text-sm md:text-base mt-2">
+                  </h2>
+                  <p className="text-xs sm:text-sm md:text-base mt-1 sm:mt-2 text-gray-600">
                     Maximisez votre visibilité et touchez des milliers de
                     candidats qualifiés en un seul clic.
                   </p>
                 </div>
-                <div className="w-full md:w-auto">
+                <div className="w-full md:w-auto mt-3 md:mt-0">
                   <Link href="/recruteur/dashboard">
-                    <button className="mt-4 md:mt-10 btn2 liquid w-full md:w-auto whitespace-nowrap">
+                    <button className="btn2 liquid w-full md:w-auto whitespace-nowrap">
                       Publier une offre
                     </button>
                   </Link>
@@ -317,7 +318,7 @@ export default function LandingPage() {
       </motion.div>
 
       {/* Section Statistiques */}
-      <div className="mt-80 md:mt-60">
+      <div className="mt-[320px] sm:mt-[280px] md:mt-56 lg:mt-52">
         <section className="py-12 md:py-20">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12 md:mb-16">
@@ -396,7 +397,7 @@ export default function LandingPage() {
               et performante. Gagnez du temps et de l'efficacité.
             </p>
 
-            <Link href="/candidat/recherche">
+            <Link href="/offres">
               <button className="mt-6 md:mt-10 btn2 liquid w-full md:w-auto">
                 Trouver un emploi
               </button>
@@ -465,7 +466,7 @@ export default function LandingPage() {
 
       <div className="mt-16 md:mt-20">
         <div>
-          <motion.div
+          {/* <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -512,7 +513,7 @@ export default function LandingPage() {
                 </ul>
               </div>
             </div>
-          </section>
+          </section> */}
 
           <section className=" py-16 lg:py-24 bg-white">
             <div className="mx-auto grid max-w-container grid-cols-1 gap-16 overflow-hidden px-4 md:px-8 lg:grid-cols-2 lg:items-center">
@@ -715,7 +716,7 @@ export default function LandingPage() {
                 <h3 className="text-2xl font-bold mb-2">Pro</h3>
                 <p className=" mb-6">Pour les recruteurs actifs</p>
                 <div className="mb-6">
-                  <span className="text-5xl font-bold">20€</span>
+                  <span className="text-5xl font-bold">XXX XOF</span>
                   <span className="">/mois</span>
                 </div>
                 <ul className="space-y-4 mb-8">
@@ -886,7 +887,7 @@ export default function LandingPage() {
                 transformer votre recrutement.
               </p>
 
-              <Link href="/recruteur/dashboard">
+              <Link href="/auth/recruteur/login">
                 <button className=" mt-10 btn2 liquid ">
                   Essayer gratuitement
                 </button>

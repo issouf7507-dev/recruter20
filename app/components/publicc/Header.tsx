@@ -7,6 +7,7 @@ import { signOut, useSession } from "@/lib/auth-client";
 import { getCandidat } from "@/action/getCandidat";
 import { useCandidat } from "@/lib/hooks/use-candidat";
 import { CandidatSheet } from "./CandidatSheet";
+import Image from "next/image";
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -62,7 +63,7 @@ const Header = () => {
               href="/"
               className="text-xl font-bold text-gray-900 hover:text-[#a590ff] transition-colors"
             >
-              Ylsix
+              <Image src="/img/icon2.png" alt="Logo" width={100} height={100} />
             </Link>
           </div>
 

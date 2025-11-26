@@ -346,7 +346,7 @@ export default function FonctionnalitesPage() {
             <p className="text-gray-600 text-lg mb-8">
               Rejoignez les 500+ entreprises qui nous font confiance
             </p>
-            <Link href="/recruteur/dashboard">
+            <Link href="/auth/recruteur/login">
               <button className="bg-[#a590ff] text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors shadow-lg">
                 Commencer gratuitement
               </button>
@@ -473,7 +473,7 @@ export default function FonctionnalitesPage() {
               requise.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/recruteur/dashboard">
+              <Link href="/auth/recruteur/login">
                 <button className="bg-white text-[#a590ff] px-8 py-2 rounded-full font-semibold text-lg hover:bg-gray-100 transition-colors shadow-lg">
                   Démarrer gratuitement
                 </button>

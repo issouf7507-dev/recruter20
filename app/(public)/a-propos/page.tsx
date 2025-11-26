@@ -99,20 +99,6 @@ export default function AProposPage() {
             </p>
           </motion.div>
         </div>
-        <div className="container mx-auto px-4 grid place-items-center  absolute bottom-1/5 left-0 right-0 w-full">
-          <div className=" container mx-auto">
-            <div className="grid grid-cols-2 gap-4  absolute bottom-1/5 left-0 w-full container mx-auto  ">
-              <div className="flex  items-center  gap-4">
-                <div className="bg-emerald-500 rounded-xl p-4 h-[300px] w-full"></div>
-                <div className="bg-emerald-500 rounded-xl p-4 h-[250px] w-full"></div>
-              </div>
-              <div className="flex  items-center  gap-4">
-                <div className="bg-emerald-500 rounded-xl p-4 h-[300px] w-full"></div>
-                <div className="bg-emerald-500 rounded-xl p-4 h-[250px] w-full"></div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Mission Statement */}

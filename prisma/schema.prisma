@@ -57,7 +57,7 @@ model Candidat {
   telephone           String?
   cv                  String?
   letterm             String?
-  bio                 String?
+  bio                 String?     @db.Text
   adresse             String?
   ville               String?
   statut              String?
@@ -206,6 +206,7 @@ model JobOffer {
   type                String?
   etat                String?              @default("active")
   experience          String?
+  logo                String?
   salaryMin           Float?
   salaryMax           Float?
   salaryCurrency      String?
@@ -213,6 +214,7 @@ model JobOffer {
   benefits            String?              @db.Text
   requirements        String?              @db.Text
   responsibilities    String?              @db.Text
+  anneesexperience    String?
   duedate             DateTime?
   skills              String?
   favorite            Boolean?             @default(false)
@@ -662,7 +664,7 @@ model CardNote {
   authorId  String
   createdAt DateTime @default(now())  
   //a migrer 
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
 
   card      KanbanCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
   author    User       @relation(fields: [authorId], references: [id])

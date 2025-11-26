@@ -123,6 +123,7 @@ export async function POST(request: NextRequest) {
       recruteurId: recruteurId || "",
       duedate: body.duedate ? new Date(body.duedate) : undefined,
       salaryCurrency: body.salaryCurrency || "",
+      logo: body.logo || undefined,
     });
 
     return NextResponse.json({

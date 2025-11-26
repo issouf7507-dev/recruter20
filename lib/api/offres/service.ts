@@ -70,6 +70,7 @@ export async function fetchOffer(
     salaryCurrency?: string;
     datePosted?: string;
     experience?: string[];
+    anneesexperience?: string;
   }
 ): Promise<JobOffer> {
   const queryParams = new URLSearchParams();
@@ -90,7 +91,8 @@ export async function fetchOffer(
   if (params?.datePosted) queryParams.set("datePosted", params.datePosted);
   if (params?.experience && params.experience.length > 0)
     queryParams.set("experience", params.experience.join(","));
-
+  if (params?.anneesexperience)
+    queryParams.set("anneesexperience", params.anneesexperience);
   const queryString = queryParams.toString();
   const response = await fetch(`/api/offres/${id}?${queryString.toString()}`);
   const result: ApiResponse<JobOffer> = await response.json();
@@ -124,6 +126,8 @@ export async function createOffer(data: CreateOfferData): Promise<JobOffer> {
       benefits: data.avantages,
       duedate: data.duedate,
       salaryCurrency: data.salaryCurrency,
+      anneesexperience: data.anneesexperience,
+      logo: data.logo,
     }),
   });
 
@@ -160,6 +164,7 @@ export async function updateOffer(
       skills: data.competences,
       benefits: data.avantages,
       duedate: data.duedate,
+      logo: data.logo,
     }),
   });
 

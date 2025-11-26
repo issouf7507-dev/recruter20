@@ -1,5 +1,11 @@
 "use client";
-import { Search, MapPin, Filter, DollarSignIcon } from "lucide-react";
+import {
+  Search,
+  MapPin,
+  Filter,
+  DollarSignIcon,
+  Briefcase,
+} from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useState, useMemo, useCallback, useEffect } from "react";
@@ -177,7 +183,7 @@ export default function OffresPage() {
             : "",
         experience: "Non spécifié",
         remote: offer.location ? "Sur site" : "Télétravail",
-        logo: "https://www.untitledui.com/images/avatars/amelie-laurent?fm=webp&q=80",
+        logo: offer.logo || null,
         tags: [],
         postedAt,
         description: offer.description || "",
@@ -264,10 +270,12 @@ export default function OffresPage() {
   // État de chargement initial
   if (isLoadingOffers) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-20">
+      <div className="min-h-screen bg-gray-50 pt-20 flex items-center justify-center">
         <div className="container mx-auto px-4 py-12 text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#a590ff] mx-auto"></div>
-          <p className="mt-4 text-gray-600 text-lg">Chargement des offres...</p>
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 md:h-16 md:w-16 border-b-2 border-[#a590ff] mx-auto"></div>
+          <p className="mt-4 text-gray-600 text-sm sm:text-base md:text-lg">
+            Chargement des offres...
+          </p>
         </div>
       </div>
     );
@@ -277,7 +285,7 @@ export default function OffresPage() {
     <div className="min-h-screen bg-gray-50 pt-20">
       {/* Hero Section */}
       <div
-        className="bg-cover bg-center bg-no-repeat py-12 md:py-32 "
+        className="bg-cover bg-center bg-no-repeat py-8 sm:py-12 md:py-20 lg:py-32"
         style={{
           backgroundImage: "url('/img/banniereweb_.png')",
         }}
@@ -289,47 +297,49 @@ export default function OffresPage() {
             transition={{ duration: 0.5 }}
             className="text-center"
           >
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4 text-gray-900">
               Trouvez votre emploi idéal
             </h1>
-            <p className="text-lg text-black mb-8 max-w-3xl mx-auto">
+            <p className="text-sm sm:text-base md:text-lg text-black mb-6 md:mb-8 max-w-3xl mx-auto px-2">
               Vous cherchez un emploi ? Parcourez nos dernières offres d'emploi
               pour voir et postuler aux meilleurs emplois d'aujourd'hui !
             </p>
 
             {/* Search Bar */}
-            <div className="max-w-4xl mx-auto bg-white rounded-full shadow-lg border border-gray-200 p-4 flex flex-col md:flex-row gap-4">
-              <div className="flex-1 flex items-center gap-3 border-r border-gray-200 pr-4">
-                <Search className="w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Rechercher un poste ou mot-clé"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 outline-none text-gray-800 placeholder-gray-400"
-                />
+            <div className="max-w-4xl mx-auto bg-white rounded-2xl md:rounded-full shadow-lg border border-gray-200 p-3 sm:p-4">
+              <div className="flex flex-col md:flex-row gap-3 md:gap-4">
+                <div className="flex-1 flex items-center gap-3 md:border-r border-gray-200 md:pr-4">
+                  <Search className="w-5 h-5 text-gray-400 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="Rechercher un poste ou mot-clé"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="flex-1 outline-none text-gray-800 placeholder-gray-400 text-sm sm:text-base min-w-0"
+                  />
+                </div>
+                <div className="flex-1 flex items-center gap-3 border-t md:border-t-0 pt-3 md:pt-0">
+                  <MapPin className="w-5 h-5 text-gray-400 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="Pays ou fuseau horaire"
+                    value={locationQuery}
+                    onChange={(e) => setLocationQuery(e.target.value)}
+                    className="flex-1 outline-none text-gray-800 placeholder-gray-400 text-sm sm:text-base min-w-0"
+                  />
+                </div>
+                <button className="bg-[#a590ff] text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold transition-colors cursor-pointer text-sm sm:text-base hover:bg-[#9580ef]">
+                  Rechercher
+                </button>
               </div>
-              <div className="flex-1 flex items-center gap-3">
-                <MapPin className="w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Pays ou fuseau horaire"
-                  value={locationQuery}
-                  onChange={(e) => setLocationQuery(e.target.value)}
-                  className="flex-1 outline-none text-gray-800 placeholder-gray-400"
-                />
-              </div>
-              <button className="bg-[#a590ff] text-white px-8 py-3 rounded-full font-semibold transition-colors cursor-pointer">
-                Rechercher
-              </button>
             </div>
           </motion.div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex gap-8">
+      <div className="container mx-auto px-4 py-6 md:py-8">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Sidebar Filters */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -337,7 +347,7 @@ export default function OffresPage() {
             transition={{ duration: 0.5 }}
             className={`${
               showFilters ? "block" : "hidden"
-            } md:block w-full md:w-80 bg-white rounded-xl  p-6 h-fit sticky top-4`}
+            } lg:block w-full lg:w-72 xl:w-80 bg-white rounded-xl p-4 sm:p-6 h-fit lg:sticky lg:top-24 shadow-sm`}
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold">Filtres</h2>
@@ -509,40 +519,54 @@ export default function OffresPage() {
           </motion.div>
 
           {/* Job List */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {/* Mobile Filter Toggle */}
-            <div className="md:hidden mb-4">
+            <div className="lg:hidden mb-4">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 w-full bg-white rounded-lg shadow-md px-4 py-3 font-semibold"
+                className="flex items-center gap-2 w-full bg-white rounded-lg shadow-sm px-4 py-3 font-semibold border border-gray-100"
               >
-                <Filter className="w-5 h-5" />
-                <span>Filter</span>
+                <Filter className="w-5 h-5 text-[#a590ff]" />
+                <span>Filtres</span>
                 {hasActiveFilters && (
-                  <span className="bg-green-600 text-white text-xs px-2 py-1 rounded-full ml-auto">
-                    Active
+                  <span className="bg-[#a590ff] text-white text-xs px-2 py-1 rounded-full ml-auto">
+                    Actifs
                   </span>
                 )}
               </button>
             </div>
 
-            <div className="mb-6 flex items-center justify-between">
-              <p className="text-gray-600">
+            <div className="mb-4 sm:mb-6 flex items-center justify-between">
+              <p className="text-sm sm:text-base text-gray-600">
                 <span className="font-semibold text-gray-900">
                   {pagination?.total || 0}
                 </span>{" "}
-                Jobs resultats
+                résultats
               </p>
             </div>
 
             {/* Job Cards */}
             <div className="space-y-4">
               {!jobOffers || jobOffers.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-600 text-lg">Aucune offre trouvée</p>
-                  <p className="text-gray-500 text-sm mt-2">
-                    Essayez de modifier vos critères de recherche
+                <div className="text-center py-8 sm:py-12 bg-white rounded-xl p-6">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                    <Search className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+                  </div>
+                  <p className="text-gray-600 text-base sm:text-lg font-medium">
+                    Aucune offre trouvée
                   </p>
+                  <p className="text-gray-500 text-xs sm:text-sm mt-2 max-w-sm mx-auto">
+                    Essayez de modifier vos critères de recherche ou d'élargir
+                    votre zone géographique
+                  </p>
+                  {hasActiveFilters && (
+                    <button
+                      onClick={clearAllFilters}
+                      className="mt-4 text-[#a590ff] hover:underline text-sm font-medium"
+                    >
+                      Réinitialiser les filtres
+                    </button>
+                  )}
                 </div>
               ) : (
                 <>
@@ -551,47 +575,53 @@ export default function OffresPage() {
                       key={job.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
+                      transition={{ duration: 0.5, delay: index * 0.05 }}
                     >
                       <Link href={`/offres/${job.id}`}>
-                        <div className="bg-white rounded-xl  p-6 cursor-pointer   hover:border-[#a590ff] hover:border transition-all hover:shadow-lg">
-                          <div className="flex gap-4">
-                            <img
-                              src={job.logo}
-                              alt={job.company}
-                              className="w-16 h-16 rounded-lg object-cover"
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-start justify-between mb-2">
-                                <div>
-                                  <h3 className="text-xl font-bold text-gray-900 hover:text-[#a590ff] transition-colors">
+                        <div className="bg-white rounded-xl p-4 sm:p-6 cursor-pointer border border-transparent hover:border-[#a590ff] transition-all hover:shadow-lg">
+                          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                            {job.logo ? (
+                              <img
+                                src={job.logo}
+                                alt={job.company}
+                                className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover shrink-0"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                                <Briefcase className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              {/* Header with title and location */}
+                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4 mb-2">
+                                <div className="min-w-0">
+                                  <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 hover:text-[#a590ff] transition-colors truncate">
                                     {job.title}
                                   </h3>
-                                  <p className="text-gray-600 font-medium">
+                                  <p className="text-sm sm:text-base text-gray-600 font-medium">
                                     {job.company}
                                   </p>
                                 </div>
 
-                                <div className="flex items-center gap-2">
-                                  <div className="flex items-start gap-2">
-                                    <div className="flex flex-col gap-1">
-                                      <div className="flex items-center gap-x-2">
-                                        <MapPin className="w-5 h-5" />
-                                        <span className="flex items-center gap-1 text-lg font-bold">
-                                          {job.location}
-                                        </span>
-                                      </div>
-                                      <span className="text-sm text-gray-500 ml-7">
-                                        {job.postedAt}
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <div className="flex flex-col gap-0.5">
+                                    <div className="flex items-center gap-1.5">
+                                      <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+                                      <span className="text-sm sm:text-base font-semibold text-gray-700">
+                                        {job.location}
                                       </span>
                                     </div>
+                                    <span className="text-xs sm:text-sm text-gray-500 ml-5 sm:ml-6">
+                                      {job.postedAt}
+                                    </span>
                                   </div>
                                 </div>
                               </div>
 
-                              <div className="flex flex-wrap gap-3 mb-3">
+                              {/* Tags */}
+                              <div className="flex flex-wrap gap-2 mb-2 sm:mb-3">
                                 <span
-                                  className={`px-3 py-1 rounded-full text-base font-medium ${
+                                  className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium ${
                                     job.type === "CDI"
                                       ? "bg-green-100 text-green-700"
                                       : job.type === "FREELANCE"
@@ -604,24 +634,31 @@ export default function OffresPage() {
                                   {job.type}
                                 </span>
                                 {job.salary && (
-                                  <span className="  px-3 py-1 rounded-full text-base font-medium flex items-center gap-2">
-                                    {/* <DollarSignIcon className="h-4 w-4" /> */}
+                                  <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700">
                                     {job.salary} {job.salaryCurrency}
                                   </span>
                                 )}
                               </div>
 
-                              <div className="space-y-2 mb-3">
+                              {/* Description - hidden on very small screens */}
+                              <div className="hidden sm:block space-y-1 sm:space-y-2">
                                 {job.description
                                   .split(". ")
                                   .slice(0, 2)
                                   .map((sentence, idx) => (
-                                    <p
-                                      key={idx}
-                                      className="text-gray-600 text-sm"
-                                    >
-                                      • {sentence.trim()}
-                                    </p>
+                                    // <p
+                                    //   key={idx}
+                                    //   className="text-gray-600 text-xs sm:text-sm line-clamp-1"
+                                    // >
+                                    //   • {sentence.trim()}
+                                    // </p>
+
+                                    <div
+                                      dangerouslySetInnerHTML={{
+                                        __html: sentence.trim(),
+                                      }}
+                                      className="text-gray-600 text-xs sm:text-sm line-clamp-1"
+                                    />
                                   ))}
                               </div>
                             </div>
@@ -633,9 +670,68 @@ export default function OffresPage() {
 
                   <div>
                     {pagination && pagination.totalPages > 1 && (
-                      <Card className="shadow-none">
-                        <CardContent>
-                          <div className="flex items-center justify-between">
+                      <Card className="shadow-none mt-4">
+                        <CardContent className="p-3 sm:p-4 md:p-6">
+                          {/* Mobile pagination */}
+                          <div className="flex flex-col gap-4 sm:hidden">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">
+                                Page {pagination.page} / {pagination.totalPages}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-muted-foreground mr-1">
+                                  Afficher
+                                </span>
+                                <Select
+                                  value={itemsPerPage.toString()}
+                                  onValueChange={(value) => {
+                                    setItemsPerPage(parseInt(value));
+                                    setCurrentPage(1);
+                                  }}
+                                >
+                                  <SelectTrigger className="w-[60px] h-8 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="5">5</SelectItem>
+                                    <SelectItem value="10">10</SelectItem>
+                                    <SelectItem value="20">20</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handlePreviousPage}
+                                disabled={currentPage === 1}
+                                className="flex-1"
+                              >
+                                <IconChevronLeft className="h-4 w-4 mr-1" />
+                                Préc.
+                              </Button>
+                              <span className="px-3 py-1 text-sm font-medium bg-[#a590ff] text-white rounded">
+                                {pagination.page}
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleNextPage}
+                                disabled={
+                                  currentPage === pagination.totalPages ||
+                                  !pagination.totalPages
+                                }
+                                className="flex-1"
+                              >
+                                Suiv.
+                                <IconChevronRight className="h-4 w-4 ml-1" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Desktop pagination */}
+                          <div className="hidden sm:flex flex-col md:flex-row items-center justify-between gap-4">
                             <div className="flex items-center gap-2">
                               <span className="text-sm text-muted-foreground">
                                 Afficher
@@ -647,7 +743,7 @@ export default function OffresPage() {
                                   setCurrentPage(1);
                                 }}
                               >
-                                <SelectTrigger className="w-[80px]">
+                                <SelectTrigger className="w-[70px]">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -662,24 +758,18 @@ export default function OffresPage() {
                               </span>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap justify-center">
                               <span className="text-sm text-muted-foreground">
                                 Page {pagination.page} sur{" "}
                                 {pagination.totalPages}
                               </span>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 sm:gap-2">
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  // onClick={() => {
-                                  //   setCurrentPage(1);
-                                  //   window.scrollTo({
-                                  //     top: 0,
-                                  //     behavior: "smooth",
-                                  //   });
-                                  // }}
                                   onClick={handleFirstPage}
                                   disabled={currentPage === 1}
+                                  className="hidden md:flex"
                                 >
                                   <IconChevronLeft className="h-4 w-4 mr-1" />
                                   Première
@@ -687,33 +777,19 @@ export default function OffresPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  // onClick={() => {
-                                  //   setCurrentPage(currentPage - 1);
-                                  //   window.scrollTo({
-                                  //     top: 0,
-                                  //     behavior: "smooth",
-                                  //   });
-                                  // }}
                                   onClick={handlePreviousPage}
                                   disabled={currentPage === 1}
                                 >
                                   <IconChevronLeft className="h-4 w-4" />
                                 </Button>
 
-                                <span className="px-4 py-2 text-sm font-medium">
+                                <span className="px-3 sm:px-4 py-2 text-sm font-medium bg-[#a590ff] text-white rounded">
                                   {pagination.page}
                                 </span>
 
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  // onClick={() => {
-                                  //   setCurrentPage(currentPage + 1);
-                                  //   window.scrollTo({
-                                  //     top: 0,
-                                  //     behavior: "smooth",
-                                  //   });
-                                  // }}
                                   onClick={handleNextPage}
                                   disabled={
                                     currentPage === pagination.totalPages ||
@@ -726,18 +802,12 @@ export default function OffresPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  // onClick={() => {
-                                  //   window.scrollTo({
-                                  //     top: 0,
-                                  //     behavior: "smooth",
-                                  //   });
-                                  //   setCurrentPage(pagination.totalPages || 1);
-                                  // }}
                                   onClick={handleLastPage}
                                   disabled={
                                     currentPage === pagination.totalPages ||
                                     !pagination.totalPages
                                   }
+                                  className="hidden md:flex"
                                 >
                                   Dernière
                                   <IconChevronRight className="h-4 w-4 ml-1" />
@@ -757,7 +827,7 @@ export default function OffresPage() {
       </div>
 
       {/* CTA Section */}
-      <div className="py-16 mt-20">
+      <div className="py-10 sm:py-12 md:py-16 mt-10 sm:mt-16 md:mt-20 bg-gradient-to-b from-gray-50 to-gray-100">
         <div className="container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -765,14 +835,14 @@ export default function OffresPage() {
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4 px-2">
               Vous ne trouvez pas ce que vous cherchez ?
             </h2>
-            <p className="text-gray-600 text-lg mb-8">
+            <p className="text-gray-600 text-sm sm:text-base md:text-lg mb-6 md:mb-8 max-w-xl mx-auto px-4">
               Créez une alerte emploi et recevez les nouvelles offres d'emploi
               par email
             </p>
-            <button className=" text-white bg-[#a590ff] px-8 py-2 rounded-full font-semibold text-lg transition-colors shadow-lg cursor-pointer">
+            <button className="text-white bg-[#a590ff] hover:bg-[#9580ef] px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base md:text-lg transition-colors shadow-lg cursor-pointer">
               Créer une alerte emploi
             </button>
           </motion.div>

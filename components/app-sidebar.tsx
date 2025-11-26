@@ -35,6 +35,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useSession } from "@/lib/auth-client";
+import Image from "next/image";
 
 const data = {
   // user: {
@@ -157,8 +158,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
               <a href="/recruteur/dashboard">
-                <IconInnerShadowTop className="size-5!" />
-                <span className="text-base font-semibold">Recruteur20</span>
+                {/* <IconInnerShadowTop className="size-5!" />
+                <span className="text-base font-semibold">Recruteur20</span> */}
+                <Image
+                  src="/img/icon2.png"
+                  alt="Logo"
+                  width={1000}
+                  height={100}
+                  className="w-15 h-8"
+                />
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>

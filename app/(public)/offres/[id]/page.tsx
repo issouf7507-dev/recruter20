@@ -18,7 +18,7 @@ import {
 import Link from "next/link";
 import { motion } from "framer-motion";
 import React, { useState } from "react";
-import { useOffer } from "@/lib/hooks/use-offers";
+import { useOffer, useOffers } from "@/lib/hooks/use-offers";
 import { useCandidat } from "@/lib/hooks/use-candidat";
 import { useCandidatures } from "@/lib/hooks/use-candidatures";
 import { useRouter } from "next/navigation";
@@ -37,421 +37,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
-
-// Base de données des offres (devrait correspondre à la page de liste)
-const allJobs = [
-  {
-    id: 1,
-    title: "Designer Produit",
-    company: "Gojek",
-    location: "Marina East, Singapour",
-    type: "CDI",
-    salary: "€3,500-€4,500",
-    experience: "3-5 ans",
-    remote: "Sur site",
-    logo: "https://www.untitledui.com/images/avatars/amelie-laurent?fm=webp&q=80",
-    tags: ["Design UI", "Recherche UX", "Figma", "Prototypage"],
-    postedAt: "Publié il y a 5 min",
-    description: `Dans ce rôle, vous créerez du contenu pour une large gamme de clients locaux et internationaux. 
-    Ce poste convient aux créatifs basés à Singapour qui souhaitent travailler en interne avec une équipe dynamique.`,
-    urgent: true,
-    rating: 4.8,
-    missions: [
-      "Concevoir des interfaces utilisateur intuitives et esthétiques",
-      "Réaliser des recherches UX pour comprendre les besoins des utilisateurs",
-      "Créer des prototypes interactifs avec Figma",
-      "Collaborer avec les développeurs pour l'implémentation",
-      "Maintenir et faire évoluer le design system",
-      "Présenter les concepts aux parties prenantes",
-    ],
-    profil: [
-      "3 à 5 ans d'expérience en design de produit",
-      "Maîtrise de Figma et autres outils de design",
-      "Portfolio démontrant des projets réussis",
-      "Compétences en recherche UX et tests utilisateurs",
-      "Excellentes capacités de communication",
-      "Esprit d'équipe et sens du détail",
-    ],
-    avantages: [
-      "Salaire compétitif + bonus annuel",
-      "Assurance santé premium",
-      "Budget formation de 2000€/an",
-      "Équipement Apple dernière génération",
-      "25 jours de congés payés",
-      "Événements d'équipe mensuels",
-      "Café et snacks à volonté",
-      "Salle de sport sur place",
-    ],
-    processus: [
-      {
-        title: "Entretien RH",
-        description: "Discussion sur votre parcours et vos motivations",
-        duration: "30 min",
-      },
-      {
-        title: "Portfolio Review",
-        description: "Présentation détaillée de vos projets",
-        duration: "1h",
-      },
-      {
-        title: "Design Challenge",
-        description: "Exercice pratique à réaliser",
-        duration: "3-4h",
-      },
-      {
-        title: "Rencontre d'équipe",
-        description: "Échange avec l'équipe design",
-        duration: "45 min",
-      },
-    ],
-    companyInfo: {
-      name: "Gojek",
-      size: "1000+ employés",
-      sector: "Technologie / Transport",
-      founded: "2010",
-      website: "www.gojek.com",
-      description:
-        "Gojek est une super app asiatique leader, offrant des services de transport, livraison et paiement. Nous innovons constamment pour améliorer la vie de millions d'utilisateurs.",
-    },
-  },
-  {
-    id: 2,
-    title: "Spécialiste Rédaction",
-    company: "Odama Studio",
-    location: "Paris, France",
-    type: "Freelance",
-    salary: "€1,600-€1,800",
-    experience: "2-4 ans",
-    remote: "Télétravail",
-    logo: "https://www.untitledui.com/images/avatars/nikolas-gibbons?fm=webp&q=80",
-    tags: ["Rédaction", "Marketing", "SEO", "Réseaux sociaux"],
-    postedAt: "Publié il y a 3 jours",
-    description: `Collaborez avec l'équipe marketing pour optimiser la conversion. 
-    Développez des textes inspirants, persuasifs et convaincants pour une large gamme de besoins rédactionnels.`,
-    urgent: false,
-    rating: 4.6,
-    missions: [
-      "Rédiger du contenu marketing de qualité",
-      "Optimiser le contenu pour le SEO",
-      "Créer des publications pour les réseaux sociaux",
-      "Collaborer avec l'équipe marketing",
-      "Analyser les performances du contenu",
-      "Adapter le ton selon les besoins",
-    ],
-    profil: [
-      "2 à 4 ans d'expérience en rédaction",
-      "Excellente maîtrise du français",
-      "Connaissance du SEO et du marketing digital",
-      "Créativité et sens de l'adaptation",
-      "Portfolio de contenus rédigés",
-      "Autonomie et respect des délais",
-    ],
-    avantages: [
-      "Télétravail 100%",
-      "Horaires flexibles",
-      "Missions variées et stimulantes",
-      "Collaboration avec clients internationaux",
-      "Formation continue incluse",
-      "Réseau de freelances actif",
-    ],
-    processus: [
-      {
-        title: "Entretien de découverte",
-        description: "Présentation du poste et de vos compétences",
-        duration: "30 min",
-      },
-      {
-        title: "Test de rédaction",
-        description: "Exercice pratique sur un brief réel",
-        duration: "2h",
-      },
-      {
-        title: "Entretien final",
-        description: "Discussion sur les modalités de collaboration",
-        duration: "30 min",
-      },
-    ],
-    companyInfo: {
-      name: "Odama Studio",
-      size: "10-50 employés",
-      sector: "Marketing Digital / Création",
-      founded: "2018",
-      website: "www.odamastudio.fr",
-      description:
-        "Odama Studio est une agence créative spécialisée dans le contenu digital. Nous aidons les marques à raconter leur histoire de manière authentique et engageante.",
-    },
-  },
-  {
-    id: 3,
-    title: "Développeur Full Stack",
-    company: "Twitter",
-    location: "Málaga, Espagne",
-    type: "CDI",
-    salary: "€1,000-€2,000",
-    experience: "3-5 ans",
-    remote: "Hybride",
-    logo: "https://www.untitledui.com/images/avatars/sienna-hewitt?fm=webp&q=80",
-    tags: ["React", "Node.js", "TypeScript", "MongoDB"],
-    postedAt: "Publié il y a 3 jours",
-    description: `Responsable de la conception, planification et test de projets/produits. 
-    Construction de modules efficaces et réutilisables qui amélioreront l'expérience utilisateur dans chaque projet/produit.`,
-    urgent: false,
-    rating: 4.9,
-    missions: [
-      "Développer des applications web full-stack",
-      "Concevoir l'architecture technique",
-      "Écrire du code propre et testé",
-      "Collaborer avec l'équipe produit",
-      "Optimiser les performances",
-      "Participer aux code reviews",
-    ],
-    profil: [
-      "3 à 5 ans d'expérience en développement",
-      "Maîtrise de React et Node.js",
-      "Connaissance de TypeScript",
-      "Expérience avec MongoDB",
-      "Pratique des tests unitaires",
-      "Anglais professionnel",
-    ],
-    avantages: [
-      "Télétravail 2 jours/semaine",
-      "Assurance santé complète",
-      "Budget formation",
-      "Stock options",
-      "Vacances illimitées",
-      "Environnement international",
-    ],
-    processus: [
-      {
-        title: "Screening RH",
-        description: "Entretien téléphonique",
-        duration: "30 min",
-      },
-      {
-        title: "Test technique",
-        description: "Exercice de code",
-        duration: "2-3h",
-      },
-      {
-        title: "Entretien technique",
-        description: "Discussion avec l'équipe tech",
-        duration: "1h",
-      },
-      {
-        title: "Entretien final",
-        description: "Rencontre avec le manager",
-        duration: "45 min",
-      },
-    ],
-    companyInfo: {
-      name: "Twitter",
-      size: "5000+ employés",
-      sector: "Réseaux Sociaux / Tech",
-      founded: "2006",
-      website: "www.twitter.com",
-      description:
-        "Twitter est une plateforme mondiale de conversation en temps réel. Nous connectons des millions de personnes à travers le monde.",
-    },
-  },
-  {
-    id: 4,
-    title: "Responsable Marketing",
-    company: "TechCorp",
-    location: "Berlin, Allemagne",
-    type: "CDI",
-    salary: "€4,000-€5,500",
-    experience: "5+ ans",
-    remote: "Hybride",
-    logo: "https://www.untitledui.com/images/avatars/marco-kelly?fm=webp&q=80",
-    tags: ["Marketing Digital", "Analytique", "Gestion de Campagnes"],
-    postedAt: "Publié il y a 1 semaine",
-    description: `Dirigez nos initiatives marketing et stimulez la croissance grâce à des campagnes innovantes et des partenariats stratégiques.`,
-    urgent: false,
-    rating: 4.7,
-    missions: [
-      "Définir la stratégie marketing",
-      "Gérer les campagnes digitales",
-      "Analyser les performances",
-      "Manager une équipe de 5 personnes",
-      "Développer des partenariats",
-      "Gérer le budget marketing",
-    ],
-    profil: [
-      "5+ ans d'expérience en marketing",
-      "Expérience en management d'équipe",
-      "Maîtrise des outils analytics",
-      "Connaissance du marketing digital",
-      "Excellentes capacités stratégiques",
-      "Anglais et allemand courants",
-    ],
-    avantages: [
-      "Salaire attractif + bonus",
-      "Télétravail flexible",
-      "Voiture de fonction",
-      "Assurance premium",
-      "30 jours de congés",
-      "Formation continue",
-    ],
-    processus: [
-      {
-        title: "Entretien RH",
-        description: "Discussion initiale",
-        duration: "45 min",
-      },
-      {
-        title: "Case Study",
-        description: "Présentation d'une stratégie",
-        duration: "1h30",
-      },
-      {
-        title: "Rencontre direction",
-        description: "Entretien avec le CMO",
-        duration: "1h",
-      },
-    ],
-    companyInfo: {
-      name: "TechCorp",
-      size: "200-500 employés",
-      sector: "Technologie / SaaS",
-      founded: "2015",
-      website: "www.techcorp.de",
-      description:
-        "TechCorp est un leader européen des solutions SaaS pour les entreprises. Nous innovons pour faciliter la transformation digitale.",
-    },
-  },
-  {
-    id: 5,
-    title: "Data Scientist",
-    company: "DataLabs",
-    location: "Amsterdam, Pays-Bas",
-    type: "CDI",
-    salary: "€5,000-€7,000",
-    experience: "3-5 ans",
-    remote: "Télétravail",
-    logo: "https://www.untitledui.com/images/avatars/jaya-willis?fm=webp&q=80",
-    tags: ["Python", "Machine Learning", "TensorFlow", "Analyse de Données"],
-    postedAt: "Publié il y a 1 semaine",
-    description: `Exploitez les données pour créer des modèles prédictifs innovants et générer des insights business grâce à l'analytique avancée.`,
-    urgent: false,
-    rating: 4.8,
-    missions: [
-      "Développer des modèles ML",
-      "Analyser des données complexes",
-      "Créer des visualisations",
-      "Collaborer avec les équipes métier",
-      "Optimiser les algorithmes",
-      "Présenter les résultats",
-    ],
-    profil: [
-      "3-5 ans en data science",
-      "Maîtrise de Python",
-      "Expérience en ML/DL",
-      "Connaissance de TensorFlow",
-      "Compétences en statistiques",
-      "Capacité à vulgariser",
-    ],
-    avantages: [
-      "Télétravail 100%",
-      "Salaire très compétitif",
-      "Budget conférences",
-      "Matériel haute performance",
-      "Horaires flexibles",
-      "Projets innovants",
-    ],
-    processus: [
-      {
-        title: "Entretien technique",
-        description: "Discussion sur votre expérience",
-        duration: "1h",
-      },
-      {
-        title: "Data Challenge",
-        description: "Cas pratique d'analyse",
-        duration: "4h",
-      },
-      {
-        title: "Présentation",
-        description: "Défense de votre solution",
-        duration: "1h",
-      },
-    ],
-    companyInfo: {
-      name: "DataLabs",
-      size: "50-200 employés",
-      sector: "Data Science / Analytics",
-      founded: "2017",
-      website: "www.datalabs.nl",
-      description:
-        "DataLabs aide les entreprises à exploiter leurs données pour prendre de meilleures décisions stratégiques.",
-    },
-  },
-  {
-    id: 6,
-    title: "Ingénieur DevOps",
-    company: "CloudTech",
-    location: "Londres, Royaume-Uni",
-    type: "CDI",
-    salary: "€4,500-€6,500",
-    experience: "4-6 ans",
-    remote: "Hybride",
-    logo: "https://www.untitledui.com/images/avatars/levi-rocha?fm=webp&q=80",
-    tags: ["Docker", "Kubernetes", "AWS", "CI/CD"],
-    postedAt: "Publié il y a 2 semaines",
-    description: `Optimisez notre infrastructure cloud et nos processus de déploiement pour assurer l'évolutivité et la fiabilité.`,
-    urgent: false,
-    rating: 4.9,
-    missions: [
-      "Gérer l'infrastructure cloud",
-      "Automatiser les déploiements",
-      "Assurer la disponibilité",
-      "Optimiser les performances",
-      "Gérer la sécurité",
-      "Former les équipes",
-    ],
-    profil: [
-      "4-6 ans en DevOps",
-      "Maîtrise de Docker/Kubernetes",
-      "Expérience AWS",
-      "Connaissance CI/CD",
-      "Scripting (Python, Bash)",
-      "Esprit d'équipe",
-    ],
-    avantages: [
-      "Salaire attractif",
-      "Télétravail 3j/semaine",
-      "Certifications payées",
-      "Assurance complète",
-      "28 jours de congés",
-      "Bureau moderne",
-    ],
-    processus: [
-      {
-        title: "Entretien RH",
-        description: "Présentation du poste",
-        duration: "30 min",
-      },
-      {
-        title: "Test technique",
-        description: "Exercice d'infrastructure",
-        duration: "2h",
-      },
-      {
-        title: "Entretien technique",
-        description: "Discussion approfondie",
-        duration: "1h30",
-      },
-    ],
-    companyInfo: {
-      name: "CloudTech",
-      size: "100-500 employés",
-      sector: "Cloud Computing",
-      founded: "2016",
-      website: "www.cloudtech.uk",
-      description:
-        "CloudTech fournit des solutions cloud innovantes pour les entreprises du monde entier.",
-    },
-  },
-];
 
 export default function OffreDetailPage({
   params,
@@ -489,11 +74,41 @@ export default function OffreDetailPage({
     },
   });
 
-  console.log(documents);
+  // Fetch similar offers from API
+  const { data: similarOffersData } = useOffers(
+    {
+      limit: 4,
+    },
+    {
+      enabled: !!id,
+    }
+  );
 
-  const similarJobs = allJobs
-    .filter((job) => job.id !== parseInt(id))
-    .slice(0, 3);
+  // Transform similar offers and exclude current offer
+  const similarJobs = React.useMemo(() => {
+    if (!similarOffersData?.items) return [];
+
+    return similarOffersData.items
+      .filter((offer) => offer.id !== id)
+      .slice(0, 3)
+      .map((offer) => ({
+        id: offer.id,
+        title: offer.title,
+        company: offer.company || "Entreprise",
+        location: offer.location || "Non spécifié",
+        type: offer.type?.toUpperCase() || "CDI",
+        salary:
+          offer.salaryMin && offer.salaryMax
+            ? `${offer.salaryMin.toLocaleString()}-${offer.salaryMax.toLocaleString()}`
+            : offer.salaryMin
+            ? `${offer.salaryMin.toLocaleString()}+`
+            : "",
+        logo: offer.logo || null,
+        salaryCurrency: offer.salaryCurrency || "",
+      }));
+  }, [similarOffersData, id]);
+
+  console.log(documents);
 
   // Si l'offre n'existe pas, rediriger ou afficher un message
   if (!jobDetail || isLoading) {
@@ -616,11 +231,17 @@ export default function OffreDetailPage({
             className="bg-white rounded-2xl shadow-2xl p-6 md:p-8"
           >
             <div className="flex flex-col md:flex-row gap-6">
-              <img
-                src={""}
-                alt={jobDetail.company}
-                className="w-20 h-20 md:w-24 md:h-24 rounded-xl object-cover shadow-md"
-              />
+              {jobDetail.logo ? (
+                <img
+                  src={jobDetail.logo}
+                  alt={jobDetail.company}
+                  className="w-20 h-20 md:w-24 md:h-24 rounded-xl object-cover shadow-md"
+                />
+              ) : (
+                <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl bg-gray-100 flex items-center justify-center shadow-md">
+                  <Briefcase className="w-10 h-10 md:w-12 md:h-12 text-gray-400" />
+                </div>
+              )}
               <div className="flex-1">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
                   <div>
@@ -720,9 +341,12 @@ export default function OffreDetailPage({
                   Description du poste
                 </h2>
               </div>
-              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                {jobDetail.description}
-              </p>
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: jobDetail.description || "",
+                }}
+                className="text-gray-700 leading-relaxed whitespace-pre-line"
+              />
             </motion.div>
             {/* Missions */}
           </div>
@@ -832,33 +456,13 @@ export default function OffreDetailPage({
                   </div>
                 )} */}
               </div>
-              <p className="text-gray-600 text-sm leading-relaxed mb-4">
-                {jobDetail.description}
-              </p>
-              <Link
-                href="#"
-                className="text-[#a590ff] hover:underline font-semibold text-sm flex items-center gap-1 group"
-              >
-                Voir toutes les offres
-                <span className="group-hover:translate-x-1 transition-transform">
-                  →
-                </span>
-              </Link>
-            </motion.div>
 
-            {/* Remote Badge */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="rounded-xl p-6 border border-gray-200"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <h3 className="font-bold text-gray-900">Mode de travail</h3>
-              </div>
-              <p className="text-gray-700 font-medium text-lg">
-                {/* {jobDetail.remote} */}
-              </p>
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: jobDetail.description || "",
+                }}
+                className="text-gray-700 leading-relaxed whitespace-pre-line"
+              />
             </motion.div>
           </div>
         </div>
@@ -894,11 +498,17 @@ export default function OffreDetailPage({
                 <Link href={`/offres/${job.id}`}>
                   <div className="bg-white rounded-xl transition-all p-6 cursor-pointer  border border-gray-200  hover:border-[#a590ff] h-full">
                     <div className="flex items-start gap-3 mb-4">
-                      <img
-                        src={job.logo}
-                        alt={job.company}
-                        className="w-12 h-12 rounded-lg object-cover"
-                      />
+                      {job.logo ? (
+                        <img
+                          src={job.logo}
+                          alt={job.company}
+                          className="w-12 h-12 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                          <Briefcase className="w-6 h-6 text-gray-400" />
+                        </div>
+                      )}
                       <div className="flex-1">
                         <h3 className="font-bold text-base text-gray-900 mb-1 hover:text-[#a590ff] transition-colors line-clamp-2">
                           {job.title}
@@ -918,7 +528,7 @@ export default function OffreDetailPage({
                     </div>
                     <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                       <span className="text-[#a590ff] font-bold text-lg">
-                        {job.salary}
+                        {job.salary} {job.salaryCurrency}
                       </span>
                       <span className="bg-purple-50 text-[#a590ff] px-3 py-1 rounded-full text-xs font-medium">
                         Voir l'offre

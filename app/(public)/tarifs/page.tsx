@@ -7,7 +7,7 @@ const pricingPlans = [
   {
     name: "Gratuit",
     description: "Pour découvrir la plateforme",
-    price: "0",
+    price: "XXX XOF",
     period: "gratuit",
     icon: Users,
     color: "gray",
@@ -27,7 +27,7 @@ const pricingPlans = [
   {
     name: "Professionnel",
     description: "Pour les recruteurs actifs",
-    price: "99",
+    price: "XXX XOF",
     period: "mois",
     icon: Building2,
     color: "purple",
@@ -166,7 +166,7 @@ export default function TarifsPage() {
                   ) : (
                     <>
                       <span className="text-5xl font-bold text-gray-900">
-                        {plan.price}€
+                        {plan.price}
                       </span>
                       {plan.period && (
                         <span className="text-gray-600">/ {plan.period}</span>
@@ -326,7 +326,10 @@ export default function TarifsPage() {
             Recruteur20 pour leurs recrutements.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-white text-[#a590ff] px-8 py-2 rounded-full font-semibold text-lg hover:bg-gray-100 transition-colors ">
+            <button
+              onClick={() => (window.location.href = "/auth/recruteur/login")}
+              className="bg-white text-[#a590ff] px-8 py-2 rounded-full font-semibold text-lg hover:bg-gray-100 transition-colors "
+            >
               Commencer gratuitement
             </button>
             <Link

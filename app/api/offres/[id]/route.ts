@@ -139,6 +139,7 @@ export async function PUT(
         etat: body.etat,
         experience: body.experience,
         duedate: body.duedate ? new Date(body.duedate) : null,
+        logo: body.logo,
       },
     });
 
