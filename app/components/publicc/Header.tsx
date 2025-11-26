@@ -169,20 +169,47 @@ const Header = () => {
               </Link>
             ))}
             <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-gray-200">
-              <Link href="/auth/recruteur/login">
-                <button
-                  className={
-                    "w-full border rounded-full border-[#a590ff] text-[#a590ff] px-6 py-3 hover:bg-[#a590ff] hover:text-white transition-colors font-medium"
-                  }
-                >
-                  Se connecter
-                </button>
-              </Link>
-              <Link href="/auth/recruteur/register">
-                <button className="w-full rounded-full bg-[#a590ff] text-white px-6 py-3 hover:bg-[#9580ef] transition-colors font-medium">
-                  Commencer gratuitement
-                </button>
-              </Link>
+              {!candidat ? (
+                <>
+                  <Link href="/auth/recruteur/login">
+                    <button
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="w-full border rounded-full border-[#a590ff] text-[#a590ff] px-6 py-3 hover:bg-[#a590ff] hover:text-white transition-colors font-medium"
+                    >
+                      Se connecter
+                    </button>
+                  </Link>
+                  <Link href="/auth/recruteur/register">
+                    <button
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="w-full rounded-full bg-[#a590ff] text-white px-6 py-3 hover:bg-[#9580ef] transition-colors font-medium"
+                    >
+                      Commencer gratuitement
+                    </button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => {
+                      setIsCandidatSheetOpen(true);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full rounded-full bg-[#a590ff] text-white px-6 py-3 hover:bg-[#9580ef] transition-colors font-medium"
+                  >
+                    Mon espace candidat
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleSignOut();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full rounded-full bg-[#a590ff] text-white px-6 py-3 hover:bg-[#9580ef] transition-colors font-medium"
+                  >
+                    Se déconnecter
+                  </button>
+                </>
+              )}
             </div>
           </nav>
         </div>

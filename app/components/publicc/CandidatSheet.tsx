@@ -57,74 +57,78 @@ export function CandidatSheet({ open, onOpenChange }: CandidatSheetProps) {
         side="right"
         className="w-full sm:w-3/4 lg:w-2/3 xl:w-1/2 h-full overflow-hidden flex flex-col p-0 bg-background border-none"
       >
-        <SheetHeader className="px-6 pt-6 pb-4 border-b  gap-2">
-          <SheetTitle className="text-2xl">Espace Candidat</SheetTitle>
-          <SheetDescription>
+        <SheetHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b gap-1 sm:gap-2">
+          <SheetTitle className="text-xl sm:text-2xl">
+            Espace Candidat
+          </SheetTitle>
+          <SheetDescription className="text-sm">
             Gérez votre profil, vos candidatures, et votre carrière
           </SheetDescription>
         </SheetHeader>
 
-        <div className=" overflow-hidden">
+        <div className="overflow-hidden flex-1 flex flex-col">
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
             className="h-full flex flex-col"
           >
-            <div className="border-b px-6">
-              <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 gap-2 h-auto">
-                <TabsTrigger
-                  value="profil"
-                  className="flex flex-col items-center gap-1 py-3 data-[state=active]:bg-[#a590ff] data-[state=active]:text-primary-foreground"
-                >
-                  <User className="h-4 w-4" />
-                  <span className="text-xs">Profil</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="experiences"
-                  className="flex flex-col items-center gap-1 py-3 data-[state=active]:bg-[#a590ff] data-[state=active]:text-primary-foreground"
-                >
-                  <Briefcase className="h-4 w-4" />
-                  <span className="text-xs">Expériences</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="candidatures"
-                  className="flex flex-col items-center gap-1 py-3 data-[state=active]:bg-[#a590ff] data-[state=active]:text-primary-foreground"
-                >
-                  <FileText className="h-4 w-4" />
-                  <span className="text-xs">Candidatures</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="alertes"
-                  className="flex flex-col items-center gap-1 py-3 data-[state=active]:bg-[#a590ff] data-[state=active]:text-primary-foreground"
-                >
-                  <Bell className="h-4 w-4" />
-                  <span className="text-xs">Alertes</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="objectifs"
-                  className="flex flex-col items-center gap-1 py-3 data-[state=active]:bg-[#a590ff] data-[state=active]:text-primary-foreground"
-                >
-                  <Target className="h-4 w-4" />
-                  <span className="text-xs">Objectifs</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="documents"
-                  className="flex flex-col items-center gap-1 py-3 data-[state=active]:bg-[#a590ff] data-[state=active]:text-primary-foreground"
-                >
-                  <FolderOpen className="h-4 w-4" />
-                  <span className="text-xs">Documents</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="messages"
-                  className="flex flex-col items-center gap-1 py-3 data-[state=active]:bg-[#a590ff] data-[state=active]:text-primary-foreground"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  <span className="text-xs">Messages</span>
-                </TabsTrigger>
-              </TabsList>
+            <div className="border-b overflow-x-auto">
+              <div className="px-4 sm:px-6">
+                <TabsList className="inline-flex w-auto gap-1 sm:gap-2 h-auto p-1 bg-muted">
+                  <TabsTrigger
+                    value="profil"
+                    className="flex flex-col items-center gap-1 py-2 sm:py-3 px-2 sm:px-3 data-[state=active]:bg-[#a590ff] data-[state=active]:text-white whitespace-nowrap shrink-0"
+                  >
+                    <User className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="text-[10px] sm:text-xs">Profil</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="experiences"
+                    className="flex flex-col items-center gap-1 py-2 sm:py-3 px-2 sm:px-3 data-[state=active]:bg-[#a590ff] data-[state=active]:text-white whitespace-nowrap shrink-0"
+                  >
+                    <Briefcase className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="text-[10px] sm:text-xs">Expériences</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="candidatures"
+                    className="flex flex-col items-center gap-1 py-2 sm:py-3 px-2 sm:px-3 data-[state=active]:bg-[#a590ff] data-[state=active]:text-white whitespace-nowrap shrink-0"
+                  >
+                    <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="text-[10px] sm:text-xs">Candidatures</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="alertes"
+                    className="flex flex-col items-center gap-1 py-2 sm:py-3 px-2 sm:px-3 data-[state=active]:bg-[#a590ff] data-[state=active]:text-white whitespace-nowrap shrink-0"
+                  >
+                    <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="text-[10px] sm:text-xs">Alertes</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="objectifs"
+                    className="flex flex-col items-center gap-1 py-2 sm:py-3 px-2 sm:px-3 data-[state=active]:bg-[#a590ff] data-[state=active]:text-white whitespace-nowrap shrink-0"
+                  >
+                    <Target className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="text-[10px] sm:text-xs">Objectifs</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="documents"
+                    className="flex flex-col items-center gap-1 py-2 sm:py-3 px-2 sm:px-3 data-[state=active]:bg-[#a590ff] data-[state=active]:text-white whitespace-nowrap shrink-0"
+                  >
+                    <FolderOpen className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="text-[10px] sm:text-xs">Documents</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="messages"
+                    className="flex flex-col items-center gap-1 py-2 sm:py-3 px-2 sm:px-3 data-[state=active]:bg-[#a590ff] data-[state=active]:text-white whitespace-nowrap shrink-0"
+                  >
+                    <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="text-[10px] sm:text-xs">Messages</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4">
               <TabsContent value="profil" className="mt-0">
                 <ProfilSection candidat={candidat} />
               </TabsContent>

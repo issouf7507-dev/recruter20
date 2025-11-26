@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Recruteur 2.0 - Plateforme de recrutement moderne",
-    template: "%s | Recruteur 2.0",
+    default: "Ylsix - Plateforme de recrutement moderne",
+    template: "%s | Ylsix",
   },
   description:
     "La plateforme moderne qui connecte les meilleurs talents avec les meilleures opportunités. Trouvez votre prochain emploi ou recrutez les meilleurs candidats.",
@@ -30,9 +30,9 @@ export const metadata: Metadata = {
     "carrière",
     "RH",
   ],
-  authors: [{ name: "Recruteur 2.0" }],
-  creator: "Recruteur 2.0",
-  publisher: "Recruteur 2.0",
+  authors: [{ name: "Ylsix" }],
+  creator: "Ylsix",
+  publisher: "Ylsix",
   robots: {
     index: true,
     follow: true,
@@ -40,11 +40,11 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "fr_FR",
-    url: "https://recruteur20.com",
+    url: "https://ylsix.com",
     title: "Recruteur 2.0 - Plateforme de recrutement moderne",
     description:
       "La plateforme moderne qui connecte les meilleurs talents avec les meilleures opportunités",
-    siteName: "Recruteur 2.0",
+    siteName: "Ylsix",
   },
 };
 

@@ -129,8 +129,7 @@ class EmailService {
     try {
       const info = await this.transporter!.sendMail({
         from:
-          process.env.MAILTRAP_FROM ||
-          `"${recruteurName}" <noreply@recruteur20.com>`,
+          process.env.MAILTRAP_FROM || `"${recruteurName}" <noreply@ylsix.com>`,
         to,
         subject: `Invitation à collaborer - ${
           companyName || "Équipe de recrutement"
@@ -212,8 +211,7 @@ class EmailService {
     try {
       const info = await this.transporter!.sendMail({
         from:
-          process.env.MAILTRAP_FROM ||
-          `"${recruteurName}" <noreply@recruteur20.com>`,
+          process.env.MAILTRAP_FROM || `"${recruteurName}" <noreply@ylsix.com>`,
         to,
         subject: `Invitation acceptée - ${
           companyName || "Équipe de recrutement"

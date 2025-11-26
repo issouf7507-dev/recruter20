@@ -24,6 +24,8 @@ export async function GET(request: NextRequest) {
     const salaryCurrency = searchParams.get("salaryCurrency");
     const datePosted = searchParams.get("datePosted");
     const experience = searchParams.get("experience");
+    const experienceMin = searchParams.get("experienceMin");
+    const experienceMax = searchParams.get("experienceMax");
 
     // Utiliser le repository au lieu d'appeler Prisma directement
     const result = await jobOfferRepository.findAll({
@@ -39,6 +41,8 @@ export async function GET(request: NextRequest) {
       salaryCurrency: salaryCurrency || undefined,
       datePosted: datePosted || undefined,
       experience: experience ? experience.split(",") : undefined,
+      experienceMin: experienceMin ? parseInt(experienceMin) : undefined,
+      experienceMax: experienceMax ? parseInt(experienceMax) : undefined,
     });
 
     return NextResponse.json({

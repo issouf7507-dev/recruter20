@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,6 +38,14 @@ import {
   IconAward,
 } from "@tabler/icons-react";
 import { useSearchCandidates } from "@/lib/hooks/use-candidats";
+import { useSession } from "@/lib/auth-client";
+import {
+  useRecruteurByUserId,
+  useCollaborateurByUserId,
+} from "@/lib/hooks/use-recruteurs";
+import { useCandidatures } from "@/lib/hooks/use-candidatures";
+import { useOffers } from "@/lib/hooks/use-offers";
+import { toast } from "sonner";
 
 // Listes prédéfinies (importées depuis ProfilSection)
 const DOMAINES_PREDEFINIS = [
@@ -248,6 +257,12 @@ function transformCandidatData(candidat: any) {
 }
 
 export default function RechercheCVPage() {
+  const router = useRouter();
+  const { data: session } = useSession();
+  const { data: recruteur } = useRecruteurByUserId(session?.user?.id);
+  const { data: collaborateur } = useCollaborateurByUserId(session?.user?.id);
+  const recruteurId = recruteur ? recruteur?.id : collaborateur?.recruteurId;
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filtres, setFiltres] = useState({
     lieu: "all",
@@ -275,6 +290,20 @@ export default function RechercheCVPage() {
     format: filtres.format !== "all" ? filtres.format : undefined,
   });
 
+  // Get offers for the recruiter (to use for creating conversations)
+  const { data: offersData } = useOffers(
+    {
+      recruteurId: recruteurId || undefined,
+      limit: 1,
+    },
+    {
+      enabled: !!recruteurId,
+    }
+  );
+
+  // Get conversation creation hook
+  const { createConversation } = useCandidatures(recruteurId || undefined);
+
   // console.log("data", data);
 
   // Transform API data to page format
@@ -295,6 +324,81 @@ export default function RechercheCVPage() {
     setCvsFavoris((prev) =>
       prev.includes(id) ? prev.filter((favId) => favId !== id) : [...prev, id]
     );
+  };
+
+  const handleDownloadCV = async (cvUrl: string, candidatName: string) => {
+    if (!cvUrl || cvUrl === "#") {
+      toast.error("Le CV n'est pas disponible pour téléchargement");
+      return;
+    }
+
+    try {
+      // Fetch the file
+      const response = await fetch(cvUrl);
+      if (!response.ok) {
+        throw new Error("Erreur lors du téléchargement du CV");
+      }
+
+      // Get the blob
+      const blob = await response.blob();
+
+      // Create a download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+
+      // Get file extension from URL or default to pdf
+      const urlExtension = cvUrl.split(".").pop()?.toLowerCase();
+      const extension =
+        urlExtension && ["pdf", "doc", "docx"].includes(urlExtension)
+          ? urlExtension
+          : "pdf";
+
+      // Set filename
+      const sanitizedName = candidatName
+        .replace(/[^a-z0-9]/gi, "_")
+        .toLowerCase();
+      link.download = `CV_${sanitizedName}.${extension}`;
+
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("CV téléchargé avec succès");
+    } catch (error) {
+      console.error("Error downloading CV:", error);
+      toast.error("Erreur lors du téléchargement du CV");
+    }
+  };
+
+  const handleContactCandidat = (candidatId: string) => {
+    if (!recruteurId) {
+      toast.error("Erreur: Recruteur non trouvé");
+      return;
+    }
+
+    // Get first available offer or redirect to messaging
+    const firstOffer = offersData?.items?.[0];
+
+    if (!firstOffer) {
+      // No offers available, redirect to messaging page
+      toast.info(
+        "Veuillez créer une offre d'emploi avant de contacter un candidat"
+      );
+      router.push("/recruteur/offres");
+      return;
+    }
+
+    // Create conversation with the first available offer
+    createConversation.mutate({
+      candidatId,
+      jobOfferId: firstOffer.id,
+      recruteurId: recruteurId,
+    });
   };
 
   const handleFiltreChange = (key: string, value: string) => {
@@ -843,13 +947,26 @@ export default function RechercheCVPage() {
                                   Voir CV
                                 </a>
                               </Button>
-                              <Button variant="outline" size="sm">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleDownloadCV(cv.cvUrl, cv.candidat.nom)
+                                }
+                                disabled={!cv.cvUrl || cv.cvUrl === "#"}
+                              >
                                 <IconDownload className="h-4 w-4" />
                                 Télécharger
                               </Button>
-                              <Button size="sm">
+                              <Button
+                                size="sm"
+                                onClick={() => handleContactCandidat(cv.id)}
+                                disabled={createConversation.isPending}
+                              >
                                 <IconMail className="h-4 w-4" />
-                                Contacter
+                                {createConversation.isPending
+                                  ? "En cours..."
+                                  : "Contacter"}
                               </Button>
                             </div>
                           </div>
