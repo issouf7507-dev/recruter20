@@ -322,8 +322,8 @@ export default function TarifsPage() {
             Prêt à commencer ?
           </h2>
           <p className="text-lg mb-8 opacity-90 max-w-2xl mx-auto">
-            Rejoignez des centaines d'entreprises qui font confiance à
-            Recruteur20 pour leurs recrutements.
+            Rejoignez des centaines d'entreprises qui font confiance à Ylsix
+            pour leurs recrutements.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button

@@ -8,7 +8,7 @@ export default function AuthHomePage() {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Bienvenue sur Recruteur20
+            Bienvenue sur Ylsix
           </h1>
           <p className="text-lg text-gray-600 mb-8">
             Choisissez votre profil pour continuer

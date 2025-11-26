@@ -117,9 +117,9 @@ export default function AProposPage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-lg text-gray-600 leading-relaxed">
               <p>
-                Chez Recruteur20, nous croyons que chaque entreprise mérite de
-                trouver les talents qui correspondent parfaitement à sa culture
-                et ses objectifs. Notre plateforme révolutionne le processus de
+                Chez Ylsix, nous croyons que chaque entreprise mérite de trouver
+                les talents qui correspondent parfaitement à sa culture et ses
+                objectifs. Notre plateforme révolutionne le processus de
                 recrutement en utilisant des technologies avancées et une
                 approche humaine.
               </p>
@@ -167,7 +167,7 @@ export default function AProposPage() {
                   "Créer un impact, ensemble"
                 </blockquote>
                 <cite className="text-gray-600 font-medium">
-                  Fondateur de Recruteur20
+                  Fondateur de Ylsix
                 </cite>
               </div>
             </motion.div>
@@ -262,7 +262,7 @@ export default function AProposPage() {
           </h2>
           <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
             Rejoignez des milliers d'entreprises qui font confiance à
-            Recruteur20 pour leurs besoins en recrutement.
+            Ylsix pour leurs besoins en recrutement.
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <Link

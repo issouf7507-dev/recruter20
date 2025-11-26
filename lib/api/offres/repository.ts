@@ -21,7 +21,8 @@ export class JobOfferRepository {
     salaryCurrency?: string;
     datePosted?: string;
     experience?: string[];
-    anneesexperience?: string;
+    experienceMin?: number;
+    experienceMax?: number;
   }) {
     const {
       page = 1,
@@ -36,6 +37,8 @@ export class JobOfferRepository {
       salaryCurrency,
       datePosted,
       experience,
+      experienceMin,
+      experienceMax,
     } = params;
 
     const where: any = {
@@ -164,9 +167,45 @@ export class JobOfferRepository {
       }
     }
 
-    // Filtre par expérience
+    // Filtre par expérience (champ experience)
     if (experience && experience.length > 0) {
       where.experience = { in: experience };
+    }
+
+    // Filtre par années d'expérience (anneesexperience)
+    if (experienceMin !== undefined || experienceMax !== undefined) {
+      where.AND = where.AND || [];
+      
+      if (experienceMin !== undefined && experienceMax !== undefined) {
+        // Trouver les offres dont l'expérience requise est dans la plage
+        where.AND.push({
+          OR: [
+            {
+              AND: [
+                { anneesexperience: { not: null } },
+                { anneesexperience: { gte: experienceMin.toString() } },
+                { anneesexperience: { lte: experienceMax.toString() } },
+              ],
+            },
+          ],
+        });
+      } else if (experienceMin !== undefined) {
+        // Expérience minimum uniquement
+        where.AND.push({
+          OR: [
+            { anneesexperience: { gte: experienceMin.toString() } },
+            { anneesexperience: null },
+          ],
+        });
+      } else if (experienceMax !== undefined) {
+        // Expérience maximum uniquement
+        where.AND.push({
+          OR: [
+            { anneesexperience: { lte: experienceMax.toString() } },
+            { anneesexperience: null },
+          ],
+        });
+      }
     }
 
     const [offres, total] = await Promise.all([

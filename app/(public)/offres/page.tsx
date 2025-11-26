@@ -21,28 +21,28 @@ import { SelectTrigger } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 
-// Tableau initial vide (sera remplacé par les vraies données)
-
-const contractTypes = ["CDI", "CDD", "Stage", "Freelance", "Temps partiel"];
-const remoteOptions = ["Sur site", "Hybride", "Télétravail"];
-
-const salaryRanges = [
-  "Moins de €1,000",
-  "€1,000 à €2,500",
-  "€2,500 à €5,000",
-  "Personnalisé",
+// Options de filtres basées sur le schéma JobOffer
+const contractTypes = [
+  { label: "CDI", value: "cdi" },
+  { label: "CDD", value: "cdd" },
+  { label: "Stage", value: "stage" },
+  { label: "Freelance", value: "freelance" },
+  { label: "Temps partiel", value: "temps-partiel" },
 ];
-const jobFunctions = [
-  "Relations Publiques",
-  "Management",
-  "Ingénierie",
-  "Finance",
-  "Marketing",
-  "Design",
-  "Ventes",
-  "Opérations",
+
+const currencies = [
+  { label: "XOF (FCFA)", value: "XOF" },
+  { label: "EUR (€)", value: "EUR" },
+  { label: "USD ($)", value: "USD" },
 ];
-const currencies = ["EUR (€)", "USD ($)", "GBP (£)", "CHF (CHF)"];
+
+const experienceLevels = [
+  { label: "Débutant (0-2 ans)", value: "0-2" },
+  { label: "Junior (2-4 ans)", value: "2-4" },
+  { label: "Confirmé (4-6 ans)", value: "4-6" },
+  { label: "Senior (6-10 ans)", value: "6-10" },
+  { label: "Expert (10+ ans)", value: "10+" },
+];
 
 export default function OffresPage() {
   // Récupérer les vraies offres depuis l'API
@@ -53,13 +53,9 @@ export default function OffresPage() {
   const [selectedContractTypes, setSelectedContractTypes] = useState<string[]>(
     []
   );
-  const [selectedRemote, setSelectedRemote] = useState<string[]>([]);
-  const [selectedExperience, setSelectedExperience] = useState<string[]>([]);
-  const [selectedSalaryRange, setSelectedSalaryRange] =
-    useState<string>("Personnalisé");
-  const [selectedJobFunctions, setSelectedJobFunctions] = useState<string[]>(
-    []
-  );
+  const [selectedExperience, setSelectedExperience] = useState<string>("");
+  const [salaryMin, setSalaryMin] = useState<string>("");
+  const [salaryMax, setSalaryMax] = useState<string>("");
   const [selectedCurrency, setSelectedCurrency] = useState<string>("Toutes");
   const [datePosted, setDatePosted] = useState<string>("N'importe quand");
   const [savedJobs, setSavedJobs] = useState<number[]>([]);
@@ -83,41 +79,30 @@ export default function OffresPage() {
       params.location = locationQuery;
     }
 
-    // Types de contrat
+    // Types de contrat (utilise les valeurs du schéma: cdi, cdd, stage, freelance, temps-partiel)
     if (selectedContractTypes.length > 0) {
-      params.types = selectedContractTypes.map((t) => t.toLowerCase());
+      params.types = selectedContractTypes;
     }
 
-    // Salaire
-    if (selectedSalaryRange !== "Personnalisé") {
-      switch (selectedSalaryRange) {
-        case "Moins de €1,000":
-          params.salaryMax = 1000;
-          break;
-        case "€1,000 à €2,500":
-          params.salaryMin = 1000;
-          params.salaryMax = 2500;
-          break;
-        case "€2,500 à €5,000":
-          params.salaryMin = 2500;
-          params.salaryMax = 5000;
-          break;
-      }
+    // Salaire min/max
+    if (salaryMin) {
+      params.salaryMin = parseFloat(salaryMin);
+    }
+    if (salaryMax) {
+      params.salaryMax = parseFloat(salaryMax);
     }
 
-    // Devise (extraire le code de devise)
-    // Si une devise spécifique est sélectionnée, filtrer par cette devise
+    // Devise (XOF, EUR, USD)
     if (selectedCurrency && selectedCurrency !== "Toutes") {
-      const currencyMap: Record<string, string> = {
-        "USD ($)": "USD",
-        "GBP (£)": "GBP",
-        "CHF (CHF)": "CHF",
-        "EUR (€)": "EUR",
-      };
-      const currencyCode = currencyMap[selectedCurrency];
-      if (currencyCode) {
-        params.salaryCurrency = currencyCode;
-      }
+      params.salaryCurrency = selectedCurrency;
+    }
+
+    // Expérience
+    if (selectedExperience) {
+      const [minExp, maxExp] = selectedExperience.split("-");
+      if (minExp)
+        params.experienceMin = minExp === "10+" ? 10 : parseInt(minExp);
+      if (maxExp && maxExp !== "+") params.experienceMax = parseInt(maxExp);
     }
 
     // Date de publication
@@ -132,8 +117,10 @@ export default function OffresPage() {
     searchQuery,
     locationQuery,
     selectedContractTypes,
-    selectedSalaryRange,
+    salaryMin,
+    salaryMax,
     selectedCurrency,
+    selectedExperience,
     datePosted,
   ]);
 
@@ -208,10 +195,9 @@ export default function OffresPage() {
 
   const clearAllFilters = () => {
     setSelectedContractTypes([]);
-    setSelectedRemote([]);
-    setSelectedExperience([]);
-    setSelectedJobFunctions([]);
-    setSelectedSalaryRange("Personnalisé");
+    setSelectedExperience("");
+    setSalaryMin("");
+    setSalaryMax("");
     setSelectedCurrency("Toutes");
     setDatePosted("N'importe quand");
     setSearchQuery("");
@@ -220,10 +206,9 @@ export default function OffresPage() {
 
   const hasActiveFilters =
     selectedContractTypes.length > 0 ||
-    selectedRemote.length > 0 ||
-    selectedExperience.length > 0 ||
-    selectedJobFunctions.length > 0 ||
-    selectedSalaryRange !== "Personnalisé" ||
+    selectedExperience !== "" ||
+    salaryMin !== "" ||
+    salaryMax !== "" ||
     selectedCurrency !== "Toutes" ||
     datePosted !== "N'importe quand" ||
     searchQuery !== "" ||
@@ -244,8 +229,10 @@ export default function OffresPage() {
     searchQuery,
     locationQuery,
     selectedContractTypes,
-    selectedSalaryRange,
+    salaryMin,
+    salaryMax,
     selectedCurrency,
+    selectedExperience,
     datePosted,
   ]);
 
@@ -387,22 +374,22 @@ export default function OffresPage() {
               <div className="space-y-2">
                 {contractTypes.map((type) => (
                   <label
-                    key={type}
+                    key={type.value}
                     className="flex items-center gap-2 cursor-pointer"
                   >
                     <input
                       type="checkbox"
-                      checked={selectedContractTypes.includes(type)}
+                      checked={selectedContractTypes.includes(type.value)}
                       onChange={() =>
                         toggleFilter(
                           selectedContractTypes,
                           setSelectedContractTypes,
-                          type
+                          type.value
                         )
                       }
                       className="w-4 h-4 text-green-600 rounded"
                     />
-                    <span className="text-gray-700">{type}</span>
+                    <span className="text-gray-700">{type.label}</span>
                   </label>
                 ))}
               </div>
@@ -413,40 +400,23 @@ export default function OffresPage() {
               <h3 className="font-semibold mb-3 text-gray-800">
                 Fourchette de salaire
               </h3>
-              <div className="space-y-2">
-                {salaryRanges.map((range) => (
-                  <label
-                    key={range}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <input
-                      type="radio"
-                      name="salaryRange"
-                      checked={selectedSalaryRange === range}
-                      onChange={() => setSelectedSalaryRange(range)}
-                      className="w-4 h-4 text-green-600"
-                    />
-                    <span className="text-gray-700">{range}</span>
-                  </label>
-                ))}
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  placeholder="Min"
+                  value={salaryMin}
+                  onChange={(e) => setSalaryMin(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+                <span className="text-gray-500">à</span>
+                <input
+                  type="number"
+                  placeholder="Max"
+                  value={salaryMax}
+                  onChange={(e) => setSalaryMax(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
               </div>
-              {selectedSalaryRange === "Personnalisé" && (
-                <div className="mt-4">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      placeholder="€1,500"
-                      className="w-full p-2 border border-gray-300 rounded-lg"
-                    />
-                    <span className="text-gray-500">à</span>
-                    <input
-                      type="number"
-                      placeholder="€2,500"
-                      className="w-full p-2 border border-gray-300 rounded-lg"
-                    />
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Currency */}
@@ -459,61 +429,42 @@ export default function OffresPage() {
               >
                 <option value="Toutes">Toutes les devises</option>
                 {currencies.map((currency) => (
-                  <option key={currency} value={currency}>
-                    {currency}
+                  <option key={currency.value} value={currency.value}>
+                    {currency.label}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* On-site/Remote */}
+            {/* Experience */}
             <div className="mb-6">
               <h3 className="font-semibold mb-3 text-gray-800">
-                On-site/remote
+                Années d'expérience
               </h3>
               <div className="space-y-2">
-                {remoteOptions.map((option) => (
+                {experienceLevels.map((level) => (
                   <label
-                    key={option}
+                    key={level.value}
                     className="flex items-center gap-2 cursor-pointer"
                   >
                     <input
                       type="radio"
-                      name="remote"
-                      checked={selectedRemote.includes(option)}
-                      onChange={() => setSelectedRemote([option])}
+                      name="experience"
+                      checked={selectedExperience === level.value}
+                      onChange={() => setSelectedExperience(level.value)}
                       className="w-4 h-4 text-green-600"
                     />
-                    <span className="text-gray-700">{option}</span>
+                    <span className="text-gray-700">{level.label}</span>
                   </label>
                 ))}
-              </div>
-            </div>
-
-            {/* Job Function */}
-            <div className="mb-6">
-              <h3 className="font-semibold mb-3 text-gray-800">Job function</h3>
-              <div className="space-y-2">
-                {jobFunctions.map((function_) => (
-                  <label
-                    key={function_}
-                    className="flex items-center gap-2 cursor-pointer"
+                {selectedExperience && (
+                  <button
+                    onClick={() => setSelectedExperience("")}
+                    className="text-sm text-green-600 hover:underline mt-2"
                   >
-                    <input
-                      type="checkbox"
-                      checked={selectedJobFunctions.includes(function_)}
-                      onChange={() =>
-                        toggleFilter(
-                          selectedJobFunctions,
-                          setSelectedJobFunctions,
-                          function_
-                        )
-                      }
-                      className="w-4 h-4 text-green-600 rounded"
-                    />
-                    <span className="text-gray-700">{function_}</span>
-                  </label>
-                ))}
+                    Effacer
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>

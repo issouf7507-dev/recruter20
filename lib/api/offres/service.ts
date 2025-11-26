@@ -21,6 +21,8 @@ export async function fetchOffers(params?: {
   salaryCurrency?: string;
   datePosted?: string;
   experience?: string[];
+  experienceMin?: number;
+  experienceMax?: number;
 }): Promise<PaginatedResponse<JobOffer>> {
   const queryParams = new URLSearchParams();
   if (params?.page) queryParams.set("page", params.page.toString());
@@ -40,6 +42,10 @@ export async function fetchOffers(params?: {
   if (params?.datePosted) queryParams.set("datePosted", params.datePosted);
   if (params?.experience && params.experience.length > 0)
     queryParams.set("experience", params.experience.join(","));
+  if (params?.experienceMin !== undefined)
+    queryParams.set("experienceMin", params.experienceMin.toString());
+  if (params?.experienceMax !== undefined)
+    queryParams.set("experienceMax", params.experienceMax.toString());
 
   const response = await fetch(`/api/offres?${queryParams.toString()}`);
   const result: ApiResponse<PaginatedResponse<JobOffer>> =

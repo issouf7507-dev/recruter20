@@ -118,7 +118,7 @@ export default function AuthForm({
       <div className="block w-full max-w-2xl">
         <div className="mb-8">
           <h1 className="text-5xl font-bold mb-2">
-            {type === "login" ? "Welcome back" : "Create account"}
+            {type === "login" ? "Bienvenue" : "Créer un compte"}
           </h1>
           <p className="text-base text-gray-600 mb-6">{subtitle}</p>
         </div>
@@ -155,7 +155,7 @@ export default function AuthForm({
 
               <div className="flex flex-col gap-3">
                 <Label htmlFor="date" className="px-1 text-gray-700">
-                  Date de naissance
+                  Date de création de l'entreprise
                 </Label>
                 <Popover open={open} onOpenChange={setOpen}>
                   <PopoverTrigger asChild>
