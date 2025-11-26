@@ -249,6 +249,9 @@ export default function KanbanPage() {
 
   // Dialog state for labels
   const [isLabelsDialogOpen, setIsLabelsDialogOpen] = useState(false);
+  const [isChecklistDialogOpen, setIsChecklistDialogOpen] = useState(false);
+  const [isDueDateDialogOpen, setIsDueDateDialogOpen] = useState(false);
+  const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = useState(false);
   const [isCreateLabelDialogOpen, setIsCreateLabelDialogOpen] = useState(false);
   const [isEditLabelDialogOpen, setIsEditLabelDialogOpen] = useState(false);
   const [editingLabel, setEditingLabel] = useState<{
@@ -1046,7 +1049,7 @@ export default function KanbanPage() {
               </div>
 
               {/* Header avec assignés */}
-              <div className="flex flex-row items-center justify-between mb-6">
+              {/* <div className="flex flex-row items-center justify-between mb-6">
                 <div className="flex -space-x-2 overflow-hidden">
                   <Avatar className="h-8 w-8 border-2 border-background">
                     <AvatarImage src="/images/avatars/05.png" />
@@ -1070,11 +1073,11 @@ export default function KanbanPage() {
                   <IconUserPlus className="h-4 w-4" />
                   <span className="hidden lg:inline">Add Assignee</span>
                 </Button>
-              </div>
+              </div> */}
 
               {/* Tabs */}
               <div className="mb-4 flex justify-between items-center gap-2">
-                <div className="bg-muted text-muted-foreground inline-flex h-9 w-fit items-center justify-center rounded-lg p-[3px]">
+                {/* <div className="bg-muted text-muted-foreground inline-flex h-9 w-fit items-center justify-center rounded-lg p-[3px]">
                   <Button
                     variant={activeTab === "overview" ? "default" : "ghost"}
                     onClick={() => setActiveTab("overview")}
@@ -1110,46 +1113,9 @@ export default function KanbanPage() {
                   >
                     Files
                   </Button>
-                </div>
+                </div> */}
+                <div></div>
                 <div className="flex gap-2 items-center">
-                  <div className="relative hidden w-auto lg:block">
-                    <IconSearch className="absolute top-2.5 left-3 h-4 w-4 opacity-50" />
-                    <Input
-                      placeholder="Search tasks..."
-                      className="ps-8 h-9 w-[200px] rounded-md border bg-transparent px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                  <div className="lg:hidden">
-                    <Button variant="outline" size="sm">
-                      <IconSearch className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <Select defaultValue="all">
-                    <SelectTrigger className="h-9 w-[120px] text-sm">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="archived">Archived</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select defaultValue="newest">
-                    <SelectTrigger className="h-9 w-[120px] text-sm">
-                      <SelectValue placeholder="Sort" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="newest">Newest</SelectItem>
-                      <SelectItem value="oldest">Oldest</SelectItem>
-                      <SelectItem value="priority">Priority</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button variant="outline" size="sm">
-                    <IconFilter className="h-4 w-4" />
-                    <span className="hidden lg:inline">Filters</span>
-                  </Button>
                   <Button
                     size="sm"
                     onClick={() => setIsCreateColumnDialogOpen(true)}
@@ -3219,6 +3185,687 @@ export default function KanbanPage() {
                         </DialogContent>
                       </Dialog>
 
+                      {/* Checklist Dialog */}
+                      <Dialog
+                        open={isChecklistDialogOpen}
+                        onOpenChange={setIsChecklistDialogOpen}
+                      >
+                        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                              <IconListCheck className="h-5 w-5" />
+                              Checklist
+                            </DialogTitle>
+                            <DialogDescription>
+                              Gérez les tâches de votre checklist
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            {/* Progress Bar */}
+                            {selectedCard?.checklist &&
+                              selectedCard.checklist.length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between text-sm">
+                                    <span className="text-muted-foreground">
+                                      Progression
+                                    </span>
+                                    <span className="font-medium">
+                                      {Math.round(
+                                        (selectedCard.checklist.filter(
+                                          (c) => c.isDone
+                                        ).length /
+                                          selectedCard.checklist.length) *
+                                          100
+                                      )}
+                                      %
+                                    </span>
+                                  </div>
+                                  <div className="w-full bg-muted rounded-full h-2.5">
+                                    <div
+                                      className="bg-primary h-2.5 rounded-full transition-all duration-300"
+                                      style={{
+                                        width: `${
+                                          (selectedCard.checklist.filter(
+                                            (c) => c.isDone
+                                          ).length /
+                                            selectedCard.checklist.length) *
+                                          100
+                                        }%`,
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs text-muted-foreground">
+                                      {
+                                        selectedCard.checklist.filter(
+                                          (c) => c.isDone
+                                        ).length
+                                      }{" "}
+                                      / {selectedCard.checklist.length} tâches
+                                      complétées
+                                    </span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 text-xs"
+                                      onClick={() =>
+                                        setHideCompletedItems(
+                                          !hideCompletedItems
+                                        )
+                                      }
+                                    >
+                                      {hideCompletedItems
+                                        ? "Afficher complétées"
+                                        : "Masquer complétées"}
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+
+                            {/* Checklist Items */}
+                            {selectedCard?.checklist &&
+                            selectedCard.checklist.length > 0 ? (
+                              <div className="space-y-2">
+                                {selectedCard.checklist
+                                  .filter(
+                                    (item) =>
+                                      !hideCompletedItems || !item.isDone
+                                  )
+                                  .map((item) => (
+                                    <div
+                                      key={item.id}
+                                      className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 group transition-colors"
+                                    >
+                                      <Checkbox
+                                        checked={item.isDone}
+                                        onCheckedChange={() =>
+                                          handleToggleCheckItem(
+                                            item.id,
+                                            item.isDone
+                                          )
+                                        }
+                                        className="h-5 w-5"
+                                      />
+                                      {editingCheckItemId === item.id ? (
+                                        <div className="flex-1 flex items-center gap-2">
+                                          <Input
+                                            value={editingCheckItemLabel}
+                                            onChange={(e) =>
+                                              setEditingCheckItemLabel(
+                                                e.target.value
+                                              )
+                                            }
+                                            onKeyDown={(e) => {
+                                              if (e.key === "Enter") {
+                                                handleSaveEditCheckItem();
+                                              } else if (e.key === "Escape") {
+                                                setEditingCheckItemId(null);
+                                                setEditingCheckItemLabel("");
+                                              }
+                                            }}
+                                            className="h-8 text-sm"
+                                            autoFocus
+                                          />
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 w-8 p-0"
+                                            onClick={handleSaveEditCheckItem}
+                                          >
+                                            <IconCircleCheck className="h-4 w-4" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 w-8 p-0"
+                                            onClick={() => {
+                                              setEditingCheckItemId(null);
+                                              setEditingCheckItemLabel("");
+                                            }}
+                                          >
+                                            <IconX className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      ) : (
+                                        <>
+                                          <span
+                                            className={`flex-1 text-sm cursor-pointer ${
+                                              item.isDone
+                                                ? "text-muted-foreground line-through"
+                                                : ""
+                                            }`}
+                                            onClick={() =>
+                                              handleStartEditCheckItem(item)
+                                            }
+                                          >
+                                            {item.label}
+                                          </span>
+                                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-8 w-8 p-0"
+                                              onClick={() =>
+                                                handleStartEditCheckItem(item)
+                                              }
+                                            >
+                                              <IconEdit className="h-3.5 w-3.5" />
+                                            </Button>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                              onClick={() =>
+                                                handleDeleteCheckItem(item.id)
+                                              }
+                                            >
+                                              <IconTrash className="h-3.5 w-3.5" />
+                                            </Button>
+                                          </div>
+                                        </>
+                                      )}
+                                    </div>
+                                  ))}
+                              </div>
+                            ) : (
+                              <div className="text-center py-8 text-muted-foreground">
+                                <IconListCheck className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                <p className="text-sm">
+                                  Aucune tâche dans la checklist
+                                </p>
+                                <p className="text-xs mt-1">
+                                  Ajoutez des tâches ci-dessous
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Add New Item */}
+                            <div className="flex items-center gap-2 pt-2 border-t">
+                              <Input
+                                placeholder="Ajouter une nouvelle tâche..."
+                                value={newCheckItemLabel}
+                                onChange={(e) =>
+                                  setNewCheckItemLabel(e.target.value)
+                                }
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleAddCheckItem();
+                                  }
+                                }}
+                                className="flex-1"
+                              />
+                              <Button
+                                onClick={handleAddCheckItem}
+                                disabled={
+                                  !newCheckItemLabel.trim() ||
+                                  createCheckItem.isPending
+                                }
+                              >
+                                {createCheckItem.isPending ? (
+                                  <IconClock className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <IconPlus className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsChecklistDialogOpen(false)}
+                            >
+                              Fermer
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+
+                      {/* Due Date Dialog */}
+                      <Dialog
+                        open={isDueDateDialogOpen}
+                        onOpenChange={setIsDueDateDialogOpen}
+                      >
+                        <DialogContent className="max-w-md">
+                          <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                              <IconCalendar className="h-5 w-5" />
+                              Date d'échéance
+                            </DialogTitle>
+                            <DialogDescription>
+                              Gérez les dates d'échéance de cette card
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            {/* Existing Due Dates */}
+                            {selectedCard?.dueDates &&
+                            selectedCard.dueDates.length > 0 ? (
+                              <div className="space-y-3">
+                                {selectedCard.dueDates.map((dueDate) => {
+                                  const isPast =
+                                    new Date(dueDate.dueAt) < new Date();
+                                  const isSoon =
+                                    !isPast &&
+                                    new Date(dueDate.dueAt) <
+                                      new Date(
+                                        Date.now() + 24 * 60 * 60 * 1000
+                                      );
+
+                                  return (
+                                    <div
+                                      key={dueDate.id}
+                                      className={`p-4 rounded-lg border ${
+                                        isPast
+                                          ? "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20"
+                                          : isSoon
+                                          ? "border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-900/20"
+                                          : "border-border"
+                                      }`}
+                                    >
+                                      {editingDueDateId === dueDate.id ? (
+                                        <div className="space-y-3">
+                                          <Input
+                                            type="datetime-local"
+                                            value={editingDueDate}
+                                            onChange={(e) =>
+                                              setEditingDueDate(e.target.value)
+                                            }
+                                            className="w-full"
+                                            autoFocus
+                                          />
+                                          <div className="flex items-center gap-2 justify-end">
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => {
+                                                setEditingDueDateId(null);
+                                                setEditingDueDate("");
+                                              }}
+                                            >
+                                              Annuler
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              onClick={handleUpdateDueDate}
+                                              disabled={
+                                                updateCardDueDate.isPending ||
+                                                !editingDueDate.trim()
+                                              }
+                                            >
+                                              {updateCardDueDate.isPending
+                                                ? "Enregistrement..."
+                                                : "Enregistrer"}
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-3">
+                                            <div
+                                              className={`p-2 rounded-full ${
+                                                isPast
+                                                  ? "bg-red-100 dark:bg-red-900/40"
+                                                  : isSoon
+                                                  ? "bg-orange-100 dark:bg-orange-900/40"
+                                                  : "bg-muted"
+                                              }`}
+                                            >
+                                              <IconCalendar
+                                                className={`h-5 w-5 ${
+                                                  isPast
+                                                    ? "text-red-600 dark:text-red-400"
+                                                    : isSoon
+                                                    ? "text-orange-600 dark:text-orange-400"
+                                                    : "text-muted-foreground"
+                                                }`}
+                                              />
+                                            </div>
+                                            <div>
+                                              <p
+                                                className={`font-medium ${
+                                                  isPast
+                                                    ? "text-red-700 dark:text-red-300"
+                                                    : isSoon
+                                                    ? "text-orange-700 dark:text-orange-300"
+                                                    : ""
+                                                }`}
+                                              >
+                                                {formatDateTime(dueDate.dueAt)}
+                                              </p>
+                                              <div className="flex items-center gap-2 mt-1">
+                                                {isPast && (
+                                                  <Badge className="bg-red-500 text-white text-xs">
+                                                    ÉCHU
+                                                  </Badge>
+                                                )}
+                                                {isSoon && (
+                                                  <Badge className="bg-orange-500 text-white text-xs">
+                                                    Bientôt
+                                                  </Badge>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-1">
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-8 w-8 p-0"
+                                              onClick={() =>
+                                                handleStartEditDueDate(dueDate)
+                                              }
+                                            >
+                                              <IconEdit className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                              onClick={() =>
+                                                handleDeleteDueDate(dueDate.id)
+                                              }
+                                              disabled={
+                                                deleteCardDueDate.isPending
+                                              }
+                                            >
+                                              <IconTrash className="h-4 w-4" />
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <div className="text-center py-8 text-muted-foreground">
+                                <IconCalendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                <p className="text-sm">
+                                  Aucune date d'échéance définie
+                                </p>
+                                <p className="text-xs mt-1">
+                                  Ajoutez une date ci-dessous
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Add New Due Date */}
+                            {(!selectedCard?.dueDates ||
+                              selectedCard.dueDates.length === 0) && (
+                              <div className="space-y-3 pt-2 border-t">
+                                <Label htmlFor="new-due-date">
+                                  Nouvelle date d'échéance
+                                </Label>
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    id="new-due-date"
+                                    type="datetime-local"
+                                    value={newDueDate}
+                                    onChange={(e) =>
+                                      setNewDueDate(e.target.value)
+                                    }
+                                    className="flex-1"
+                                  />
+                                  <Button
+                                    onClick={handleAddDueDate}
+                                    disabled={
+                                      !newDueDate.trim() ||
+                                      createCardDueDate.isPending
+                                    }
+                                  >
+                                    {createCardDueDate.isPending ? (
+                                      <IconClock className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <IconPlus className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+
+                            {selectedCard?.dueDates &&
+                              selectedCard.dueDates.length > 0 && (
+                                <p className="text-xs text-muted-foreground italic text-center pt-2 border-t">
+                                  Supprimez la date existante pour en ajouter
+                                  une nouvelle
+                                </p>
+                              )}
+                          </div>
+                          <DialogFooter>
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsDueDateDialogOpen(false)}
+                            >
+                              Fermer
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+
+                      {/* Attachment Dialog */}
+                      <Dialog
+                        open={isAttachmentDialogOpen}
+                        onOpenChange={setIsAttachmentDialogOpen}
+                      >
+                        <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                              <IconPaperclip className="h-5 w-5" />
+                              Pièces jointes
+                            </DialogTitle>
+                            <DialogDescription>
+                              Gérez les fichiers attachés à cette card
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            {/* Existing Attachments */}
+                            {selectedCard?.attachments &&
+                            selectedCard.attachments.length > 0 ? (
+                              <div className="space-y-3">
+                                {selectedCard.attachments.map((attachment) => {
+                                  const isImage =
+                                    attachment.fileType?.startsWith("image/");
+                                  const isPdf =
+                                    attachment.fileType === "application/pdf";
+                                  const fileSize = attachment.fileSize
+                                    ? attachment.fileSize < 1024
+                                      ? `${attachment.fileSize} B`
+                                      : attachment.fileSize < 1024 * 1024
+                                      ? `${(attachment.fileSize / 1024).toFixed(
+                                          1
+                                        )} KB`
+                                      : `${(
+                                          attachment.fileSize /
+                                          (1024 * 1024)
+                                        ).toFixed(1)} MB`
+                                    : "";
+
+                                  return (
+                                    <div
+                                      key={attachment.id}
+                                      className="p-4 rounded-lg border hover:bg-muted/50 transition-colors group"
+                                    >
+                                      <div className="flex items-start gap-3">
+                                        {/* Preview/Icon */}
+                                        <div className="shrink-0">
+                                          {isImage ? (
+                                            <div className="w-16 h-16 rounded-lg overflow-hidden border bg-muted">
+                                              <img
+                                                src={attachment.url}
+                                                alt={
+                                                  attachment.filename ||
+                                                  "Aperçu"
+                                                }
+                                                className="w-full h-full object-cover"
+                                              />
+                                            </div>
+                                          ) : (
+                                            <div
+                                              className={`w-16 h-16 rounded-lg flex items-center justify-center ${
+                                                isPdf
+                                                  ? "bg-red-100 dark:bg-red-900/30"
+                                                  : "bg-muted"
+                                              }`}
+                                            >
+                                              <IconPaperclip
+                                                className={`h-8 w-8 ${
+                                                  isPdf
+                                                    ? "text-red-600 dark:text-red-400"
+                                                    : "text-muted-foreground"
+                                                }`}
+                                              />
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        {/* Info */}
+                                        <div className="flex-1 min-w-0">
+                                          <a
+                                            href={attachment.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-sm font-medium text-primary hover:underline block truncate"
+                                          >
+                                            {attachment.filename || "Fichier"}
+                                          </a>
+                                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                            {attachment.fileType && (
+                                              <Badge
+                                                variant="secondary"
+                                                className="text-xs"
+                                              >
+                                                {attachment.fileType
+                                                  .split("/")[1]
+                                                  ?.toUpperCase() ||
+                                                  attachment.fileType}
+                                              </Badge>
+                                            )}
+                                            {fileSize && (
+                                              <span className="text-xs text-muted-foreground">
+                                                {fileSize}
+                                              </span>
+                                            )}
+                                          </div>
+                                          {attachment.uploadedBy && (
+                                            <p className="text-xs text-muted-foreground mt-2">
+                                              Ajouté par{" "}
+                                              {attachment.uploadedBy.name ||
+                                                attachment.uploadedBy.email}
+                                            </p>
+                                          )}
+                                        </div>
+
+                                        {/* Actions */}
+                                        <div className="flex items-center gap-1 shrink-0">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 w-8 p-0"
+                                            asChild
+                                          >
+                                            <a
+                                              href={attachment.url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                            >
+                                              <IconEye className="h-4 w-4" />
+                                            </a>
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                            onClick={() =>
+                                              handleDeleteAttachment(
+                                                attachment.id,
+                                                attachment.url
+                                              )
+                                            }
+                                            disabled={
+                                              deleteCardAttachment.isPending
+                                            }
+                                          >
+                                            <IconTrash className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <div className="text-center py-8 text-muted-foreground">
+                                <IconPaperclip className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                <p className="text-sm">Aucune pièce jointe</p>
+                                <p className="text-xs mt-1">
+                                  Ajoutez des fichiers ci-dessous
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Upload Section */}
+                            <div className="pt-4 border-t space-y-3">
+                              <Label>Ajouter une pièce jointe</Label>
+                              <label className="block">
+                                <Input
+                                  type="file"
+                                  className="hidden"
+                                  id="attachment-upload-dialog"
+                                  onChange={handleUploadAttachment}
+                                  disabled={uploadingAttachment}
+                                />
+                                <div
+                                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-colors ${
+                                    uploadingAttachment
+                                      ? "opacity-50 cursor-not-allowed"
+                                      : ""
+                                  }`}
+                                  onClick={() => {
+                                    if (!uploadingAttachment) {
+                                      document
+                                        .getElementById(
+                                          "attachment-upload-dialog"
+                                        )
+                                        ?.click();
+                                    }
+                                  }}
+                                >
+                                  {uploadingAttachment ? (
+                                    <div className="flex flex-col items-center gap-2">
+                                      <IconClock className="h-8 w-8 animate-spin text-primary" />
+                                      <p className="text-sm font-medium">
+                                        Upload en cours...
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-col items-center gap-2">
+                                      <IconPlus className="h-8 w-8 text-muted-foreground" />
+                                      <p className="text-sm font-medium">
+                                        Cliquez pour ajouter un fichier
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        ou glissez-déposez ici
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              </label>
+                              <p className="text-xs text-muted-foreground text-center">
+                                Taille maximale : 10MB
+                              </p>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsAttachmentDialogOpen(false)}
+                            >
+                              Fermer
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+
                       {/* Sidebar - Right Side */}
                       <div className="w-64 border-l bg-muted/30 p-4 space-y-4 overflow-y-auto">
                         {/* Suggested Section */}
@@ -3293,7 +3940,7 @@ export default function KanbanPage() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                handleScrollToChecklist();
+                                setIsChecklistDialogOpen(true);
                               }}
                             >
                               <IconListCheck className="h-4 w-4 mr-2" />
@@ -3306,7 +3953,7 @@ export default function KanbanPage() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                handleScrollToDueDate();
+                                setIsDueDateDialogOpen(true);
                               }}
                             >
                               <IconClock className="h-4 w-4 mr-2" />
@@ -3319,26 +3966,26 @@ export default function KanbanPage() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                handleScrollToAttachment();
+                                setIsAttachmentDialogOpen(true);
                               }}
                             >
                               <IconPaperclip className="h-4 w-4 mr-2" />
                               Attachment
                             </Button>
 
-                            <Button
+                            {/* <Button
                               variant="ghost"
                               size="sm"
                               className="w-full justify-start"
                             >
                               <IconDeviceDesktop className="h-4 w-4 mr-2" />
                               Cover
-                            </Button>
+                            </Button> */}
                           </div>
                         </div>
 
                         {/* Power-Ups Section */}
-                        <div>
+                        {/* <div>
                           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">
                             Power-Ups
                           </span>
@@ -3360,10 +4007,10 @@ export default function KanbanPage() {
                             <IconPlus className="h-4 w-4 mr-2" />
                             Add Power-Ups
                           </Button>
-                        </div>
+                        </div> */}
 
                         {/* Butler Section */}
-                        <div>
+                        {/* <div>
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                               Butler
@@ -3384,10 +4031,10 @@ export default function KanbanPage() {
                             <IconPlus className="h-4 w-4 mr-2" />
                             Add button
                           </Button>
-                        </div>
+                        </div> */}
 
                         {/* Actions Section */}
-                        <div>
+                        {/* <div>
                           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">
                             Actions
                           </span>
@@ -3401,7 +4048,7 @@ export default function KanbanPage() {
                               Delete
                             </Button>
                           </div>
-                        </div>
+                        </div> */}
                       </div>
                     </div>
                   ) : (

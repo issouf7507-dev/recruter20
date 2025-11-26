@@ -230,9 +230,9 @@ function transformCandidatData(candidat: any) {
       langues: ["Français (Natif)"], // TODO: Add languages to schema if needed
       certifications: candidat.certifications?.map((c: any) => c.nom) || [],
       niveauxEtude: candidat.niveauEtude?.map((n: any) => n.nom) || [],
-      derniereMiseAJour: cvDocument
-        ? new Date(cvDocument.updatedAt).toISOString().split("T")[0]
-        : new Date(candidat.updatedAt).toISOString().split("T")[0],
+      // derniereMiseAJour: cvDocument
+      //   ? new Date(cvDocument.updatedAt)
+      //   : new Date(candidat.updatedAt).toISOString().split("T")[0],
       taille: cvDocument ? formatFileSize(cvDocument.fileSize) : "N/A",
       format: cvDocument?.fileType || "PDF",
     },
@@ -733,9 +733,9 @@ export default function RechercheCVPage() {
                                           : ""}
                                       </span>
                                     )}
-                                    <span className="text-muted-foreground">
+                                    {/* <span className="text-muted-foreground">
                                       Mis à jour: {cv.cv.derniereMiseAJour}
-                                    </span>
+                                    </span> */}
                                   </div>
                                 </CardDescription>
                               </div>

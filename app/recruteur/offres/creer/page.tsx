@@ -24,6 +24,7 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { RichTextEditorWrapper } from "@/components/rich-text-editor-wrapper";
 import { useCreateOffer } from "@/lib/hooks/use-offers";
+import { useEdgeStore } from "@/lib/edgestore";
 import { toast } from "sonner";
 import {
   IconBriefcase,
@@ -31,6 +32,10 @@ import {
   IconCurrencyEuro,
   IconCalendar,
   IconUsers,
+  IconPhoto,
+  IconUpload,
+  IconX,
+  IconLoader2,
 } from "@tabler/icons-react";
 import { ChevronDownIcon } from "lucide-react";
 import {
@@ -54,12 +59,17 @@ interface FormData {
   nombrePostes: string;
   duedate: Date | undefined;
   salaryCurrency: string;
+  anneesexperience: string;
+  logo: string;
 }
 
 export default function CreerOffrePage() {
   const router = useRouter();
   const createOffer = useCreateOffer();
+  const { edgestore } = useEdgeStore();
   const [open, setOpen] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const [formData, setFormData] = useState<FormData>({
     titre: "",
@@ -75,12 +85,73 @@ export default function CreerOffrePage() {
     nombrePostes: "",
     duedate: new Date(),
     salaryCurrency: "XOF",
+    anneesexperience: "",
+    logo: "",
   });
 
   const handleInputChange = (field: string, value: string | Date) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
+    }));
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Veuillez sélectionner une image (JPG, PNG, GIF, etc.)");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("L'image est trop volumineuse (max 5MB)");
+      return;
+    }
+
+    setUploadingLogo(true);
+    setUploadProgress(0);
+
+    try {
+      const res = await edgestore.publicFiles.upload({
+        file,
+        onProgressChange: (progress) => {
+          setUploadProgress(progress);
+        },
+      });
+
+      setFormData((prev) => ({
+        ...prev,
+        logo: res.url,
+      }));
+      toast.success("Logo uploadé avec succès");
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      toast.error("Erreur lors de l'upload du logo");
+    } finally {
+      setUploadingLogo(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    if (!formData.logo) return;
+
+    try {
+      await edgestore.publicFiles.delete({
+        url: formData.logo,
+      });
+    } catch (error) {
+      console.error("Error deleting logo from EdgeStore:", error);
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      logo: "",
     }));
   };
 
@@ -117,6 +188,8 @@ export default function CreerOffrePage() {
         duedate: new Date(),
         nombrePostes: "",
         salaryCurrency: "XOF",
+        anneesexperience: "",
+        logo: "",
       });
     } catch (error) {
       toast.error("Erreur lors de la création de l'offre");
@@ -153,36 +226,104 @@ export default function CreerOffrePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Logo Upload */}
                       <div className="space-y-2">
-                        <Label htmlFor="titre">Titre du poste *</Label>
-                        <Input
-                          id="titre"
-                          placeholder="Ex: Développeur React Senior"
-                          value={formData.titre}
-                          onChange={(e) =>
-                            handleInputChange("titre", e.target.value)
-                          }
-                          required
-                        />
+                        <Label>Logo de l'entreprise</Label>
+                        <div className="flex flex-col items-center gap-3">
+                          {formData.logo ? (
+                            <div className="relative group">
+                              <div className="w-24 h-24 rounded-lg overflow-hidden border-2 border-border bg-muted">
+                                <img
+                                  src={formData.logo}
+                                  alt="Logo entreprise"
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="icon"
+                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={handleRemoveLogo}
+                              >
+                                <IconX className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <label className="cursor-pointer">
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleLogoUpload}
+                                disabled={uploadingLogo}
+                              />
+                              <div
+                                className={`w-24 h-24 rounded-lg border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/50 transition-colors flex flex-col items-center justify-center gap-1 ${
+                                  uploadingLogo
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : ""
+                                }`}
+                              >
+                                {uploadingLogo ? (
+                                  <>
+                                    <IconLoader2 className="h-6 w-6 animate-spin text-primary" />
+                                    <span className="text-xs text-muted-foreground">
+                                      {uploadProgress}%
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <IconPhoto className="h-6 w-6 text-muted-foreground" />
+                                    <span className="text-xs text-muted-foreground text-center px-1">
+                                      Ajouter logo
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </label>
+                          )}
+                          <p className="text-xs text-muted-foreground text-center">
+                            JPG, PNG (max 5MB)
+                          </p>
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="entreprise">
-                          Nom de l'entreprise *
-                        </Label>
-                        <Input
-                          id="entreprise"
-                          placeholder="Ex: TechCorp"
-                          value={formData.entreprise}
-                          onChange={(e) =>
-                            handleInputChange("entreprise", e.target.value)
-                          }
-                          required
-                        />
+
+                      {/* Titre et Entreprise */}
+                      <div className="md:col-span-2 space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="titre">Titre du poste *</Label>
+                            <Input
+                              id="titre"
+                              placeholder="Ex: Développeur React Senior"
+                              value={formData.titre}
+                              onChange={(e) =>
+                                handleInputChange("titre", e.target.value)
+                              }
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="entreprise">
+                              Nom de l'entreprise *
+                            </Label>
+                            <Input
+                              id="entreprise"
+                              placeholder="Ex: TechCorp"
+                              value={formData.entreprise}
+                              onChange={(e) =>
+                                handleInputChange("entreprise", e.target.value)
+                              }
+                              required
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="typeContrat">Type de contrat *</Label>
                         <Select
@@ -236,6 +377,33 @@ export default function CreerOffrePage() {
                             <SelectItem value="XOF">XOF</SelectItem>
                             <SelectItem value="EUR">EUR</SelectItem>
                             <SelectItem value="USD">USD</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="anneesexperience">
+                          Années d'expérience *
+                        </Label>
+                        <Select
+                          value={formData.anneesexperience}
+                          onValueChange={(value) =>
+                            handleInputChange("anneesexperience", value)
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Sélectionner" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">1</SelectItem>
+                            <SelectItem value="2">2</SelectItem>
+                            <SelectItem value="3">3</SelectItem>
+                            <SelectItem value="4">4</SelectItem>
+                            <SelectItem value="5">5</SelectItem>
+                            <SelectItem value="6">6</SelectItem>
+                            <SelectItem value="7">7</SelectItem>
+                            <SelectItem value="8">8</SelectItem>
+                            <SelectItem value="9">9</SelectItem>
+                            <SelectItem value="10">10</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

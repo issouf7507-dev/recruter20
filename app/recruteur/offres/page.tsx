@@ -32,6 +32,7 @@ import {
   useCollaborateurByUserId,
   useRecruteurByUserId,
 } from "@/lib/hooks/use-recruteurs";
+import { useEdgeStore } from "@/lib/edgestore";
 import type { JobOffer } from "@/lib/api/offres/types";
 import { toast } from "sonner";
 import {
@@ -49,6 +50,8 @@ import {
   IconLoader,
   IconChevronLeft,
   IconChevronRight,
+  IconPhoto,
+  IconX,
 } from "@tabler/icons-react";
 import {
   Popover,
@@ -60,12 +63,16 @@ import { Calendar } from "@/components/ui/calendar";
 
 export default function MesOffresPage() {
   const { data: session, isPending: isSessionLoading } = useSession();
+  const { edgestore } = useEdgeStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatut, setFilterStatut] = useState("all");
   const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
   const [editTypeContrat, setEditTypeContrat] = useState("cdi");
   const [editDescription, setEditDescription] = useState("");
   const [editDuedate, setEditDuedate] = useState<Date | undefined>(undefined);
+  const [editLogo, setEditLogo] = useState("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [open, setOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -143,11 +150,69 @@ export default function MesOffresPage() {
     if (offre) {
       setEditTypeContrat(offre.type || "cdi");
       setEditDescription(offre.description || "");
+      setEditLogo(offre.logo || "");
+      setEditDuedate(offre.duedate ? new Date(offre.duedate) : undefined);
     }
   };
 
   const handleCloseEditModal = () => {
     setEditingOfferId(null);
+    setEditLogo("");
+    setUploadingLogo(false);
+    setUploadProgress(0);
+  };
+
+  const handleEditLogoUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Veuillez sélectionner une image (JPG, PNG, GIF, etc.)");
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("L'image est trop volumineuse (max 5MB)");
+      return;
+    }
+
+    setUploadingLogo(true);
+    setUploadProgress(0);
+
+    try {
+      const res = await edgestore.publicFiles.upload({
+        file,
+        onProgressChange: (progress) => {
+          setUploadProgress(progress);
+        },
+      });
+
+      setEditLogo(res.url);
+      toast.success("Logo uploadé avec succès");
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      toast.error("Erreur lors de l'upload du logo");
+    } finally {
+      setUploadingLogo(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const handleRemoveEditLogo = async () => {
+    if (!editLogo) return;
+
+    try {
+      await edgestore.publicFiles.delete({
+        url: editLogo,
+      });
+    } catch (error) {
+      console.error("Error deleting logo from EdgeStore:", error);
+    }
+
+    setEditLogo("");
   };
 
   const handleSubmitEdit = async (
@@ -170,8 +235,7 @@ export default function MesOffresPage() {
           salaireMax: formData.get("salaireMax") as string,
           description: editDescription || offre.description,
           duedate: editDuedate ? new Date(editDuedate) : undefined,
-          // duedate: editingOffer.duedate || offre.duedate,
-          // numberOfPosts: editingOffer.numberOfPosts || offre.numberOfPosts,
+          logo: editLogo || undefined,
         },
       });
       handleCloseEditModal();
@@ -367,40 +431,65 @@ export default function MesOffresPage() {
                     >
                       <CardHeader>
                         <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <CardTitle className="text-lg">
-                                {offre.title}
-                              </CardTitle>
-                              {getStatutBadge(offre.etat || "active")}
+                          <div className="flex items-start gap-4 flex-1">
+                            {/* Logo de l'entreprise */}
+                            {offre.logo ? (
+                              <div className="shrink-0">
+                                <div className="w-14 h-14 rounded-lg overflow-hidden border bg-muted">
+                                  <img
+                                    src={offre.logo}
+                                    alt={`Logo ${
+                                      offre.company || "entreprise"
+                                    }`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="shrink-0">
+                                <div className="w-14 h-14 rounded-lg border bg-muted flex items-center justify-center">
+                                  <IconBriefcase className="h-6 w-6 text-muted-foreground" />
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                <CardTitle className="text-lg">
+                                  {offre.title}
+                                </CardTitle>
+                                {getStatutBadge(offre.etat || "active")}
+                              </div>
+                              <CardDescription className="flex items-center gap-4 text-sm flex-wrap">
+                                {offre.company && (
+                                  <span className="flex items-center gap-1">
+                                    <IconBriefcase className="h-4 w-4" />
+                                    {offre.company}
+                                  </span>
+                                )}
+                                {offre.location && (
+                                  <span className="flex items-center gap-1">
+                                    <IconMapPin className="h-4 w-4" />
+                                    {offre.location}
+                                  </span>
+                                )}
+                                {(offre.salaryMin || offre.salaryMax) && (
+                                  <span className="flex items-center gap-1">
+                                    {offre.salaryMin
+                                      ? `${offre.salaryMin}`
+                                      : ""}
+                                    {offre.salaryMin && offre.salaryMax
+                                      ? " - "
+                                      : ""}
+                                    {offre.salaryMax
+                                      ? `${offre.salaryMax} ${offre.salaryCurrency}`
+                                      : ""}
+                                  </span>
+                                )}
+                              </CardDescription>
                             </div>
-                            <CardDescription className="flex items-center gap-4 text-sm flex-wrap">
-                              {offre.company && (
-                                <span className="flex items-center gap-1">
-                                  <IconBriefcase className="h-4 w-4" />
-                                  {offre.company}
-                                </span>
-                              )}
-                              {offre.location && (
-                                <span className="flex items-center gap-1">
-                                  <IconMapPin className="h-4 w-4" />
-                                  {offre.location}
-                                </span>
-                              )}
-                              {(offre.salaryMin || offre.salaryMax) && (
-                                <span className="flex items-center gap-1">
-                                  {offre.salaryMin ? `${offre.salaryMin}` : ""}
-                                  {offre.salaryMin && offre.salaryMax
-                                    ? " - "
-                                    : ""}
-                                  {offre.salaryMax
-                                    ? `${offre.salaryMax} ${offre.salaryCurrency}`
-                                    : ""}
-                                </span>
-                              )}
-                            </CardDescription>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 shrink-0">
                             <Button
                               variant="outline"
                               size="sm"
@@ -586,26 +675,95 @@ export default function MesOffresPage() {
                 }
                 className="space-y-4"
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Logo et informations principales */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Logo Upload */}
                   <div className="space-y-2">
-                    <Label htmlFor="edit-titre">Titre du poste *</Label>
-                    <Input
-                      id="edit-titre"
-                      name="titre"
-                      placeholder="Ex: Développeur React Senior"
-                      defaultValue={editingOffer.title}
-                      required
-                    />
+                    <Label>Logo de l'entreprise</Label>
+                    <div className="flex flex-col items-center gap-3">
+                      {editLogo ? (
+                        <div className="relative group">
+                          <div className="w-20 h-20 rounded-lg overflow-hidden border-2 border-border bg-muted">
+                            <img
+                              src={editLogo}
+                              alt="Logo entreprise"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={handleRemoveEditLogo}
+                          >
+                            <IconX className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <label className="cursor-pointer">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleEditLogoUpload}
+                            disabled={uploadingLogo}
+                          />
+                          <div
+                            className={`w-20 h-20 rounded-lg border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/50 transition-colors flex flex-col items-center justify-center gap-1 ${
+                              uploadingLogo
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            }`}
+                          >
+                            {uploadingLogo ? (
+                              <>
+                                <IconLoader className="h-5 w-5 animate-spin text-primary" />
+                                <span className="text-xs text-muted-foreground">
+                                  {uploadProgress}%
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <IconPhoto className="h-5 w-5 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground text-center px-1">
+                                  Ajouter
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </label>
+                      )}
+                      <p className="text-xs text-muted-foreground text-center">
+                        Max 5MB
+                      </p>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-entreprise">Entreprise *</Label>
-                    <Input
-                      id="edit-entreprise"
-                      name="entreprise"
-                      placeholder="Ex: TechCorp"
-                      defaultValue={editingOffer.company || ""}
-                      required
-                    />
+
+                  {/* Titre et Entreprise */}
+                  <div className="md:col-span-2 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-titre">Titre du poste *</Label>
+                        <Input
+                          id="edit-titre"
+                          name="titre"
+                          placeholder="Ex: Développeur React Senior"
+                          defaultValue={editingOffer.title}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-entreprise">Entreprise *</Label>
+                        <Input
+                          id="edit-entreprise"
+                          name="entreprise"
+                          placeholder="Ex: TechCorp"
+                          defaultValue={editingOffer.company || ""}
+                          required
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 

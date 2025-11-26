@@ -56,7 +56,7 @@ export default function CandidateLoginPage() {
   };
 
   return (
-    <div className="h-screen bg-[#a590ff] grid grid-cols-2 p-5 relative overflow-hidden">
+    <div className="h-screen bg-[#a590ff] grid grid-cols-2 p-5 relative overflow-y-auto">
       <div className="flex flex-col  ">
         <div className="flex items-center justify-between px-10">
           <h1 className="text-6xl font-bold mb-4">Ylsix</h1>

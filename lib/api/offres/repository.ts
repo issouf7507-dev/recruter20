@@ -21,6 +21,7 @@ export class JobOfferRepository {
     salaryCurrency?: string;
     datePosted?: string;
     experience?: string[];
+    anneesexperience?: string;
   }) {
     const {
       page = 1,
@@ -466,6 +467,7 @@ export class JobOfferRepository {
     recruteurId: string;
     duedate?: Date;
     salaryCurrency: string;
+    logo?: string;
   }) {
     return prisma.jobOffer.create({
       data: {
@@ -483,6 +485,7 @@ export class JobOfferRepository {
         duedate: data.duedate,
         etat: "active",
         salaryCurrency: data.salaryCurrency,
+        logo: data.logo,
       },
     });
   }
@@ -507,6 +510,7 @@ export class JobOfferRepository {
         recruteurId: data.recruteurId,
         duedate: data.duedate,
         etat: data.etat,
+        logo: data.logo,
       },
     });
   }

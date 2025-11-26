@@ -118,9 +118,7 @@ export default function AcceptInvitationPage() {
         // Si l'utilisateur vient de créer un compte, rediriger vers la connexion
         // Sinon, rediriger vers le dashboard
         if (!session?.user) {
-          router.push(
-            `/auth/collaborateur/login?invitation=accepted&email=${invitation?.email}`
-          );
+          router.push(`/auth/recruteur/login`);
         } else {
           router.push("/recruteur/dashboard");
         }

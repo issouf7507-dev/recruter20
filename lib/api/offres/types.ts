@@ -7,6 +7,7 @@ export interface JobOffer {
   type?: string;
   etat?: string;
   experience?: string;
+  logo?: string;
   salaryMin?: number;
   salaryMax?: number;
   salaryCurrency?: string;
@@ -24,6 +25,7 @@ export interface JobOffer {
   dueDate?: Date | string;
   applicationCount?: number;
   applications?: any[];
+  anneesexperience?: string;
 }
 
 export interface CreateOfferData {
@@ -40,6 +42,8 @@ export interface CreateOfferData {
   nombrePostes?: string;
   duedate?: Date | undefined;
   salaryCurrency: string;
+  anneesexperience: string;
+  logo?: string;
 }
 
 export interface PaginatedResponse<T> {
