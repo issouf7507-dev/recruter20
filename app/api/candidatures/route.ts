@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         data: application,
-        message: "Application submitted successfully",
+        message: "Candidature envoyée avec succès",
       },
       { status: 201 }
     );

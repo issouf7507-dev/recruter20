@@ -99,6 +99,15 @@ export default function MessageriePage() {
 
   // console.log("conversationsRecruteur", conversationsRecruteur);
 
+  // Synchroniser les messages avec conversationsMessages
+  useEffect(() => {
+    if (conversationsMessages) {
+      setMessages(conversationsMessages);
+    } else {
+      setMessages([]);
+    }
+  }, [conversationsMessages]);
+
   // Sélectionner la conversation depuis l'URL
   useEffect(() => {
     if (conversationIdFromUrl && conversationsRecruteur?.length > 0) {
@@ -126,10 +135,8 @@ export default function MessageriePage() {
   const handleConversationSelect = (conversation: Conversation) => {
     setSelectedConversation(conversation);
     setShowMobileChat(true);
-    // loadMessages(conversation.id);
-    refetchConversationsMessages();
 
-    // Mettre à jour l'URL
+    // Mettre à jour l'URL - React Query refetch automatiquement quand conversationIdFromUrl change
     router.push(`/recruteur/messagerie?conversationId=${conversation.id}`);
   };
 
@@ -158,9 +165,9 @@ export default function MessageriePage() {
       const result = await response.json();
 
       if (result.success) {
-        setMessages((prev) => [...prev, result.data]);
         setNewMessage("");
-        // Recharger les conversations pour mettre à jour le dernier message
+        // Recharger les messages et les conversations
+        refetchConversationsMessages();
         refetchConversationsRecruteur();
       } else {
         toast.error("Erreur lors de l'envoi du message");
@@ -408,7 +415,16 @@ export default function MessageriePage() {
 
                       {/* Zone des messages */}
                       <div className="flex-1 overflow-y-auto p-4">
-                        {messages.length === 0 ? (
+                        {isLoadingConversationsMessages ? (
+                          <div className="flex items-center justify-center h-full">
+                            <div className="text-center">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                              <p className="text-muted-foreground">
+                                Chargement des messages...
+                              </p>
+                            </div>
+                          </div>
+                        ) : messages.length === 0 ? (
                           <div className="flex items-center justify-center h-full">
                             <div className="text-center">
                               <IconMessage className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />

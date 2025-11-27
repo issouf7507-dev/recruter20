@@ -14,6 +14,7 @@ import {
   FileText,
   AlertCircle,
   Loader2Icon,
+  MessageCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -134,6 +135,40 @@ export default function OffreDetailPage({
     );
   }
 
+  // Formater la date limite
+  const formatDueDate = (duedate: Date | string | undefined) => {
+    if (!duedate) return null;
+
+    const dueDate = new Date(duedate);
+    const now = new Date();
+    const diffInMs = dueDate.getTime() - now.getTime();
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+    const isExpired = diffInMs < 0;
+    const isSoon = diffInDays >= 0 && diffInDays <= 7;
+
+    let formatted = "";
+    if (isExpired) {
+      formatted = "Expiré";
+    } else if (diffInDays === 0) {
+      formatted = "Aujourd'hui";
+    } else if (diffInDays === 1) {
+      formatted = "Demain";
+    } else if (diffInDays < 7) {
+      formatted = `Dans ${diffInDays} jours`;
+    } else {
+      formatted = dueDate.toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    }
+
+    return { formatted, isExpired, isSoon };
+  };
+
+  const dueDateInfo = formatDueDate(jobDetail.duedate);
+
   const handleShare = () => {
     // if (navigator.share) {
     //   navigator.share({
@@ -150,6 +185,12 @@ export default function OffreDetailPage({
     navigator.clipboard.writeText(window.location.href);
     alert("Lien copié dans le presse-papier !");
     setShowShareModal(false);
+  };
+
+  const shareViaWhatsApp = () => {
+    const text = `Découvrez cette offre d'emploi : ${jobDetail.title} chez ${jobDetail.company}\n${window.location.href}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(whatsappUrl, "_blank");
   };
 
   const handlePostulerModal = () => {
@@ -294,6 +335,22 @@ export default function OffreDetailPage({
                     {jobDetail.salaryMax} - {jobDetail.salaryMin}{" "}
                     {jobDetail.salaryCurrency}
                   </span>
+                  {dueDateInfo && (
+                    <span
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium ${
+                        dueDateInfo.isExpired
+                          ? "bg-red-50 text-red-700"
+                          : dueDateInfo.isSoon
+                          ? "bg-orange-50 text-orange-700"
+                          : "bg-blue-50 text-blue-700"
+                      }`}
+                    >
+                      <Calendar className="w-4 h-4 md:w-5 md:h-5" />
+                      {dueDateInfo.isExpired
+                        ? "⚠️ " + dueDateInfo.formatted
+                        : "Clôture: " + dueDateInfo.formatted}
+                    </span>
+                  )}
                 </div>
 
                 {/* <div className="flex flex-wrap gap-2 mb-6">
@@ -384,6 +441,22 @@ export default function OffreDetailPage({
                     {new Date(jobDetail.createdAt).toLocaleDateString()}
                   </span>
                 </div>
+                {dueDateInfo && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Date limite</span>
+                    <span
+                      className={`font-medium ${
+                        dueDateInfo.isExpired
+                          ? "text-red-600"
+                          : dueDateInfo.isSoon
+                          ? "text-orange-600"
+                          : "text-blue-600"
+                      }`}
+                    >
+                      {dueDateInfo.formatted}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-500">Candidatures</span>
                   <span className="text-[#a590ff] font-semibold">
@@ -562,6 +635,13 @@ export default function OffreDetailPage({
               >
                 <FileText className="w-5 h-5 text-gray-600" />
                 <span className="text-gray-700">Copier le lien</span>
+              </button>
+              <button
+                onClick={shareViaWhatsApp}
+                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200"
+              >
+                <MessageCircle className="w-5 h-5 text-gray-600" />
+                <span className="text-gray-700">Partager par WhatsApp</span>
               </button>
               <a
                 href={`mailto:?subject=${encodeURIComponent(

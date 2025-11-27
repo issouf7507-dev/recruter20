@@ -127,6 +127,8 @@ export default function OffresPage() {
   const { data: offersData, isLoading: isLoadingOffers } =
     useOffers(filterParams);
 
+  console.log("offersData", offersData);
+
   const pagination = offersData?.pagination;
 
   // Transformer les vraies offres pour correspondre au format attendu
@@ -156,6 +158,37 @@ export default function OffresPage() {
         postedAt = `Publié il y a ${Math.floor(diffInDays / 7)} semaines`;
       }
 
+      // Format date limite
+      let dueDateFormatted = "";
+      let isDueDateSoon = false;
+      let isDueDateExpired = false;
+
+      if (offer.duedate) {
+        const dueDate = new Date(offer.duedate);
+        const now = new Date();
+        const diffInMs = dueDate.getTime() - now.getTime();
+        const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+        isDueDateExpired = diffInMs < 0;
+        isDueDateSoon = diffInDays >= 0 && diffInDays <= 7;
+
+        if (isDueDateExpired) {
+          dueDateFormatted = "Expiré";
+        } else if (diffInDays === 0) {
+          dueDateFormatted = "Aujourd'hui";
+        } else if (diffInDays === 1) {
+          dueDateFormatted = "Demain";
+        } else if (diffInDays < 7) {
+          dueDateFormatted = `Dans ${diffInDays} jours`;
+        } else {
+          dueDateFormatted = dueDate.toLocaleDateString("fr-FR", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          });
+        }
+      }
+
       return {
         id: offer.id,
         title: offer.title,
@@ -177,6 +210,10 @@ export default function OffresPage() {
         urgent: false,
         rating: 4.5,
         salaryCurrency: offer.salaryCurrency || "",
+        duedate: offer.duedate,
+        dueDateFormatted,
+        isDueDateSoon,
+        isDueDateExpired,
       };
     });
   }, [offersData]);
@@ -587,6 +624,21 @@ export default function OffresPage() {
                                 {job.salary && (
                                   <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700">
                                     {job.salary} {job.salaryCurrency}
+                                  </span>
+                                )}
+                                {job.dueDateFormatted && (
+                                  <span
+                                    className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium ${
+                                      job.isDueDateExpired
+                                        ? "bg-red-100 text-red-700"
+                                        : job.isDueDateSoon
+                                        ? "bg-orange-100 text-orange-700"
+                                        : "bg-blue-100 text-blue-700"
+                                    }`}
+                                  >
+                                    {job.isDueDateExpired
+                                      ? "" + job.dueDateFormatted
+                                      : " Clôture: " + job.dueDateFormatted}
                                   </span>
                                 )}
                               </div>
