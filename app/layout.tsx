@@ -41,10 +41,13 @@ export const metadata: Metadata = {
     type: "website",
     locale: "fr_FR",
     url: "https://ylsix.com",
-    title: "Recruteur 2.0 - Plateforme de recrutement moderne",
+    title: "Ylsix - Plateforme de recrutement moderne",
     description:
-      "La plateforme moderne qui connecte les meilleurs talents avec les meilleures opportunités",
+      "La plateforme moderne qui connecte les meilleurs talents avec les meilleures opportunités. Trouvez votre prochain emploi ou recrutez les meilleurs candidats.",
     siteName: "Ylsix",
+  },
+  icons: {
+    icon: "/favicon.ico",
   },
 };
 
