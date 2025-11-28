@@ -388,7 +388,7 @@ export default function ContactPage() {
             </div>
 
             {/* Map placeholder */}
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            {/* <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <div className="h-64 bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
                 <div className="text-center">
                   <MapPin className="w-12 h-12 text-[#a590ff] mx-auto mb-3" />
@@ -398,7 +398,7 @@ export default function ContactPage() {
                   <p className="text-gray-600">75008 Paris, France</p>
                 </div>
               </div>
-            </div>
+            </div> */}
           </motion.div>
         </div>
       </div>

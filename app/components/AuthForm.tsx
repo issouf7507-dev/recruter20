@@ -155,7 +155,9 @@ export default function AuthForm({
 
               <div className="flex flex-col gap-3">
                 <Label htmlFor="date" className="px-1 text-gray-700">
-                  Date de création de l'entreprise
+                  {userType === "recruteur"
+                    ? "Date de création de l'entreprise"
+                    : "Date de naissance"}
                 </Label>
                 <Popover open={open} onOpenChange={setOpen}>
                   <PopoverTrigger asChild>
