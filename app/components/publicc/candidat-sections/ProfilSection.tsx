@@ -803,6 +803,26 @@ const NIVEAUX_ETUDE_PREDEFINIS = [
     value: "baccalaureat",
     label: "Baccalauréat Général",
   },
+  { value: "baccalaureat-technologique", label: "Baccalauréat Technologique" },
+  { value: "baccalaureat-professionnel", label: "Baccalauréat Professionnel" },
+  { value: "bts", label: "BTS (Brevet de Technicien Supérieur)" },
+  { value: "dut", label: "DUT (Diplôme Universitaire de Technologie)" },
+  {
+    value: "deust",
+    label:
+      "DEUST (Diplôme d'Études Universitaires Scientifiques et Techniques)",
+  },
+  { value: "licence", label: "Licence" },
+  { value: "licence-professionnelle", label: "Licence Professionnelle" },
+  { value: "master-1", label: "Master 1 (Maîtrise)" },
+  { value: "master-2", label: "Master 2" },
+  { value: "master-professionnel", label: "Master Professionnel" },
+  { value: "master-recherche", label: "Master de Recherche" },
+  { value: "mba", label: "MBA (Master of Business Administration)" },
+  { value: "doctorat", label: "Doctorat" },
+  { value: "ingenieur", label: "Ingénieur" },
+  { value: "grande-ecole", label: "Grande École" },
+  { value: "autre", label: "Autre" },
 ];
 export function ProfilSection({ candidat }: ProfilSectionProps) {
   const [file, setFile] = useState<File>();
