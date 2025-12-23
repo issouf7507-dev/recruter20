@@ -409,7 +409,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
               viewport={{ once: true }}
-              className="bg-black text-white h-52  rounded-lg px-10 py-4"
+              className="bg-[#a590ff] text-white h-52  rounded-lg px-10 py-4"
             >
               <UserIcon className="w-12 h-12 opacity-50" />
               <h1 className="text-2xl font-bold mb-4">Tableau Kanban</h1>
@@ -423,7 +423,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               viewport={{ once: true }}
-              className="bg-black text-white h-52  rounded-lg px-10 py-4 "
+              className="bg-[#a590ff] text-white h-52  rounded-lg px-10 py-4 "
             >
               <BriefcaseIcon className="w-12 h-12 opacity-50" />
               <h1 className="text-2xl font-bold mb-4">Multi-diffusion</h1>
@@ -437,7 +437,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
               viewport={{ once: true }}
-              className="bg-black text-white h-52  rounded-lg px-10 py-4 "
+              className="bg-[#a590ff] text-white h-52  rounded-lg px-10 py-4 "
             >
               <ShieldCheckIcon className="w-12 h-12 opacity-50" />
               <h1 className="text-2xl font-bold mb-4">Collaboration</h1>
@@ -451,7 +451,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
               viewport={{ once: true }}
-              className="bg-black text-white h-52  rounded-lg px-10 py-4 "
+              className="bg-[#a590ff] text-white h-52  rounded-lg px-10 py-4 "
             >
               <UserIcon className="w-12 h-12 opacity-50" />
               <h1 className="text-2xl font-bold mb-4">Statistiques</h1>

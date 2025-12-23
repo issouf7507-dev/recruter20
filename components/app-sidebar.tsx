@@ -16,6 +16,7 @@ import {
   IconReport,
   IconSearch,
   IconSettings,
+  IconShare,
   IconSun,
   IconUser,
   IconUsers,
@@ -103,14 +104,21 @@ const data = {
     },
 
     {
-      title: "Aide et support",
-      url: "/recruteur/aide-support",
-      icon: IconHelp,
+      title: "Multi-diffusion",
+      url: "/recruteur/multi-diffusion",
+      icon: IconShare,
     },
+
     {
       title: "Invitations",
       url: "/recruteur/invitations",
       icon: IconMail,
+    },
+
+    {
+      title: "Aide et support",
+      url: "/recruteur/aide-support",
+      icon: IconHelp,
     },
   ],
   navSecondary: [
@@ -119,11 +127,11 @@ const data = {
       url: "/recruteur/parametres",
       icon: IconSettings,
     },
-    {
-      title: "Aide",
-      url: "#",
-      icon: IconHelp,
-    },
+    // {
+    //   title: "Aide",
+    //   url: "#",
+    //   icon: IconHelp,
+    // },
     // {
     //   title: "Recherche",
     //   url: "#",

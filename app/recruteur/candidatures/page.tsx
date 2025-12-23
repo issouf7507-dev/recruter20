@@ -36,6 +36,7 @@ import {
   IconPhone,
   IconClock,
   IconMessage,
+  IconLoader,
 } from "@tabler/icons-react";
 import { useSession } from "@/lib/auth-client";
 import {
@@ -44,7 +45,7 @@ import {
 } from "@/lib/hooks/use-recruteurs";
 import { useCandidatures } from "@/lib/hooks/use-candidatures";
 import { toast } from "sonner";
-import { Star } from "lucide-react";
+import { LoaderCircle, Star } from "lucide-react";
 import { ApplicationStatus } from "@/lib/api/candidatures";
 import { CandidatProfilDialog } from "@/app/components/recruteur/CandidatProfilDialog";
 
@@ -213,7 +214,14 @@ export default function CandidaturesRecuesPage() {
   ) as string[];
 
   if (isLoadingRecruteur) {
-    return <div>Chargement des candidatures...</div>;
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
   }
 
   if (errorRecruteur)

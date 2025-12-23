@@ -206,7 +206,6 @@ export default function CandidatsFavorisPage() {
               {/* Header */}
               <div className="mb-6">
                 <h1 className="text-2xl font-bold flex items-center gap-2">
-                  <IconHeart className="h-6 w-6 text-red-500" />
                   Candidats favoris
                 </h1>
                 <p className="text-muted-foreground mt-2">
@@ -227,7 +226,7 @@ export default function CandidatsFavorisPage() {
                           {candidaturesFavorites?.length}
                         </p>
                       </div>
-                      <IconHeart className="h-8 w-8 text-red-500" />
+                      <IconHeart className="h-8 w-8 " />
                     </div>
                   </CardContent>
                 </Card>
@@ -238,7 +237,7 @@ export default function CandidatsFavorisPage() {
                         <p className="text-sm text-muted-foreground">
                           Disponibles
                         </p>
-                        <p className="text-2xl font-bold text-green-600">
+                        <p className="text-2xl font-bold ">
                           {
                             candidaturesFavorites?.filter(
                               (c: CandidatureRecruteur) =>
@@ -247,7 +246,7 @@ export default function CandidatsFavorisPage() {
                           }
                         </p>
                       </div>
-                      <IconUser className="h-8 w-8 text-green-500" />
+                      <IconUser className="h-8 w-8 " />
                     </div>
                   </CardContent>
                 </Card>
@@ -258,7 +257,7 @@ export default function CandidatsFavorisPage() {
                         <p className="text-sm text-muted-foreground">
                           En postule
                         </p>
-                        <p className="text-2xl font-bold text-yellow-600">
+                        <p className="text-2xl font-bold ">
                           {
                             candidaturesFavorites?.filter(
                               (c: CandidatureRecruteur) =>
@@ -267,7 +266,7 @@ export default function CandidatsFavorisPage() {
                           }
                         </p>
                       </div>
-                      <IconBriefcase className="h-8 w-8 text-yellow-500" />
+                      <IconBriefcase className="h-8 w-8 " />
                     </div>
                   </CardContent>
                 </Card>
@@ -278,7 +277,7 @@ export default function CandidatsFavorisPage() {
                         <p className="text-sm text-muted-foreground">
                           Embauchés
                         </p>
-                        <p className="text-2xl font-bold text-blue-600">
+                        <p className="text-2xl font-bold ">
                           {
                             candidaturesFavorites?.filter(
                               (c: CandidatureRecruteur) =>
@@ -287,7 +286,7 @@ export default function CandidatsFavorisPage() {
                           }
                         </p>
                       </div>
-                      <IconHeart className="h-8 w-8 text-blue-500" />
+                      <IconHeart className="h-8 w-8 " />
                     </div>
                   </CardContent>
                 </Card>

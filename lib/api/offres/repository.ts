@@ -507,6 +507,7 @@ export class JobOfferRepository {
     duedate?: Date;
     salaryCurrency: string;
     logo?: string;
+    etat?: "active" | "brouillon";
   }) {
     return prisma.jobOffer.create({
       data: {
@@ -522,7 +523,7 @@ export class JobOfferRepository {
         skills: data.skills,
         recruteurId: data.recruteurId,
         duedate: data.duedate,
-        etat: "active",
+        etat: data.etat || "active",
         salaryCurrency: data.salaryCurrency,
         logo: data.logo,
       },

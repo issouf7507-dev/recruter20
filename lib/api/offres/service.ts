@@ -134,6 +134,7 @@ export async function createOffer(data: CreateOfferData): Promise<JobOffer> {
       salaryCurrency: data.salaryCurrency,
       anneesexperience: data.anneesexperience,
       logo: data.logo,
+      etat: data.etat || "active",
     }),
   });
 

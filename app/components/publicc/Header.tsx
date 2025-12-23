@@ -1,17 +1,41 @@
 "use client";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
-import { usePathname } from "next/navigation";
+import React, { useState } from "react";
+import { Menu, X, User, Briefcase } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "@/lib/auth-client";
 import { getCandidat } from "@/action/getCandidat";
 import { useCandidat } from "@/lib/hooks/use-candidat";
 import { CandidatSheet } from "./CandidatSheet";
 import Image from "next/image";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCandidatSheetOpen, setIsCandidatSheetOpen] = useState(false);
+  const [isUserTypeModalOpen, setIsUserTypeModalOpen] = useState(false);
+  const [modalAction, setModalAction] = useState<"login" | "register">("login");
+  const router = useRouter();
+
+  const openUserTypeModal = (action: "login" | "register") => {
+    setModalAction(action);
+    setIsUserTypeModalOpen(true);
+  };
+
+  const handleUserTypeSelect = (userType: "candidat" | "recruteur") => {
+    setIsUserTypeModalOpen(false);
+    if (modalAction === "login") {
+      router.push(`/auth/${userType}/login`);
+    } else {
+      router.push(`/auth/${userType}/register`);
+    }
+  };
 
   const links = [
     {
@@ -91,36 +115,34 @@ const Header = () => {
           {/* Desktop CTA */}
           {!candidat ? (
             <div className="hidden lg:flex items-center gap-4">
-              <Link href="/auth/recruteur/login">
-                <button
-                  className={`border rounded-full cursor-pointerborder-[#a590ff] text-[#a590ff] px-6 py-2 hover:bg-[#a590ff] hover:text-white transition-colors font-medium ${
-                    pathname == "/a-propos" ||
-                    pathname == "/fonctionnalites" ||
-                    pathname == "/contact" ||
-                    isOffreDetail ||
-                    pathname == "/offres"
-                      ? "bg-[#ffff] text-[#a590ff]"
-                      : ""
-                  }`}
-                >
-                  Se connecter
-                </button>
-              </Link>
-              <Link href="/auth/recruteur/register">
-                <button
-                  className={`rounded-full cursor-pointer bg-[#a590ff]  px-6 py-2 hover:bg-[#9580ef] transition-colors font-medium ${
-                    pathname == "/a-propos" ||
-                    isOffreDetail ||
-                    pathname == "/offres" ||
-                    pathname == "/fonctionnalites" ||
-                    pathname == "/contact"
-                      ? "bg-[#ffff] text-[#a590ff]"
-                      : "text-white"
-                  }`}
-                >
-                  Commencer
-                </button>
-              </Link>
+              <button
+                onClick={() => openUserTypeModal("login")}
+                className={`border rounded-full cursor-pointer border-[#a590ff] text-[#a590ff] px-6 py-2 hover:bg-[#a590ff] hover:text-white transition-colors font-medium ${
+                  pathname == "/a-propos" ||
+                  pathname == "/fonctionnalites" ||
+                  pathname == "/contact" ||
+                  isOffreDetail ||
+                  pathname == "/offres"
+                    ? "bg-[#ffff] text-[#a590ff]"
+                    : ""
+                }`}
+              >
+                Se connecter
+              </button>
+              <button
+                onClick={() => openUserTypeModal("register")}
+                className={`rounded-full cursor-pointer bg-[#a590ff] px-6 py-2 hover:bg-[#9580ef] transition-colors font-medium ${
+                  pathname == "/a-propos" ||
+                  isOffreDetail ||
+                  pathname == "/offres" ||
+                  pathname == "/fonctionnalites" ||
+                  pathname == "/contact"
+                    ? "bg-[#ffff] text-[#a590ff]"
+                    : "text-white"
+                }`}
+              >
+                Commencer
+              </button>
             </div>
           ) : (
             <div className="hidden lg:flex items-center gap-4">
@@ -171,22 +193,24 @@ const Header = () => {
             <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-gray-200">
               {!candidat ? (
                 <>
-                  <Link href="/auth/recruteur/login">
-                    <button
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="w-full border rounded-full border-[#a590ff] text-[#a590ff] px-6 py-3 hover:bg-[#a590ff] hover:text-white transition-colors font-medium"
-                    >
-                      Se connecter
-                    </button>
-                  </Link>
-                  <Link href="/auth/recruteur/register">
-                    <button
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="w-full rounded-full bg-[#a590ff] text-white px-6 py-3 hover:bg-[#9580ef] transition-colors font-medium"
-                    >
-                      Commencer gratuitement
-                    </button>
-                  </Link>
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      openUserTypeModal("login");
+                    }}
+                    className="w-full border rounded-full border-[#a590ff] text-[#a590ff] px-6 py-3 hover:bg-[#a590ff] hover:text-white transition-colors font-medium"
+                  >
+                    Se connecter
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      openUserTypeModal("register");
+                    }}
+                    className="w-full rounded-full bg-[#a590ff] text-white px-6 py-3 hover:bg-[#9580ef] transition-colors font-medium"
+                  >
+                    Commencer gratuitement
+                  </button>
                 </>
               ) : (
                 <>
@@ -219,6 +243,51 @@ const Header = () => {
         open={isCandidatSheetOpen}
         onOpenChange={setIsCandidatSheetOpen}
       />
+
+      {/* Modal de sélection du type d'utilisateur */}
+      <Dialog open={isUserTypeModalOpen} onOpenChange={setIsUserTypeModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl">
+              {modalAction === "login" ? "Connexion" : "Créer un compte"}
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              {modalAction === "login"
+                ? "Êtes-vous un candidat ou un recruteur ?"
+                : "Quel type de compte souhaitez-vous créer ?"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            {/* Option Candidat */}
+            <button
+              onClick={() => handleUserTypeSelect("candidat")}
+              className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-gray-200 hover:border-[#a590ff] hover:bg-[#a590ff]/5 transition-all duration-200 group"
+            >
+              <div className="w-16 h-16 rounded-full bg-[#a590ff]/10 flex items-center justify-center group-hover:bg-[#a590ff]/20 transition-colors">
+                <User className="w-8 h-8 text-[#a590ff]" />
+              </div>
+              <span className="font-semibold text-gray-900">Candidat</span>
+              <span className="text-xs text-gray-500 text-center">
+                Je cherche un emploi
+              </span>
+            </button>
+
+            {/* Option Recruteur */}
+            <button
+              onClick={() => handleUserTypeSelect("recruteur")}
+              className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-gray-200 hover:border-[#a590ff] hover:bg-[#a590ff]/5 transition-all duration-200 group"
+            >
+              <div className="w-16 h-16 rounded-full bg-[#a590ff]/10 flex items-center justify-center group-hover:bg-[#a590ff]/20 transition-colors">
+                <Briefcase className="w-8 h-8 text-[#a590ff]" />
+              </div>
+              <span className="font-semibold text-gray-900">Recruteur</span>
+              <span className="text-xs text-gray-500 text-center">
+                Je recrute des talents
+              </span>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 };
