@@ -903,3 +903,5 @@ model DiffusionHistory {
   @@index([jobOfferId])
   @@map("diffusion_history")
 }
+
+

@@ -8,11 +8,21 @@ import {
   UserIcon,
   X,
   ChevronDown,
+  User,
+  Briefcase,
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { TestimonialsColumn } from "@/app/components/publicc/TestimonialsColumns";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const teamMembers = [
   {
@@ -219,6 +229,23 @@ function FAQItem({
 
 export default function LandingPage() {
   const [openFAQIndex, setOpenFAQIndex] = useState<number | null>(0);
+  const router = useRouter();
+
+  const [modalAction, setModalAction] = useState<"login" | "register">("login");
+  const [isUserTypeModalOpen, setIsUserTypeModalOpen] = useState(false);
+
+  const openUserTypeModal = (action: "login" | "register") => {
+    setModalAction(action);
+    setIsUserTypeModalOpen(true);
+  };
+  const handleUserTypeSelect = (userType: "candidat" | "recruteur") => {
+    setIsUserTypeModalOpen(false);
+    if (modalAction === "login") {
+      router.push(`/auth/${userType}/login`);
+    } else {
+      router.push(`/auth/${userType}/register`);
+    }
+  };
   return (
     <div className="container mx-auto px-4 pt-24 pb-10">
       <motion.div
@@ -243,11 +270,14 @@ export default function LandingPage() {
             Trouvez le candidat idéal
             <br /> pour votre entreprise
           </h1>
-          <Link href="/auth/recruteur/login">
-            <button className="mt-4 sm:mt-6 md:mt-10 btn liquid">
-              Commencer maintenant
-            </button>
-          </Link>
+          {/* <Link href="/auth/recruteur/login"> */}
+          <button
+            className="mt-4 sm:mt-6 md:mt-10 btn liquid"
+            onClick={() => openUserTypeModal("login")}
+          >
+            Commencer maintenant
+          </button>
+          {/* </Link> */}
         </motion.div>
 
         <motion.div
@@ -896,6 +926,51 @@ export default function LandingPage() {
           </div>
         </section>
       </div>
+
+      {/* Modal de sélection du type d'utilisateur */}
+      <Dialog open={isUserTypeModalOpen} onOpenChange={setIsUserTypeModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl">
+              {modalAction === "login" ? "Connexion" : "Créer un compte"}
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              {modalAction === "login"
+                ? "Êtes-vous un candidat ou un recruteur ?"
+                : "Quel type de compte souhaitez-vous créer ?"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            {/* Option Candidat */}
+            <button
+              onClick={() => handleUserTypeSelect("candidat")}
+              className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-gray-200 hover:border-[#a590ff] hover:bg-[#a590ff]/5 transition-all duration-200 group"
+            >
+              <div className="w-16 h-16 rounded-full bg-[#a590ff]/10 flex items-center justify-center group-hover:bg-[#a590ff]/20 transition-colors">
+                <User className="w-8 h-8 text-[#a590ff]" />
+              </div>
+              <span className="font-semibold text-gray-900">Candidat</span>
+              <span className="text-xs text-gray-500 text-center">
+                Je cherche un emploi
+              </span>
+            </button>
+
+            {/* Option Recruteur */}
+            <button
+              onClick={() => handleUserTypeSelect("recruteur")}
+              className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-gray-200 hover:border-[#a590ff] hover:bg-[#a590ff]/5 transition-all duration-200 group"
+            >
+              <div className="w-16 h-16 rounded-full bg-[#a590ff]/10 flex items-center justify-center group-hover:bg-[#a590ff]/20 transition-colors">
+                <Briefcase className="w-8 h-8 text-[#a590ff]" />
+              </div>
+              <span className="font-semibold text-gray-900">Recruteur</span>
+              <span className="text-xs text-gray-500 text-center">
+                Je recrute des talents
+              </span>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
