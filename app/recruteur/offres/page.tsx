@@ -52,6 +52,11 @@ import {
   IconChevronRight,
   IconPhoto,
   IconX,
+  IconMail,
+  IconPhone,
+  IconFileText,
+  IconClock,
+  IconCheck,
 } from "@tabler/icons-react";
 import {
   Popover,
@@ -60,6 +65,42 @@ import {
 } from "@/components/ui/popover";
 import { ChevronDownIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+
+// Type for application with candidat info
+interface ApplicationWithCandidat {
+  id: string;
+  candidatId: string;
+  jobOfferId: string;
+  status: "EN_ATTENTE" | "EN_REVISION" | "ACCEPTE" | "REFUSE";
+  rating?: number | null;
+  message?: string | null;
+  cv?: string | null;
+  favorite?: boolean | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  candidat: {
+    id: string;
+    userId: string;
+    nom?: string | null;
+    prenom?: string | null;
+    telephone?: string | null;
+    cv?: string | null;
+    image?: string | null;
+    ville?: string | null;
+    user?: {
+      email?: string;
+      name?: string;
+    };
+  };
+}
+
+// Extended JobOffer type with applications
+interface JobOfferWithApplications extends JobOffer {
+  applications?: ApplicationWithCandidat[];
+}
 
 export default function MesOffresPage() {
   const { data: session, isPending: isSessionLoading } = useSession();
@@ -67,6 +108,7 @@ export default function MesOffresPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatut, setFilterStatut] = useState("all");
   const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
+  const [viewingOfferId, setViewingOfferId] = useState<string | null>(null);
   const [editTypeContrat, setEditTypeContrat] = useState("cdi");
   const [editDescription, setEditDescription] = useState("");
   const [editDuedate, setEditDuedate] = useState<Date | undefined>(undefined);
@@ -116,7 +158,21 @@ export default function MesOffresPage() {
     setCurrentPage(1);
   }, [filterStatut, searchTerm]);
 
-  const getStatutBadge = (statut: string) => {
+  // Vérifie si une offre est expirée en fonction de la date limite
+  const isOfferExpired = (duedate?: Date | string | null) => {
+    if (!duedate) return false;
+    const dueDateObj = new Date(duedate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return dueDateObj < today;
+  };
+
+  const getStatutBadge = (statut: string, duedate?: Date | string | null) => {
+    // Si la date limite est dépassée, afficher "Expirée" même si le statut est "active"
+    if (isOfferExpired(duedate) && statut === "active") {
+      return <Badge className="bg-red-100 text-red-800">Expirée</Badge>;
+    }
+
     switch (statut) {
       case "active":
         return <Badge className="bg-green-100 text-green-800">Active</Badge>;
@@ -245,12 +301,48 @@ export default function MesOffresPage() {
   };
 
   const editingOffer = offres.find((o) => o.id === editingOfferId);
+  const viewingOffer = offres.find((o) => o.id === viewingOfferId) as
+    | JobOfferWithApplications
+    | undefined;
+
+  const getApplicationStatusBadge = (status: string) => {
+    switch (status) {
+      case "EN_ATTENTE":
+        return <Badge className="bg-blue-100 text-blue-800">En attente</Badge>;
+      case "EN_REVISION":
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800">En révision</Badge>
+        );
+      case "ACCEPTE":
+        return <Badge className="bg-green-100 text-green-800">Accepté</Badge>;
+      case "REFUSE":
+        return <Badge className="bg-red-100 text-red-800">Refusé</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  const getInitials = (nom?: string | null, prenom?: string | null) => {
+    const n = nom?.charAt(0) || "";
+    const p = prenom?.charAt(0) || "";
+    return (n + p).toUpperCase() || "?";
+  };
+
+  const handleViewOffre = (id: string) => {
+    setViewingOfferId(id);
+  };
+
+  const handleCloseViewModal = () => {
+    setViewingOfferId(null);
+  };
 
   if (isSessionLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
-          <IconLoader className="h-12 w-12 animate-spin mx-auto mb-4" />
+          {/* <IconLoader className="h-12 w-12 animate-spin mx-auto mb-4" />
+           */}
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
           <p className="text-gray-600">Chargement...</p>
         </div>
       </div>
@@ -259,7 +351,7 @@ export default function MesOffresPage() {
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader title="Mes offres d'emploi" />
       <div className="flex flex-1 flex-col">
         <div className="@container/main flex flex-1 flex-col gap-2">
           <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -276,7 +368,7 @@ export default function MesOffresPage() {
               </div>
 
               {/* Statistiques */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
@@ -297,11 +389,38 @@ export default function MesOffresPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Actives</p>
-                        <p className="text-2xl font-bold">
-                          {totalAll.filter((o) => o.etat === "active").length}
+                        <p className="text-2xl font-bold text-green-600">
+                          {
+                            totalAll.filter(
+                              (o) =>
+                                o.etat === "active" &&
+                                !isOfferExpired(o.duedate)
+                            ).length
+                          }
                         </p>
                       </div>
-                      <IconEye className="h-8 w-8 " />
+                      <IconCheck className="h-8 w-8 text-green-500" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">
+                          Expirées
+                        </p>
+                        <p className="text-2xl font-bold text-red-600">
+                          {
+                            totalAll.filter(
+                              (o) =>
+                                isOfferExpired(o.duedate) ||
+                                o.etat === "expiree"
+                            ).length
+                          }
+                        </p>
+                      </div>
+                      <IconClock className="h-8 w-8 text-red-500" />
                     </div>
                   </CardContent>
                 </Card>
@@ -369,7 +488,7 @@ export default function MesOffresPage() {
                         <SelectContent>
                           <SelectItem value="all">Tous les statuts</SelectItem>
                           <SelectItem value="active">Actives</SelectItem>
-                          <SelectItem value="expiree">Expirées</SelectItem>
+
                           <SelectItem value="brouillon">Brouillons</SelectItem>
                         </SelectContent>
                       </Select>
@@ -427,7 +546,8 @@ export default function MesOffresPage() {
                   displayedOffres.map((offre) => (
                     <Card
                       key={offre.id}
-                      className="hover:shadow-md transition-shadow"
+                      className="hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => handleViewOffre(offre.id)}
                     >
                       <CardHeader>
                         <div className="flex items-start justify-between">
@@ -458,7 +578,10 @@ export default function MesOffresPage() {
                                 <CardTitle className="text-lg">
                                   {offre.title}
                                 </CardTitle>
-                                {getStatutBadge(offre.etat || "active")}
+                                {getStatutBadge(
+                                  offre.etat || "active",
+                                  offre.duedate
+                                )}
                               </div>
                               <CardDescription className="flex items-center gap-4 text-sm flex-wrap">
                                 {offre.company && (
@@ -493,7 +616,10 @@ export default function MesOffresPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleEditOffre(offre.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditOffre(offre.id);
+                              }}
                             >
                               <IconEdit className="h-4 w-4" />
                             </Button>
@@ -501,7 +627,10 @@ export default function MesOffresPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleDeleteOffre(offre.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteOffre(offre.id);
+                              }}
                               className="text-red-600 hover:text-red-700"
                               disabled={deleteOffer.isPending}
                             >
@@ -516,7 +645,7 @@ export default function MesOffresPage() {
                             <p className="text-muted-foreground">
                               Type de contrat
                             </p>
-                            <p className="font-medium uppercase font-semibold">
+                            <p className="font-semibold uppercase">
                               {offre.type || "N/A"}
                             </p>
                           </div>
@@ -536,15 +665,30 @@ export default function MesOffresPage() {
                           </div>
                           <div>
                             <p className="text-muted-foreground">Date limite</p>
-                            <p className="font-medium flex items-center gap-1">
-                              <IconCalendar className="h-4 w-4" />
-
-                              {/* {offre.duedate} */}
+                            <p
+                              className={`font-medium flex items-center gap-1 ${
+                                isOfferExpired(offre.duedate)
+                                  ? "text-red-600"
+                                  : ""
+                              }`}
+                            >
+                              <IconCalendar
+                                className={`h-4 w-4 ${
+                                  isOfferExpired(offre.duedate)
+                                    ? "text-red-500"
+                                    : ""
+                                }`}
+                              />
                               {offre.duedate
                                 ? new Date(offre.duedate).toLocaleDateString(
                                     "fr-FR"
                                   )
                                 : "Non définie"}
+                              {isOfferExpired(offre.duedate) && (
+                                <span className="text-xs text-red-500 ml-1">
+                                  (expirée)
+                                </span>
+                              )}
                             </p>
                           </div>
                         </div>
@@ -645,6 +789,368 @@ export default function MesOffresPage() {
           </div>
         </div>
       </div>
+
+      {/* View Detail Modal */}
+      {viewingOfferId && viewingOffer && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <CardHeader className="shrink-0 border-b">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-4">
+                  {viewingOffer.logo ? (
+                    <div className="w-16 h-16 rounded-lg overflow-hidden border bg-muted shrink-0">
+                      <img
+                        src={viewingOffer.logo}
+                        alt={`Logo ${viewingOffer.company || "entreprise"}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 rounded-lg border bg-muted flex items-center justify-center shrink-0">
+                      <IconBriefcase className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-xl">
+                        {viewingOffer.title}
+                      </CardTitle>
+                      {getStatutBadge(
+                        viewingOffer.etat || "active",
+                        viewingOffer.duedate
+                      )}
+                    </div>
+                    <CardDescription className="flex items-center gap-4 mt-2 flex-wrap">
+                      {viewingOffer.company && (
+                        <span className="flex items-center gap-1">
+                          <IconBriefcase className="h-4 w-4" />
+                          {viewingOffer.company}
+                        </span>
+                      )}
+                      {viewingOffer.location && (
+                        <span className="flex items-center gap-1">
+                          <IconMapPin className="h-4 w-4" />
+                          {viewingOffer.location}
+                        </span>
+                      )}
+                      {viewingOffer.type && (
+                        <Badge variant="outline" className="uppercase">
+                          {viewingOffer.type}
+                        </Badge>
+                      )}
+                    </CardDescription>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCloseViewModal}
+                  className="shrink-0"
+                >
+                  <IconX className="h-5 w-5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-hidden p-0">
+              <Tabs defaultValue="details" className="h-full flex flex-col">
+                <TabsList className="w-full justify-start rounded-none border-b bg-transparent px-4 pt-2">
+                  <TabsTrigger
+                    value="details"
+                    className="data-[state=active]:bg-background"
+                  >
+                    Détails de l'offre
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="candidatures"
+                    className="data-[state=active]:bg-background"
+                  >
+                    Candidatures ({viewingOffer.applications?.length || 0})
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent
+                  value="details"
+                  className="flex-1 overflow-auto m-0"
+                >
+                  <div className="h-[calc(90vh-220px)] overflow-y-auto">
+                    <div className="p-6 space-y-6">
+                      {/* Informations principales */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">
+                            Type de contrat
+                          </p>
+                          <p className="font-medium uppercase">
+                            {viewingOffer.type || "N/A"}
+                          </p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">
+                            Salaire
+                          </p>
+                          <p className="font-medium">
+                            {viewingOffer.salaryMin || viewingOffer.salaryMax
+                              ? `${viewingOffer.salaryMin || ""} ${
+                                  viewingOffer.salaryMin &&
+                                  viewingOffer.salaryMax
+                                    ? "-"
+                                    : ""
+                                } ${viewingOffer.salaryMax || ""} ${
+                                  viewingOffer.salaryCurrency || ""
+                                }`
+                              : "Non spécifié"}
+                          </p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">
+                            Date limite
+                          </p>
+                          <p
+                            className={`font-medium flex items-center gap-1 ${
+                              isOfferExpired(viewingOffer.duedate)
+                                ? "text-red-600"
+                                : ""
+                            }`}
+                          >
+                            <IconCalendar
+                              className={`h-4 w-4 ${
+                                isOfferExpired(viewingOffer.duedate)
+                                  ? "text-red-500"
+                                  : ""
+                              }`}
+                            />
+                            {viewingOffer.duedate
+                              ? new Date(
+                                  viewingOffer.duedate
+                                ).toLocaleDateString("fr-FR")
+                              : "Non définie"}
+                            {isOfferExpired(viewingOffer.duedate) && (
+                              <Badge className="bg-red-100 text-red-800 ml-2 text-xs">
+                                Expirée
+                              </Badge>
+                            )}
+                          </p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Vues</p>
+                          <p className="font-medium flex items-center gap-1">
+                            <IconEye className="h-4 w-4" />
+                            {(viewingOffer as any).views || 0}
+                          </p>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Description */}
+                      {viewingOffer.description && (
+                        <div className="space-y-2">
+                          <h3 className="font-semibold text-lg">
+                            Description du poste
+                          </h3>
+                          <div
+                            className="prose prose-sm max-w-none text-muted-foreground"
+                            dangerouslySetInnerHTML={{
+                              __html: viewingOffer.description,
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Exigences */}
+                      {viewingOffer.requirements && (
+                        <>
+                          <Separator />
+                          <div className="space-y-2">
+                            <h3 className="font-semibold text-lg">
+                              Profil recherché
+                            </h3>
+                            <div
+                              className="prose prose-sm max-w-none text-muted-foreground"
+                              dangerouslySetInnerHTML={{
+                                __html: viewingOffer.requirements,
+                              }}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {/* Avantages */}
+                      {viewingOffer.benefits && (
+                        <>
+                          <Separator />
+                          <div className="space-y-2">
+                            <h3 className="font-semibold text-lg">Avantages</h3>
+                            <div
+                              className="prose prose-sm max-w-none text-muted-foreground"
+                              dangerouslySetInnerHTML={{
+                                __html: viewingOffer.benefits,
+                              }}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {/* Compétences */}
+                      {viewingOffer.skills && (
+                        <>
+                          <Separator />
+                          <div className="space-y-2">
+                            <h3 className="font-semibold text-lg">
+                              Compétences requises
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                              {viewingOffer.skills
+                                .split(",")
+                                .map((skill, index) => (
+                                  <Badge key={index} variant="secondary">
+                                    {skill.trim()}
+                                  </Badge>
+                                ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent
+                  value="candidatures"
+                  className="flex-1 overflow-auto m-0"
+                >
+                  <div className="h-[calc(90vh-220px)] overflow-y-auto">
+                    <div className="p-6 space-y-4">
+                      {!viewingOffer.applications ||
+                      viewingOffer.applications.length === 0 ? (
+                        <div className="text-center py-12">
+                          <IconUsers className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <h3 className="text-lg font-semibold mb-2">
+                            Aucune candidature
+                          </h3>
+                          <p className="text-muted-foreground">
+                            Cette offre n'a pas encore reçu de candidatures.
+                          </p>
+                        </div>
+                      ) : (
+                        viewingOffer.applications.map((application) => (
+                          <Card
+                            key={application.id}
+                            className="hover:shadow-sm transition-shadow"
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-4">
+                                <Avatar className="h-12 w-12 shrink-0">
+                                  <AvatarImage
+                                    src={application.candidat?.image || ""}
+                                  />
+                                  <AvatarFallback>
+                                    {getInitials(
+                                      application.candidat?.nom,
+                                      application.candidat?.prenom
+                                    )}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-2 mb-1">
+                                    <h4 className="font-semibold">
+                                      {application.candidat?.nom ||
+                                        "Nom inconnu"}{" "}
+                                      {application.candidat?.prenom || ""}
+                                    </h4>
+                                    {getApplicationStatusBadge(
+                                      application.status
+                                    )}
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
+                                    {application.candidat?.user?.email && (
+                                      <span className="flex items-center gap-1">
+                                        <IconMail className="h-4 w-4" />
+                                        {application.candidat.user.email}
+                                      </span>
+                                    )}
+                                    {application.candidat?.telephone && (
+                                      <span className="flex items-center gap-1">
+                                        <IconPhone className="h-4 w-4" />
+                                        {application.candidat.telephone}
+                                      </span>
+                                    )}
+                                    {application.candidat?.ville && (
+                                      <span className="flex items-center gap-1">
+                                        <IconMapPin className="h-4 w-4" />
+                                        {application.candidat.ville}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <IconClock className="h-4 w-4" />
+                                    Candidature reçue le{" "}
+                                    {new Date(
+                                      application.createdAt
+                                    ).toLocaleDateString("fr-FR", {
+                                      day: "numeric",
+                                      month: "long",
+                                      year: "numeric",
+                                    })}
+                                  </div>
+                                  {application.message && (
+                                    <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+                                      "{application.message}"
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="flex gap-2 shrink-0">
+                                  {application.candidat?.cv && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        window.open(
+                                          application.candidat?.cv || "",
+                                          "_blank"
+                                        )
+                                      }
+                                    >
+                                      <IconFileText className="h-4 w-4 mr-1" />
+                                      CV
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+            <div className="shrink-0 border-t p-4 flex justify-between items-center bg-muted/30">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <IconUsers className="h-4 w-4" />
+                {viewingOffer.applications?.length || 0} candidature(s)
+                <span className="mx-2">•</span>
+                <IconEye className="h-4 w-4" />
+                {(viewingOffer as any).views || 0} vue(s)
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    handleCloseViewModal();
+                    handleEditOffre(viewingOfferId);
+                  }}
+                >
+                  <IconEdit className="h-4 w-4 mr-2" />
+                  Modifier
+                </Button>
+                <Button onClick={handleCloseViewModal}>Fermer</Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editingOfferId && editingOffer && (

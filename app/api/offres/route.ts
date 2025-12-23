@@ -128,6 +128,7 @@ export async function POST(request: NextRequest) {
       duedate: body.duedate ? new Date(body.duedate) : undefined,
       salaryCurrency: body.salaryCurrency || "",
       logo: body.logo || undefined,
+      etat: body.etat || "active",
     });
 
     return NextResponse.json({

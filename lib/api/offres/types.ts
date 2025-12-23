@@ -44,6 +44,7 @@ export interface CreateOfferData {
   salaryCurrency: string;
   anneesexperience: string;
   logo?: string;
+  etat?: "active" | "brouillon";
 }
 
 export interface PaginatedResponse<T> {

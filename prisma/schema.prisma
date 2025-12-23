@@ -867,3 +867,39 @@ enum NotificationType {
   JOB_ALERT_MATCH
   JOB_ALERT_NEW_MATCHES
 }
+
+// ========================================
+// MULTI-DIFFUSION - LinkedIn Integration
+// ========================================
+
+model LinkedInAccount {
+  id           String    @id @default(cuid())
+  recruteurId  String    @unique
+  accessToken  String    @db.Text
+  expiresAt    DateTime
+  personId     String    // URN LinkedIn (ex: "urn:li:person:xxx")
+  profileName  String?   // Nom affiché sur LinkedIn
+  profileImage String?   // Image de profil LinkedIn
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("linkedin_account")
+}
+
+model DiffusionHistory {
+  id          String    @id @default(cuid())
+  recruteurId String
+  jobOfferId  String
+  platform    String    // "linkedin", "indeed", etc.
+  status      String    // "pending", "published", "failed"
+  postId      String?   // ID du post sur la plateforme
+  postUrl     String?   // URL du post
+  message     String    @db.Text
+  error       String?   @db.Text
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([recruteurId])
+  @@index([jobOfferId])
+  @@map("diffusion_history")
+}

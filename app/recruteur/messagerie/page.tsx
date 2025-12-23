@@ -249,7 +249,7 @@ export default function MessageriePage() {
   if (conversationsRecruteur?.length === 0) {
     return (
       <>
-        <SiteHeader />
+        <SiteHeader title="Messagerie" />
         <div className="flex flex-1 flex-col items-center justify-center">
           <Card className="max-w-md">
             <CardContent className="py-8 text-center">
@@ -273,7 +273,7 @@ export default function MessageriePage() {
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader title="Messagerie" />
       <div className="flex flex-1 flex-col">
         <div className="flex flex-1 flex-col gap-2">
           <div className="flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6">

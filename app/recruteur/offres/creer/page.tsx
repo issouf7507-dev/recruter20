@@ -61,6 +61,7 @@ interface FormData {
   salaryCurrency: string;
   anneesexperience: string;
   logo: string;
+  etat?: "active" | "brouillon";
 }
 
 export default function CreerOffrePage() {
@@ -70,6 +71,7 @@ export default function CreerOffrePage() {
   const [open, setOpen] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
     titre: "",
@@ -172,33 +174,57 @@ export default function CreerOffrePage() {
 
     try {
       console.log(formData);
-      await createOffer.mutateAsync(formData);
+      await createOffer.mutateAsync({ ...formData, etat: "active" });
       router.push("/recruteur/offres");
-      setFormData({
-        titre: "",
-        entreprise: "",
-        typeContrat: "",
-        lieu: "",
-        salaireMin: "",
-        salaireMax: "",
-        description: "",
-        profilRecherche: "",
-        competences: "",
-        avantages: "",
-        duedate: new Date(),
-        nombrePostes: "",
-        salaryCurrency: "XOF",
-        anneesexperience: "",
-        logo: "",
-      });
+      resetForm();
     } catch (error) {
       toast.error("Erreur lors de la création de l'offre");
     }
   };
 
+  const handleSaveAsDraft = async () => {
+    // Validation minimale pour un brouillon (juste le titre requis)
+    if (!formData.titre) {
+      toast.error("Veuillez au moins renseigner le titre du poste");
+      return;
+    }
+
+    setIsSavingDraft(true);
+    try {
+      await createOffer.mutateAsync({ ...formData, etat: "brouillon" });
+      toast.success("Brouillon sauvegardé avec succès");
+      router.push("/recruteur/offres");
+      resetForm();
+    } catch (error) {
+      toast.error("Erreur lors de la sauvegarde du brouillon");
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      titre: "",
+      entreprise: "",
+      typeContrat: "",
+      lieu: "",
+      salaireMin: "",
+      salaireMax: "",
+      description: "",
+      profilRecherche: "",
+      competences: "",
+      avantages: "",
+      duedate: new Date(),
+      nombrePostes: "",
+      salaryCurrency: "XOF",
+      anneesexperience: "",
+      logo: "",
+    });
+  };
+
   return (
     <>
-      <SiteHeader />
+      <SiteHeader title="Créer une nouvelle offre d'emploi" />
       <div className="flex flex-1 flex-col">
         <div className="@container/main flex flex-1 flex-col gap-2">
           <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -340,6 +366,9 @@ export default function CreerOffrePage() {
                             <SelectItem value="cdd">CDD</SelectItem>
                             <SelectItem value="stage">Stage</SelectItem>
                             <SelectItem value="freelance">Freelance</SelectItem>
+                            <SelectItem value="consultance">
+                              Consultance
+                            </SelectItem>
                             <SelectItem value="temps-partiel">
                               Temps partiel
                             </SelectItem>
@@ -539,13 +568,20 @@ export default function CreerOffrePage() {
 
                 {/* Actions */}
                 <div className="flex justify-end gap-4 pt-6">
-                  <Button type="button" variant="outline">
-                    Sauvegarder comme brouillon
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSaveAsDraft}
+                    disabled={isSavingDraft || createOffer.isPending}
+                  >
+                    {isSavingDraft
+                      ? "Sauvegarde..."
+                      : "Sauvegarder comme brouillon"}
                   </Button>
                   <Button
                     type="submit"
                     className="bg-primary"
-                    disabled={createOffer.isPending}
+                    disabled={createOffer.isPending || isSavingDraft}
                   >
                     {createOffer.isPending
                       ? "Publication..."
