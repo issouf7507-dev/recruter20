@@ -135,87 +135,89 @@ export default function OffresPage() {
   const jobOffers = useMemo(() => {
     if (!offersData?.items) return [];
 
-    return offersData.items.map((offer) => {
-      // Format date relative
-      const createdAt = new Date(offer.createdAt);
-      const now = new Date();
-      const diffInMs = now.getTime() - createdAt.getTime();
-      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-
-      let postedAt = "";
-      if (diffInHours < 1) {
-        postedAt = "Publié il y a 5 min";
-      } else if (diffInHours < 24) {
-        postedAt = `Publié il y a ${diffInHours}h`;
-      } else if (diffInDays === 1) {
-        postedAt = "Publié il y a 1 jour";
-      } else if (diffInDays < 7) {
-        postedAt = `Publié il y a ${diffInDays} jours`;
-      } else if (diffInDays < 14) {
-        postedAt = "Publié il y a 1 semaine";
-      } else {
-        postedAt = `Publié il y a ${Math.floor(diffInDays / 7)} semaines`;
-      }
-
-      // Format date limite
-      let dueDateFormatted = "";
-      let isDueDateSoon = false;
-      let isDueDateExpired = false;
-
-      if (offer.duedate) {
-        const dueDate = new Date(offer.duedate);
+    return offersData.items
+      .filter((offer) => offer.etat === "active")
+      .map((offer) => {
+        // Format date relative
+        const createdAt = new Date(offer.createdAt);
         const now = new Date();
-        const diffInMs = dueDate.getTime() - now.getTime();
+        const diffInMs = now.getTime() - createdAt.getTime();
         const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+        const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
 
-        isDueDateExpired = diffInMs < 0;
-        isDueDateSoon = diffInDays >= 0 && diffInDays <= 7;
-
-        if (isDueDateExpired) {
-          dueDateFormatted = "Expiré";
-        } else if (diffInDays === 0) {
-          dueDateFormatted = "Aujourd'hui";
+        let postedAt = "";
+        if (diffInHours < 1) {
+          postedAt = "Publié il y a 5 min";
+        } else if (diffInHours < 24) {
+          postedAt = `Publié il y a ${diffInHours}h`;
         } else if (diffInDays === 1) {
-          dueDateFormatted = "Demain";
+          postedAt = "Publié il y a 1 jour";
         } else if (diffInDays < 7) {
-          dueDateFormatted = `Dans ${diffInDays} jours`;
+          postedAt = `Publié il y a ${diffInDays} jours`;
+        } else if (diffInDays < 14) {
+          postedAt = "Publié il y a 1 semaine";
         } else {
-          dueDateFormatted = dueDate.toLocaleDateString("fr-FR", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          });
+          postedAt = `Publié il y a ${Math.floor(diffInDays / 7)} semaines`;
         }
-      }
 
-      return {
-        id: offer.id,
-        title: offer.title,
-        company: offer.company || "Entreprise",
-        location: offer.location || "Non spécifié",
-        type: offer.type?.toUpperCase() || "CDI",
-        salary:
-          offer.salaryMin && offer.salaryMax
-            ? `${offer.salaryMin.toLocaleString()}-${offer.salaryMax.toLocaleString()}`
-            : offer.salaryMin
-            ? `${offer.salaryMin.toLocaleString()}+`
-            : "",
-        experience: "Non spécifié",
-        remote: offer.location ? "Sur site" : "Télétravail",
-        logo: offer.logo || null,
-        tags: [],
-        postedAt,
-        description: offer.description || "",
-        urgent: false,
-        rating: 4.5,
-        salaryCurrency: offer.salaryCurrency || "",
-        duedate: offer.duedate,
-        dueDateFormatted,
-        isDueDateSoon,
-        isDueDateExpired,
-      };
-    });
+        // Format date limite
+        let dueDateFormatted = "";
+        let isDueDateSoon = false;
+        let isDueDateExpired = false;
+
+        if (offer.duedate) {
+          const dueDate = new Date(offer.duedate);
+          const now = new Date();
+          const diffInMs = dueDate.getTime() - now.getTime();
+          const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+          isDueDateExpired = diffInMs < 0;
+          isDueDateSoon = diffInDays >= 0 && diffInDays <= 7;
+
+          if (isDueDateExpired) {
+            dueDateFormatted = "Expiré";
+          } else if (diffInDays === 0) {
+            dueDateFormatted = "Aujourd'hui";
+          } else if (diffInDays === 1) {
+            dueDateFormatted = "Demain";
+          } else if (diffInDays < 7) {
+            dueDateFormatted = `Dans ${diffInDays} jours`;
+          } else {
+            dueDateFormatted = dueDate.toLocaleDateString("fr-FR", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            });
+          }
+        }
+
+        return {
+          id: offer.id,
+          title: offer.title,
+          company: offer.company || "Entreprise",
+          location: offer.location || "Non spécifié",
+          type: offer.type?.toUpperCase() || "CDI",
+          salary:
+            offer.salaryMin && offer.salaryMax
+              ? `${offer.salaryMin.toLocaleString()}-${offer.salaryMax.toLocaleString()}`
+              : offer.salaryMin
+              ? `${offer.salaryMin.toLocaleString()}+`
+              : "",
+          experience: "Non spécifié",
+          remote: offer.location ? "Sur site" : "Télétravail",
+          logo: offer.logo || null,
+          tags: [],
+          postedAt,
+          description: offer.description || "",
+          urgent: false,
+          rating: 4.5,
+          salaryCurrency: offer.salaryCurrency || "",
+          duedate: offer.duedate,
+          dueDateFormatted,
+          isDueDateSoon,
+          isDueDateExpired,
+        };
+      });
   }, [offersData]);
 
   const toggleFilter = (

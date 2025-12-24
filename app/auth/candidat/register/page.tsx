@@ -60,9 +60,9 @@ export default function CandidateRegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#a590ff] grid grid-cols-1 lg:grid-cols-2 p-4 md:p-5 relative overflow-y-auto">
+    <div className="min-h-screen bg-[#a590ff] grid grid-cols-1 xl:grid-cols-2 p-4 md:p-5 relative overflow-y-auto">
       {/* Left side - Branding */}
-      <div className="flex flex-col order-2 lg:order-1">
+      <div className="xl:flex flex-col order-2 lg:order-1 hidden">
         <div className="flex items-center justify-between px-4 md:px-10 py-4 lg:py-0">
           <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold mb-0 lg:mb-4 text-white">
             Ylsix
