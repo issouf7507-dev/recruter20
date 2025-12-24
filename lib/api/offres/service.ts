@@ -172,6 +172,7 @@ export async function updateOffer(
       benefits: data.avantages,
       duedate: data.duedate,
       logo: data.logo,
+      etat: data.etat,
     }),
   });
 
@@ -179,6 +180,30 @@ export async function updateOffer(
 
   if (!result.success) {
     throw new Error(result.error || "Failed to update offer");
+  }
+
+  return result.data;
+}
+
+/**
+ * Update offer status (publish or draft)
+ */
+export async function updateOfferStatus(
+  id: string,
+  etat: "active" | "brouillon"
+): Promise<JobOffer> {
+  const response = await fetch(`/api/offres/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ etat }),
+  });
+
+  const result: ApiResponse<JobOffer> = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.error || "Failed to update offer status");
   }
 
   return result.data;
