@@ -27,6 +27,7 @@ import {
   useOffers,
   useDeleteOffer,
   useUpdateOffer,
+  useUpdateOfferStatus,
 } from "@/lib/hooks/use-offers";
 import {
   useCollaborateurByUserId,
@@ -57,6 +58,9 @@ import {
   IconFileText,
   IconClock,
   IconCheck,
+  IconSend,
+  IconArchive,
+  IconPlayerPlay,
 } from "@tabler/icons-react";
 import {
   Popover,
@@ -141,6 +145,7 @@ export default function MesOffresPage() {
   console.log("data", data);
   const deleteOffer = useDeleteOffer();
   const updateOffer = useUpdateOffer();
+  const updateOfferStatus = useUpdateOfferStatus();
 
   const offres = data?.items || [];
   const pagination = data?.pagination;
@@ -196,6 +201,47 @@ export default function MesOffresPage() {
         await deleteOffer.mutateAsync(id);
       } catch (error) {
         console.error("Error deleting offer:", error);
+      }
+    }
+  };
+
+  // Publier une offre (brouillon → active)
+  const handlePublishOffre = async (id: string) => {
+    const offre = offres.find((o) => o.id === id);
+    if (!offre) return;
+
+    // Vérification des champs obligatoires avant publication
+    if (!offre.title || !offre.company || !offre.location) {
+      toast.error(
+        "Impossible de publier : le titre, l'entreprise et le lieu sont obligatoires"
+      );
+      return;
+    }
+
+    if (
+      confirm(
+        "Voulez-vous publier cette offre ? Elle sera visible par tous les candidats."
+      )
+    ) {
+      try {
+        await updateOfferStatus.mutateAsync({ id, etat: "active" });
+      } catch (error) {
+        console.error("Error publishing offer:", error);
+      }
+    }
+  };
+
+  // Mettre en brouillon (active → brouillon)
+  const handleDraftOffre = async (id: string) => {
+    if (
+      confirm(
+        "Voulez-vous mettre cette offre en brouillon ? Elle ne sera plus visible par les candidats."
+      )
+    ) {
+      try {
+        await updateOfferStatus.mutateAsync({ id, etat: "brouillon" });
+      } catch (error) {
+        console.error("Error drafting offer:", error);
       }
     }
   };
@@ -368,7 +414,7 @@ export default function MesOffresPage() {
               </div>
 
               {/* Statistiques */}
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
@@ -400,6 +446,27 @@ export default function MesOffresPage() {
                         </p>
                       </div>
                       <IconCheck className="h-8 w-8 text-green-500" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => setFilterStatut("brouillon")}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">
+                          Brouillons
+                        </p>
+                        <p className="text-2xl font-bold text-gray-600">
+                          {
+                            totalAll.filter((o) => o.etat === "brouillon")
+                              .length
+                          }
+                        </p>
+                      </div>
+                      <IconArchive className="h-8 w-8 text-gray-500" />
                     </div>
                   </CardContent>
                 </Card>
@@ -613,6 +680,49 @@ export default function MesOffresPage() {
                             </div>
                           </div>
                           <div className="flex gap-2 shrink-0">
+                            {/* Bouton Publier (pour les brouillons) */}
+                            {offre.etat === "brouillon" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handlePublishOffre(offre.id);
+                                }}
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                disabled={updateOfferStatus.isPending}
+                                title="Publier l'offre"
+                              >
+                                {updateOfferStatus.isPending ? (
+                                  <IconLoader className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <IconPlayerPlay className="h-4 w-4" />
+                                )}
+                              </Button>
+                            )}
+
+                            {/* Bouton Mettre en brouillon (pour les offres actives) */}
+                            {offre.etat === "active" &&
+                              !isOfferExpired(offre.duedate) && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDraftOffre(offre.id);
+                                  }}
+                                  className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+                                  disabled={updateOfferStatus.isPending}
+                                  title="Mettre en brouillon"
+                                >
+                                  {updateOfferStatus.isPending ? (
+                                    <IconLoader className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <IconArchive className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              )}
+
                             <Button
                               variant="outline"
                               size="sm"
@@ -620,6 +730,7 @@ export default function MesOffresPage() {
                                 e.stopPropagation();
                                 handleEditOffre(offre.id);
                               }}
+                              title="Modifier"
                             >
                               <IconEdit className="h-4 w-4" />
                             </Button>
@@ -633,6 +744,7 @@ export default function MesOffresPage() {
                               }}
                               className="text-red-600 hover:text-red-700"
                               disabled={deleteOffer.isPending}
+                              title="Supprimer"
                             >
                               <IconTrash className="h-4 w-4" />
                             </Button>
@@ -1135,6 +1247,45 @@ export default function MesOffresPage() {
                 {(viewingOffer as any).views || 0} vue(s)
               </div>
               <div className="flex gap-2">
+                {/* Bouton Publier (pour les brouillons) */}
+                {viewingOffer.etat === "brouillon" && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      handlePublishOffre(viewingOfferId);
+                    }}
+                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                    disabled={updateOfferStatus.isPending}
+                  >
+                    {updateOfferStatus.isPending ? (
+                      <IconLoader className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <IconPlayerPlay className="h-4 w-4 mr-2" />
+                    )}
+                    Publier
+                  </Button>
+                )}
+
+                {/* Bouton Mettre en brouillon (pour les offres actives) */}
+                {viewingOffer.etat === "active" &&
+                  !isOfferExpired(viewingOffer.duedate) && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        handleDraftOffre(viewingOfferId);
+                      }}
+                      className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+                      disabled={updateOfferStatus.isPending}
+                    >
+                      {updateOfferStatus.isPending ? (
+                        <IconLoader className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <IconArchive className="h-4 w-4 mr-2" />
+                      )}
+                      Brouillon
+                    </Button>
+                  )}
+
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -1407,20 +1558,57 @@ export default function MesOffresPage() {
                   />
                 </div>
 
-                <div className="flex justify-end gap-4 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleCloseEditModal}
-                    disabled={updateOffer.isPending}
-                  >
-                    Annuler
-                  </Button>
-                  <Button type="submit" disabled={updateOffer.isPending}>
-                    {updateOffer.isPending
-                      ? "Enregistrement..."
-                      : "Enregistrer"}
-                  </Button>
+                <div className="flex justify-between gap-4 pt-4">
+                  <div>
+                    {/* Boutons de changement d'état */}
+                    {editingOffer.etat === "brouillon" ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          handlePublishOffre(editingOfferId);
+                          handleCloseEditModal();
+                        }}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                        disabled={updateOfferStatus.isPending}
+                      >
+                        <IconPlayerPlay className="h-4 w-4 mr-2" />
+                        Publier l'offre
+                      </Button>
+                    ) : (
+                      editingOffer.etat === "active" &&
+                      !isOfferExpired(editingOffer.duedate) && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            handleDraftOffre(editingOfferId);
+                            handleCloseEditModal();
+                          }}
+                          className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+                          disabled={updateOfferStatus.isPending}
+                        >
+                          <IconArchive className="h-4 w-4 mr-2" />
+                          Mettre en brouillon
+                        </Button>
+                      )
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleCloseEditModal}
+                      disabled={updateOffer.isPending}
+                    >
+                      Annuler
+                    </Button>
+                    <Button type="submit" disabled={updateOffer.isPending}>
+                      {updateOffer.isPending
+                        ? "Enregistrement..."
+                        : "Enregistrer"}
+                    </Button>
+                  </div>
                 </div>
               </form>
             </CardContent>
