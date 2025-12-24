@@ -259,10 +259,10 @@ export default function AuthForm({
             {isLoading ? "Chargement..." : title}
           </button>
 
-          <div className="text-center mb-10">Ou continuez avec</div>
+          {/* <div className="text-center mb-10">Ou continuez avec</div> */}
         </form>
 
-        <div className="flex items-center justify-center">
+        {/* <div className="flex items-center justify-center">
           <button className="w-full text-black py-2 rounded-full text-base font-semibold cursor-pointer text-center flex items-center justify-center gap-2 border border-gray-300 hover:bg-gray-50">
             <Image
               src="/icons/Google__G__logo.svg"
@@ -272,7 +272,7 @@ export default function AuthForm({
             />
             Continue avec Google
           </button>
-        </div>
+        </div> */}
 
         <div className="text-center mt-10">
           <p className="text-sm text-gray-600">
