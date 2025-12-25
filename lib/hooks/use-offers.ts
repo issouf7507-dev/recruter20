@@ -126,19 +126,18 @@ export function useUpdateOfferStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      etat,
-    }: {
-      id: string;
-      etat: "active" | "brouillon";
-    }) => offerService.updateOfferStatus(id, etat),
+    mutationFn: ({ id, etat }: { id: string; etat: "active" | "brouillon" }) =>
+      offerService.updateOfferStatus(id, etat),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
       if (variables.etat === "active") {
-        toast.success("Offre publiée avec succès ! Elle est maintenant visible par les candidats.");
+        toast.success(
+          "Offre publiée avec succès ! Elle est maintenant visible par les candidats."
+        );
       } else {
-        toast.success("Offre mise en brouillon. Elle n'est plus visible par les candidats.");
+        toast.success(
+          "Offre mise en brouillon. Elle n'est plus visible par les candidats."
+        );
       }
     },
     onError: (error: Error) => {

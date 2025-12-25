@@ -482,6 +482,8 @@ export default function CreerOffrePage() {
                                 className="w-full"
                                 mode="single"
                                 selected={formData.duedate}
+                                fromYear={new Date().getFullYear()}
+                                toYear={2055}
                                 captionLayout="dropdown"
                                 onSelect={(date: Date | undefined) => {
                                   if (date) {
