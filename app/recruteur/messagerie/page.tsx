@@ -15,13 +15,7 @@ import {
   IconCheck,
   IconChecks,
   IconSend,
-  IconMoodSmile,
-  IconPaperclip,
-  IconMicrophone,
-  IconVideo,
-  IconPhone,
   IconArrowLeft,
-  IconCirclePlus,
 } from "@tabler/icons-react";
 import { useSession } from "@/lib/auth-client";
 import { useRecruteurByUserId } from "@/lib/hooks/use-recruteurs";

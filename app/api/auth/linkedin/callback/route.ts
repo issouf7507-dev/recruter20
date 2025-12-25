@@ -22,7 +22,9 @@ export async function GET(request: NextRequest) {
       console.error("LinkedIn OAuth error:", error, errorDescription);
       return NextResponse.redirect(
         new URL(
-          `/recruteur/multi-diffusion?error=${encodeURIComponent(errorDescription || error)}`,
+          `/recruteur/multi-diffusion?error=${encodeURIComponent(
+            errorDescription || error
+          )}`,
           request.url
         )
       );
@@ -127,7 +129,9 @@ export async function GET(request: NextRequest) {
 
     // Extraire les données du profil
     const personId = profileData.sub; // L'ID unique LinkedIn
-    const profileName = profileData.name || `${profileData.given_name} ${profileData.family_name}`;
+    const profileName =
+      profileData.name ||
+      `${profileData.given_name} ${profileData.family_name}`;
     const profileImage = profileData.picture;
 
     // 3. Récupérer le recruteurId
@@ -171,17 +175,9 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("LinkedIn callback error:", error);
     return NextResponse.redirect(
-      new URL(
-        "/recruteur/multi-diffusion?error=Erreur inattendue",
-        request.url
-      )
+      new URL("/recruteur/multi-diffusion?error=Erreur inattendue", request.url)
     );
   } finally {
     await prisma.$disconnect();
   }
 }
-
-
-
-
-

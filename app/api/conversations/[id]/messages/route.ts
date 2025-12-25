@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { emailService } from "@/lib/email";
 
 /**
  * POST /api/conversations/[id]/messages
@@ -24,9 +25,36 @@ export async function POST(
       );
     }
 
-    // Vérifier que la conversation existe
+    // Vérifier que la conversation existe avec les infos nécessaires
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
+      include: {
+        candidat: {
+          include: {
+            user: {
+              select: {
+                email: true,
+                name: true,
+              },
+            },
+          },
+        },
+        recruteur: {
+          include: {
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        jobOffer: {
+          select: {
+            title: true,
+            company: true,
+          },
+        },
+      },
     });
 
     if (!conversation) {
@@ -51,6 +79,50 @@ export async function POST(
       where: { id: conversationId },
       data: { updatedAt: new Date() },
     });
+
+    // Envoyer une notification email au candidat si le message vient du recruteur
+    if (senderType === "RECRUTEUR" && conversation.candidat?.user?.email) {
+      const candidatEmail = conversation.candidat.user.email;
+      const candidatName =
+        conversation.candidat.prenom && conversation.candidat.nom
+          ? `${conversation.candidat.prenom} ${conversation.candidat.nom}`
+          : conversation.candidat.user.name || "Candidat";
+      const recruteurName =
+        conversation.recruteur?.user?.name ||
+        conversation.recruteur?.companyName ||
+        "Un recruteur";
+      const companyName = conversation.jobOffer?.company || null;
+      const jobTitle = conversation.jobOffer?.title || "Offre d'emploi";
+
+      // Envoyer l'email de notification (sans bloquer la réponse)
+      emailService
+        .sendNewMessageNotification({
+          to: candidatEmail,
+          candidatName,
+          recruteurName,
+          companyName,
+          jobTitle,
+          messagePreview: content,
+          conversationId,
+        })
+        .then((result) => {
+          if (result.success) {
+            console.log(
+              `Email de notification envoyé à ${candidatEmail} pour la conversation ${conversationId}`
+            );
+          } else {
+            console.warn(
+              `Échec de l'envoi de l'email de notification: ${result.error}`
+            );
+          }
+        })
+        .catch((error) => {
+          console.error(
+            "Erreur lors de l'envoi de l'email de notification:",
+            error
+          );
+        });
+    }
 
     return NextResponse.json({ success: true, data: message });
   } catch (error) {

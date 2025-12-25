@@ -694,7 +694,7 @@ ${
             </Card>
 
             {/* Historique */}
-            <Card>
+            {/* <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Historique récent</CardTitle>
               </CardHeader>
@@ -752,7 +752,7 @@ ${
                   </div>
                 )}
               </CardContent>
-            </Card>
+            </Card> */}
 
             {/* Conseils */}
             <Card className="bg-linear-to-br from-[#a590ff]/5 to-[#a590ff]/10 border-[#a590ff]/20">

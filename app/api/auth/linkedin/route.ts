@@ -33,11 +33,11 @@ export async function GET(request: NextRequest) {
     // Note: w_member_social nécessite l'approbation du produit "Share on LinkedIn"
     // Pour l'instant, on utilise uniquement les scopes de base
     const baseScopes = "openid profile email";
-    
+
     // Vérifier si le scope de publication est activé via variable d'env
     const hasSharePermission = process.env.LINKEDIN_SHARE_ENABLED === "true";
-    const scope = hasSharePermission 
-      ? `${baseScopes} w_member_social` 
+    const scope = hasSharePermission
+      ? `${baseScopes} w_member_social`
       : baseScopes;
 
     // State pour sécurité CSRF (stocke l'userId)
@@ -65,4 +65,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
