@@ -20,6 +20,8 @@ import {
   GraduationCap,
   Briefcase,
   Loader2,
+  X,
+  Sparkles,
 } from "lucide-react";
 import {
   Select,
@@ -29,8 +31,26 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
+// Compétences suggérées pour le matching
+const COMPETENCES_SUGGEREES = [
+  "JavaScript", "TypeScript", "React", "Next.js", "Vue.js", "Angular",
+  "Node.js", "Python", "Java", "PHP", "Ruby", "Go", "Rust",
+  "SQL", "PostgreSQL", "MySQL", "MongoDB", "Redis",
+  "AWS", "Azure", "GCP", "Docker", "Kubernetes",
+  "Git", "CI/CD", "Agile", "Scrum",
+  "GraphQL", "REST API", "Microservices",
+  "UI/UX", "Figma", "Design System",
+  "Machine Learning", "Data Science", "Python",
+  "Leadership", "Management", "Communication",
+];
+
 interface ExperiencesFormationsSectionProps {
   candidatId?: string;
+}
+
+interface ExperienceCompetence {
+  id?: string;
+  competence: string;
 }
 
 interface Experience {
@@ -42,6 +62,8 @@ interface Experience {
   dateDebut: string;
   dateFin?: string;
   description: string;
+  experienceCompetences?: ExperienceCompetence[];
+  competences?: string[]; // Pour le formulaire
 }
 
 interface Formation {
@@ -77,7 +99,10 @@ export function ExperiencesFormationsSection({
     dateDebut: "",
     dateFin: "",
     description: "",
+    competences: [],
   });
+  
+  const [newCompetence, setNewCompetence] = useState("");
 
   const [formationForm, setFormationForm] = useState<Formation>({
     diplome: "",
@@ -139,6 +164,11 @@ export function ExperiencesFormationsSection({
     }
 
     try {
+      const dataToSend = {
+        ...experienceForm,
+        competences: experienceForm.competences || [],
+      };
+
       if (editingExperience?.id) {
         // Mise à jour
         const response = await fetch(
@@ -146,7 +176,7 @@ export function ExperiencesFormationsSection({
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(experienceForm),
+            body: JSON.stringify(dataToSend),
           }
         );
         if (response.ok) {
@@ -166,7 +196,7 @@ export function ExperiencesFormationsSection({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            ...experienceForm,
+            ...dataToSend,
             candidatId,
           }),
         });
@@ -281,9 +311,28 @@ export function ExperiencesFormationsSection({
       dateDebut: "",
       dateFin: "",
       description: "",
+      competences: [],
     });
+    setNewCompetence("");
     setEditingExperience(null);
     setShowExperienceForm(false);
+  };
+  
+  const handleAddCompetence = (competence: string) => {
+    if (competence && !experienceForm.competences?.includes(competence)) {
+      setExperienceForm((prev) => ({
+        ...prev,
+        competences: [...(prev.competences || []), competence],
+      }));
+      setNewCompetence("");
+    }
+  };
+
+  const handleRemoveCompetence = (competence: string) => {
+    setExperienceForm((prev) => ({
+      ...prev,
+      competences: prev.competences?.filter((c) => c !== competence) || [],
+    }));
   };
 
   const resetFormationForm = () => {
@@ -300,6 +349,9 @@ export function ExperiencesFormationsSection({
   };
 
   const startEditExperience = (exp: Experience) => {
+    // Extraire les compétences existantes
+    const existingCompetences = exp.experienceCompetences?.map((c) => c.competence) || [];
+    
     setExperienceForm({
       ...exp,
       dateDebut: exp.dateDebut
@@ -308,6 +360,7 @@ export function ExperiencesFormationsSection({
       dateFin: exp.dateFin
         ? new Date(exp.dateFin).toISOString().split("T")[0]
         : "",
+      competences: existingCompetences,
     });
     setEditingExperience(exp);
     setShowExperienceForm(true);
@@ -482,6 +535,89 @@ export function ExperiencesFormationsSection({
                     className="min-h-[100px]"
                   />
                 </div>
+
+                {/* Compétences utilisées - Important pour le matching */}
+                <div className="space-y-3 p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <Label className="font-medium">
+                      Compétences utilisées dans ce poste
+                    </Label>
+                    <Badge variant="secondary" className="text-xs">
+                      Important pour le matching
+                    </Badge>
+                  </div>
+
+                  {/* Compétences sélectionnées */}
+                  {experienceForm.competences && experienceForm.competences.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {experienceForm.competences.map((comp) => (
+                        <Badge
+                          key={comp}
+                          variant="default"
+                          className="flex items-center gap-1 bg-primary"
+                        >
+                          {comp}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCompetence(comp)}
+                            className="ml-1 hover:text-destructive"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Input pour ajouter */}
+                  <div className="flex gap-2">
+                    <Input
+                      value={newCompetence}
+                      onChange={(e) => setNewCompetence(e.target.value)}
+                      placeholder="Ajouter une compétence..."
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddCompetence(newCompetence);
+                        }
+                      }}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAddCompetence(newCompetence)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Suggestions */}
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">
+                      Suggestions :
+                    </Label>
+                    <div className="flex flex-wrap gap-1">
+                      {COMPETENCES_SUGGEREES.filter(
+                        (c) => !experienceForm.competences?.includes(c)
+                      )
+                        .slice(0, 12)
+                        .map((comp) => (
+                          <Badge
+                            key={comp}
+                            variant="outline"
+                            className="cursor-pointer hover:bg-primary hover:text-primary-foreground text-xs"
+                            onClick={() => handleAddCompetence(comp)}
+                          >
+                            + {comp}
+                          </Badge>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex gap-2 justify-end">
                   <Button variant="outline" onClick={resetExperienceForm}>
                     Annuler
@@ -514,7 +650,7 @@ export function ExperiencesFormationsSection({
                         <p className="text-sm text-muted-foreground">
                           {exp.entreprise}
                         </p>
-                        <div className="flex gap-2 mt-2">
+                        <div className="flex flex-wrap gap-2 mt-2">
                           <Badge variant="outline" className="uppercase">
                             {exp.typeContrat}
                           </Badge>
@@ -530,6 +666,28 @@ export function ExperiencesFormationsSection({
                           <p className="text-sm mt-2 text-muted-foreground">
                             {exp.description}
                           </p>
+                        )}
+                        {/* Afficher les compétences */}
+                        {exp.experienceCompetences && exp.experienceCompetences.length > 0 && (
+                          <div className="mt-3 pt-3 border-t">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Sparkles className="h-3 w-3 text-primary" />
+                              <span className="text-xs font-medium text-muted-foreground">
+                                Compétences utilisées :
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {exp.experienceCompetences.map((c) => (
+                                <Badge
+                                  key={c.id || c.competence}
+                                  variant="secondary"
+                                  className="text-xs"
+                                >
+                                  {c.competence}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
                         )}
                       </div>
                       <div className="flex gap-2">

@@ -48,6 +48,23 @@ export async function completeSignupCandidat(data: {
   permisConduire?: string;
   type: "CANDIDAT";
 }) {
+  // Valider et convertir la date de naissance
+  let dateNaissanceValue: Date;
+  if (data.dateNaissance && data.dateNaissance.trim() !== "") {
+    const parsedDate = new Date(data.dateNaissance);
+    if (isNaN(parsedDate.getTime())) {
+      // Si la date est invalide, utiliser une date par défaut (18 ans)
+      dateNaissanceValue = new Date();
+      dateNaissanceValue.setFullYear(dateNaissanceValue.getFullYear() - 18);
+    } else {
+      dateNaissanceValue = parsedDate;
+    }
+  } else {
+    // Si aucune date n'est fournie, utiliser une date par défaut (18 ans)
+    dateNaissanceValue = new Date();
+    dateNaissanceValue.setFullYear(dateNaissanceValue.getFullYear() - 18);
+  }
+
   return await prisma.user.update({
     where: { email: data.email },
     data: {
@@ -60,7 +77,7 @@ export async function completeSignupCandidat(data: {
           prenom: data.prenom,
           telephone: data.telephone,
           pays: data.pays,
-          dateNaissance: new Date(data.dateNaissance),
+          dateNaissance: dateNaissanceValue,
           nationalite: data.nationalite,
           situationFamiliale: data.situationFamiliale,
           permisConduire: data.permisConduire,
