@@ -64,6 +64,8 @@ jobs:
             # Naviguer vers le répertoire du projet
             cd /home/deploy_recruter/apps/recruter
 
+            echo "SSH OK"
+
             # Sauvegarder l'ancienne version
             if [ -d "current" ]; then
               mv current backup-$(date +%Y%m%d-%H%M%S)
