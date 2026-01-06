@@ -27,12 +27,11 @@ jobs:
           corepack enable
           corepack prepare pnpm@latest --activate
 
-      # 4️⃣ Installer les dépendances et générer Prism
+      # 4️⃣ Installer les dépendances et générer Prisma client
       - name: Install dependencies & Generate Prisma client
         run: |
           pnpm install --frozen-lockfile
           pnpm prisma generate
-          pnpm prisma db push
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
@@ -83,6 +82,7 @@ jobs:
             package.json
             pnpm-lock.yaml
             ecosystem.config.js
+            prisma/
           remote_path: /home/deploy_recruter/apps/recruter/current
           remote_host: ${{ secrets.VPS_HOST }}
           remote_user: ${{ secrets.VPS_USERNAME }}
@@ -125,6 +125,7 @@ jobs:
             chmod 600 .env.production
 
             pnpm install --prod --frozen-lockfile
+            pnpm prisma generate
 
       # 8️⃣ Redémarrer PM2
       - name: Restart PM2
