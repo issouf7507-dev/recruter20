@@ -9,10 +9,15 @@ echo "🚀 Configuration du serveur VPS pour le déploiement automatique..."
 echo "📦 Mise à jour du système..."
 sudo apt update && sudo apt upgrade -y
 
-# Installer Node.js et npm
-echo "📦 Installation de Node.js..."
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+# Installer Node.js et npm (version 20.x LTS)
+echo "📦 Installation de Node.js 20.x LTS..."
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs
+
+# Vérifier la version installée
+echo "✅ Node.js version installée:"
+node --version
+npm --version
 
 # Installer PM2 globalement
 echo "📦 Installation de PM2..."
