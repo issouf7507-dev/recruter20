@@ -84,7 +84,7 @@ jobs:
             # Nettoyer
             rm -rf temp-deploy
 
-            # Naviguer vers le répertoire de déploiement
+            # Naviguer vers le répertoire de déploiementS
             cd current
 
             # Installer les dépendances
