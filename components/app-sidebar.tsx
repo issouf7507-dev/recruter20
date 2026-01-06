@@ -95,11 +95,11 @@ const data = {
       icon: IconMail,
     },
 
-    {
-      title: "Matching",
-      url: "/recruteur/matching",
-      icon: IconCheck,
-    },
+    // {
+    //   title: "Matching",
+    //   url: "/recruteur/matching",
+    //   icon: IconCheck,
+    // },
     {
       title: "Multi-diffusion",
       url: "/recruteur/multi-diffusion",
