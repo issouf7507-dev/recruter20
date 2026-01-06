@@ -175,7 +175,7 @@ export class JobOfferRepository {
     // Filtre par années d'expérience (anneesexperience)
     if (experienceMin !== undefined || experienceMax !== undefined) {
       where.AND = where.AND || [];
-      
+
       if (experienceMin !== undefined && experienceMax !== undefined) {
         // Trouver les offres dont l'expérience requise est dans la plage
         where.AND.push({
@@ -518,9 +518,9 @@ export class JobOfferRepository {
         salaryMin: data.salaryMin,
         salaryMax: data.salaryMax,
         description: data.description,
-        requirements: data.requirements,
-        benefits: data.benefits,
-        skills: data.skills,
+        // requirements: data.requirements,
+        // benefits: data.benefits,
+        // skills: data.skills,
         recruteurId: data.recruteurId,
         duedate: data.duedate,
         etat: data.etat || "active",
@@ -544,9 +544,9 @@ export class JobOfferRepository {
         salaryMin: data.salaryMin,
         salaryMax: data.salaryMax,
         description: data.description,
-        requirements: data.requirements,
-        benefits: data.benefits,
-        skills: data.skills,
+        // requirements: data.requirements,
+        // benefits: data.benefits,
+        // skills: data.skills,
         recruteurId: data.recruteurId,
         duedate: data.duedate,
         etat: data.etat,

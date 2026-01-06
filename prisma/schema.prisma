@@ -205,18 +205,14 @@ model JobOffer {
   location            String?
   type                String?
   etat                String?              @default("active")
-  experience          String?
+  // experience          String?
   logo                String?
   salaryMin           Float?
   salaryMax           Float?
   salaryCurrency      String?
   salaryPeriod        String?
-  benefits            String?              @db.Text
-  requirements        String?              @db.Text
-  responsibilities    String?              @db.Text
-  anneesexperience    String?
+
   duedate             DateTime?
-  skills              String?
   favorite            Boolean?             @default(false)
   templateId          Int?
   views               Int?                 @default(0)
@@ -226,7 +222,6 @@ model JobOffer {
   deletedAt           DateTime?
   applications        Application[]
   conversations       Conversation[]
-  jobOfferCompetences JobOfferCompetence[]
   CardJobOffer        CardJobOffer[]
   recruteur           Recruteur            @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
   template            OfferTemplate?       @relation(fields: [templateId], references: [id])
@@ -238,15 +233,15 @@ model JobOffer {
   @@index([recruteurId, createdAt]) // Tri chronologique
 }
 
-model JobOfferCompetence {
-  id         String   @id @default(cuid())
-  jobOfferId String
-  competence String
-  createdAt  DateTime @default(now())
-  jobOffer   JobOffer @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
+// model JobOfferCompetence {
+//   id         String   @id @default(cuid())
+//   jobOfferId String
+//   competence String
+//   createdAt  DateTime @default(now())
+//   jobOffer   JobOffer @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
 
-  @@unique([jobOfferId, competence])
-}
+//   @@unique([jobOfferId, competence])
+// }
 
 model OfferTemplate {
   id          Int        @id @default(autoincrement())

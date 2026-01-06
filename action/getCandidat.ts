@@ -7,7 +7,7 @@ export async function getCandidat(userId: string) {
     where: { userId },
     include: {
       candidatCompetences: true,
-      competencesList: true,
+      // competencesList: true,
       certifications: true,
       niveauEtude: true,
 

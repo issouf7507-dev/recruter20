@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,6 +18,8 @@ import {
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { MessageCircle } from "lucide-react";
+import { useSocket } from "@/lib/hooks/use-socket";
+import type { MessageData } from "@/lib/socket";
 
 interface Message {
   id: string;
@@ -71,6 +73,43 @@ export function MessagesSection({ candidatId }: MessagesSectionProps) {
   const [showChat, setShowChat] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Callback pour gérer les nouveaux messages en temps réel
+  const handleNewMessage = useCallback(
+    (message: MessageData) => {
+      // Ajouter le message s'il appartient à la conversation sélectionnée
+      if (message.conversationId === selectedConversation?.id) {
+        setMessages((prev) => {
+          // Éviter les doublons
+          if (prev.some((m) => m.id === message.id)) {
+            return prev;
+          }
+          return [...prev, message];
+        });
+      }
+    },
+    [selectedConversation?.id]
+  );
+
+  // Callback pour les mises à jour de conversation (liste des conversations)
+  const handleConversationUpdate = useCallback(() => {
+    loadConversations();
+  }, [candidatId]);
+
+  // Hook Socket.IO pour les messages en temps réel
+  const {
+    isConnected,
+    isTyping,
+    handleTypingStart,
+    handleTypingStop,
+    sendMessage,
+  } = useSocket({
+    conversationId: selectedConversation?.id,
+    userId: candidatId,
+    userType: "CANDIDAT",
+    onNewMessage: handleNewMessage,
+    onConversationUpdate: handleConversationUpdate,
+  });
+
   useEffect(() => {
     if (candidatId) {
       loadConversations();
@@ -88,7 +127,9 @@ export function MessagesSection({ candidatId }: MessagesSectionProps) {
   const loadConversations = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/candidats/${candidatId}/conversations`);
+      const response = await fetch(
+        `/api/candidats/${candidatId}/conversations`
+      );
       const result = await response.json();
 
       if (result.success) {
@@ -323,9 +364,7 @@ export function MessagesSection({ candidatId }: MessagesSectionProps) {
                       <div className="flex items-center gap-2">
                         {lastMessage && getStatusIcon(lastMessage)}
                         <span className="text-muted-foreground truncate text-start text-sm">
-                          {lastMessage
-                            ? lastMessage.content
-                            : "Aucun message"}
+                          {lastMessage ? lastMessage.content : "Aucun message"}
                         </span>
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
@@ -341,11 +380,7 @@ export function MessagesSection({ candidatId }: MessagesSectionProps) {
 
         {/* Zone de chat principale */}
         {selectedConversation && (
-          <div
-            className={`grow ${
-              showChat ? "flex" : "hidden lg:flex"
-            }`}
-          >
+          <div className={`grow ${showChat ? "flex" : "hidden lg:flex"}`}>
             <div className="bg-background flex h-full w-full flex-col lg:border lg:rounded-xl">
               {/* Header du chat */}
               <div className="flex justify-between gap-4 p-4 border-b">
@@ -452,23 +487,61 @@ export function MessagesSection({ candidatId }: MessagesSectionProps) {
 
               {/* Zone de saisie */}
               <div className="p-4 border-t">
+                {/* Indicateur de frappe */}
+                {Object.values(isTyping).some(Boolean) && (
+                  <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                    <div className="flex gap-1">
+                      <span className="animate-bounce">.</span>
+                      <span
+                        className="animate-bounce"
+                        style={{ animationDelay: "0.1s" }}
+                      >
+                        .
+                      </span>
+                      <span
+                        className="animate-bounce"
+                        style={{ animationDelay: "0.2s" }}
+                      >
+                        .
+                      </span>
+                    </div>
+                    <span>Le recruteur est en train d'écrire</span>
+                  </div>
+                )}
                 <div className="bg-muted relative flex items-center rounded-md border">
                   <Input
                     placeholder="Tapez votre message..."
                     className="h-14 border-transparent bg-white pe-32 text-base shadow-transparent ring-transparent lg:pe-20"
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={(e) => {
+                      setNewMessage(e.target.value);
+                      handleTypingStart();
+                    }}
                     onKeyPress={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
+                        handleTypingStop();
                         handleSendMessage();
                       }
                     }}
+                    onBlur={handleTypingStop}
                     disabled={isSending}
                   />
                   <div className="absolute end-4 flex items-center gap-2">
+                    {/* Indicateur de connexion Socket */}
+                    <div
+                      className={`h-2 w-2 rounded-full ${
+                        isConnected ? "bg-green-500" : "bg-red-500"
+                      }`}
+                      title={
+                        isConnected ? "Connecté en temps réel" : "Non connecté"
+                      }
+                    />
                     <Button
-                      onClick={handleSendMessage}
+                      onClick={() => {
+                        handleTypingStop();
+                        handleSendMessage();
+                      }}
                       className="h-9 px-4 py-2"
                       disabled={!newMessage.trim() || isSending}
                     >
@@ -510,4 +583,3 @@ function IconMessage({ className }: { className?: string }) {
     </svg>
   );
 }
-

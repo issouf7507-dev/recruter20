@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { emailService } from "@/lib/email";
+import { emitNewMessage } from "@/lib/socket-server";
 
 /**
  * POST /api/conversations/[id]/messages
@@ -78,6 +79,18 @@ export async function POST(
     await prisma.conversation.update({
       where: { id: conversationId },
       data: { updatedAt: new Date() },
+    });
+
+    // Émettre le message via Socket.IO pour la mise à jour en temps réel
+    emitNewMessage({
+      id: message.id,
+      conversationId: message.conversationId,
+      senderId: message.senderId,
+      senderType: message.senderType,
+      content: message.content,
+      isRead: message.isRead,
+      createdAt: message.createdAt.toISOString(),
+      updatedAt: message.updatedAt.toISOString(),
     });
 
     // Envoyer une notification email au candidat si le message vient du recruteur

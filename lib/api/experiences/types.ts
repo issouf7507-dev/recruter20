@@ -1,3 +1,10 @@
+export interface ExperienceCompetence {
+  id: string;
+  experienceId: string;
+  competence: string;
+  createdAt: Date;
+}
+
 export interface Experience {
   id: string;
   candidatId: string;
@@ -10,6 +17,7 @@ export interface Experience {
   description: string;
   createdAt: Date;
   updatedAt: Date;
+  experienceCompetences?: ExperienceCompetence[];
 }
 
 export interface CreateExperienceData {
@@ -21,6 +29,7 @@ export interface CreateExperienceData {
   dateDebut: string | Date;
   dateFin?: string | Date | null;
   description?: string;
+  competences?: string[];
 }
 
 export interface UpdateExperienceData {
@@ -31,6 +40,7 @@ export interface UpdateExperienceData {
   dateDebut?: string | Date;
   dateFin?: string | Date | null;
   description?: string;
+  competences?: string[];
 }
 
 export interface ApiResponse<T> {

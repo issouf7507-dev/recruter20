@@ -16,7 +16,7 @@ interface AuthFormData {
   lastName?: string;
   companyName?: string;
   phone?: string;
-  dateNaissance?: string;
+  dateNaissance?: Date | string;
 }
 
 export default function CandidateRegisterPage() {
@@ -34,13 +34,23 @@ export default function CandidateRegisterPage() {
       });
 
       if (res.data) {
+        // Convertir la date en string ISO si c'est une Date, sinon utiliser une chaîne vide
+        let dateNaissanceStr = "";
+        if (data.dateNaissance) {
+          if (data.dateNaissance instanceof Date) {
+            dateNaissanceStr = data.dateNaissance.toISOString();
+          } else if (typeof data.dateNaissance === "string") {
+            dateNaissanceStr = data.dateNaissance;
+          }
+        }
+
         await completeSignupCandidat({
           email: data.email,
           nom: data.firstName || "",
           prenom: data.lastName || "",
           telephone: data.phone || "",
           pays: "CIV",
-          dateNaissance: data.dateNaissance || "",
+          dateNaissance: dateNaissanceStr,
           nationalite: "CIV",
           type: "CANDIDAT",
         });

@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useOffer, useOffers } from "@/lib/hooks/use-offers";
 import { useCandidat } from "@/lib/hooks/use-candidat";
 import { useCandidatures } from "@/lib/hooks/use-candidatures";
@@ -58,8 +58,29 @@ export default function OffreDetailPage({
   // Offres similaires (exclure l'offre actuelle)
 
   const { id } = React.use(params); // 🔹 Déstructure après "unwrap"
+  const hasIncrementedView = useRef(false);
 
-  const { data: jobDetail, isLoading } = useOffer(id);
+  const { data: jobDetail, isLoading, refetch: refetchOffer } = useOffer(id);
+
+  // Incrémenter le compteur de vues une seule fois au chargement
+  useEffect(() => {
+    const incrementViews = async () => {
+      if (id && !hasIncrementedView.current) {
+        hasIncrementedView.current = true;
+        try {
+          await fetch(`/api/offres/${id}/views`, {
+            method: "POST",
+          });
+          // Rafraîchir les données de l'offre pour avoir le nouveau compteur
+          refetchOffer();
+        } catch (error) {
+          console.error("Error incrementing views:", error);
+        }
+      }
+    };
+
+    incrementViews();
+  }, [id, refetchOffer]);
   const {
     data: documents,
     isLoading: isLoadingDocuments,
@@ -109,7 +130,7 @@ export default function OffreDetailPage({
       }));
   }, [similarOffersData, id]);
 
-  console.log(documents);
+  // console.log(documents);
 
   // Si l'offre n'existe pas, rediriger ou afficher un message
   if (!jobDetail || isLoading) {
@@ -460,13 +481,13 @@ export default function OffreDetailPage({
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-500">Candidatures</span>
                   <span className="text-[#a590ff] font-semibold">
-                    {Math.floor(Math.random() * 50) + 10} reçues
+                    {jobDetail.applications?.length || 0} reçues
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-500">Vues</span>
                   <span className="text-gray-700 font-medium">
-                    {Math.floor(Math.random() * 500) + 100}
+                    {jobDetail.views || 0}
                   </span>
                 </div>
               </div>
@@ -485,33 +506,33 @@ export default function OffreDetailPage({
                 </h3>
               </div>
               <div className="space-y-3 mb-4">
-                <div className="flex items-start gap-3 text-sm">
+                {/* <div className="flex items-start gap-3 text-sm">
                   <Users className="w-5 h-5 text-gray-400 shrink-0" />
                   <div>
                     <p className="text-gray-500 text-xs">Taille</p>
                     <p className="text-gray-700 font-medium">
-                      {/* {jobDetail.companyInfo.size} */}
+                      {jobDetail.companyInfo.size}
                     </p>
                   </div>
-                </div>
-                <div className="flex items-start gap-3 text-sm">
+                </div> */}
+                {/* <div className="flex items-start gap-3 text-sm">
                   <Building2 className="w-5 h-5 text-gray-400 shrink-0" />
                   <div>
                     <p className="text-gray-500 text-xs">Secteur</p>
                     <p className="text-gray-700 font-medium">
-                      {/* {jobDetail} */}
+                      {jobDetail}
                     </p>
                   </div>
-                </div>
-                <div className="flex items-start gap-3 text-sm">
+                </div> */}
+                {/* <div className="flex items-start gap-3 text-sm">
                   <Calendar className="w-5 h-5 text-gray-400 shrink-0" />
                   <div>
                     <p className="text-gray-500 text-xs">Fondée en</p>
                     <p className="text-gray-700 font-medium">
-                      {/* {jobDetail.companyInfo.founded} */}
+                      {jobDetail.companyInfo.founded}
                     </p>
                   </div>
-                </div>
+                </div> */}
                 {/* {jobDetail.companyInfo.website && (
                   <div className="flex items-start gap-3 text-sm">
                     <Globe className="w-5 h-5 text-gray-400 shrink-0" />

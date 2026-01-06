@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,8 @@ import { useSession } from "@/lib/auth-client";
 import { useRecruteurByUserId } from "@/lib/hooks/use-recruteurs";
 import { toast } from "sonner";
 import { useConversations } from "@/lib/hooks/use-conversations";
+import { useSocket } from "@/lib/hooks/use-socket";
+import type { MessageData } from "@/lib/socket";
 
 interface Message {
   id: string;
@@ -90,6 +92,43 @@ export default function MessageriePage() {
     errorConversationsMessages,
     refetchConversationsMessages,
   } = useConversations(recruteurId, conversationIdFromUrl || undefined);
+
+  // Callback pour gérer les nouveaux messages en temps réel
+  const handleNewMessage = useCallback(
+    (message: MessageData) => {
+      // Ajouter le message s'il appartient à la conversation sélectionnée
+      if (message.conversationId === selectedConversation?.id) {
+        setMessages((prev) => {
+          // Éviter les doublons
+          if (prev.some((m) => m.id === message.id)) {
+            return prev;
+          }
+          return [...prev, message];
+        });
+      }
+    },
+    [selectedConversation?.id]
+  );
+
+  // Callback pour les mises à jour de conversation (liste des conversations)
+  const handleConversationUpdate = useCallback(() => {
+    refetchConversationsRecruteur();
+  }, [refetchConversationsRecruteur]);
+
+  // Hook Socket.IO pour les messages en temps réel
+  const {
+    isConnected,
+    isTyping,
+    handleTypingStart,
+    handleTypingStop,
+    sendMessage,
+  } = useSocket({
+    conversationId: selectedConversation?.id,
+    userId: recruteurId,
+    userType: "RECRUTEUR",
+    onNewMessage: handleNewMessage,
+    onConversationUpdate: handleConversationUpdate,
+  });
 
   // console.log("conversationsRecruteur", conversationsRecruteur);
 
@@ -478,23 +517,63 @@ export default function MessageriePage() {
 
                       {/* Zone de saisie */}
                       <div className="p-4 border-t">
+                        {/* Indicateur de frappe */}
+                        {Object.values(isTyping).some(Boolean) && (
+                          <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                            <div className="flex gap-1">
+                              <span className="animate-bounce">.</span>
+                              <span
+                                className="animate-bounce"
+                                style={{ animationDelay: "0.1s" }}
+                              >
+                                .
+                              </span>
+                              <span
+                                className="animate-bounce"
+                                style={{ animationDelay: "0.2s" }}
+                              >
+                                .
+                              </span>
+                            </div>
+                            <span>Le candidat est en train d'écrire</span>
+                          </div>
+                        )}
                         <div className="bg-muted relative flex items-center rounded-md border">
                           <Input
                             placeholder="Tapez votre message..."
                             className="h-14 border-transparent bg-white pe-32 text-base shadow-transparent ring-transparent lg:pe-20"
                             value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
+                            onChange={(e) => {
+                              setNewMessage(e.target.value);
+                              handleTypingStart();
+                            }}
                             onKeyPress={(e) => {
                               if (e.key === "Enter" && !e.shiftKey) {
                                 e.preventDefault();
+                                handleTypingStop();
                                 handleSendMessage();
                               }
                             }}
+                            onBlur={handleTypingStop}
                             disabled={isSending}
                           />
                           <div className="absolute end-4 flex items-center gap-2">
+                            {/* Indicateur de connexion Socket */}
+                            <div
+                              className={`h-2 w-2 rounded-full ${
+                                isConnected ? "bg-green-500" : "bg-red-500"
+                              }`}
+                              title={
+                                isConnected
+                                  ? "Connecté en temps réel"
+                                  : "Non connecté"
+                              }
+                            />
                             <Button
-                              onClick={handleSendMessage}
+                              onClick={() => {
+                                handleTypingStop();
+                                handleSendMessage();
+                              }}
                               className="h-9 px-4 py-2"
                               disabled={!newMessage.trim() || isSending}
                             >

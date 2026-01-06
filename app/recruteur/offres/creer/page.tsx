@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +36,13 @@ import {
   IconUpload,
   IconX,
   IconLoader2,
+  IconBulb,
+  IconCheck,
+  IconCode,
+  IconMapPinFilled,
+  IconSchool,
+  IconClock,
+  IconSparkles,
 } from "@tabler/icons-react";
 import { ChevronDownIcon } from "lucide-react";
 import {
@@ -44,6 +51,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface FormData {
   titre: string;
@@ -64,6 +81,9 @@ interface FormData {
   etat?: "active" | "brouillon";
 }
 
+// Clé pour le localStorage
+const TIPS_MODAL_KEY = "recruteur_offre_tips_seen";
+
 export default function CreerOffrePage() {
   const router = useRouter();
   const createOffer = useCreateOffer();
@@ -72,6 +92,23 @@ export default function CreerOffrePage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [showTipsModal, setShowTipsModal] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  // Afficher la modal au premier chargement si pas déjà vue
+  useEffect(() => {
+    const hasSeenTips = localStorage.getItem(TIPS_MODAL_KEY);
+    if (!hasSeenTips) {
+      setShowTipsModal(true);
+    }
+  }, []);
+
+  const handleCloseTipsModal = () => {
+    if (dontShowAgain) {
+      localStorage.setItem(TIPS_MODAL_KEY, "true");
+    }
+    setShowTipsModal(false);
+  };
 
   const [formData, setFormData] = useState<FormData>({
     titre: "",
@@ -230,10 +267,22 @@ export default function CreerOffrePage() {
           <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
             <div className="px-4 lg:px-6">
               <div className="mb-6">
-                <h1 className="text-2xl font-bold flex items-center gap-2">
-                  <IconBriefcase className="h-6 w-6" />
-                  Créer une nouvelle offre d'emploi
-                </h1>
+                <div className="flex items-center justify-between">
+                  <h1 className="text-2xl font-bold flex items-center gap-2">
+                    <IconBriefcase className="h-6 w-6" />
+                    Créer une nouvelle offre d'emploi
+                  </h1>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowTipsModal(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <IconBulb className="h-4 w-4" />
+                    Conseils pour le matching
+                  </Button>
+                </div>
                 <p className="text-muted-foreground mt-2">
                   Remplissez les informations ci-dessous pour publier votre
                   offre d'emploi
@@ -595,6 +644,220 @@ export default function CreerOffrePage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de conseils pour optimiser le matching */}
+      <Dialog open={showTipsModal} onOpenChange={setShowTipsModal}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <IconSparkles className="h-6 w-6" />
+              Optimisez votre offre pour le matching IA
+            </DialogTitle>
+            <DialogDescription>
+              Suivez ces conseils pour que notre système de matching trouve les
+              meilleurs candidats pour votre offre.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Section Compétences */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                  <IconCode className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h3 className="font-semibold text-lg">
+                  Compétences techniques
+                </h3>
+                <Badge variant="secondary" className="ml-auto">
+                  Poids: 40%
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Mentionnez clairement les technologies et outils requis dans la
+                description.
+              </p>
+              <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                <p className="text-sm font-medium text-green-600 dark:text-green-400 flex items-center gap-1">
+                  <IconCheck className="h-4 w-4" /> Exemples reconnus :
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "React",
+                    "Python",
+                    "TypeScript",
+                    "Node.js",
+                    "PostgreSQL",
+                    "AWS",
+                    "Docker",
+                    "GraphQL",
+                    "Figma",
+                    "Jira",
+                  ].map((skill) => (
+                    <Badge key={skill} variant="outline" className="text-xs">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Section Expérience */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+                  <IconClock className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <h3 className="font-semibold text-lg">Niveau d'expérience</h3>
+                <Badge variant="secondary" className="ml-auto">
+                  Poids: 20%
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Indiquez clairement les années d'expérience requises.
+              </p>
+              <div className="bg-muted/50 rounded-lg p-3">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <IconCheck className="h-4 w-4 text-green-500" />
+                    <span>"3-5 ans d'expérience"</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <IconCheck className="h-4 w-4 text-green-500" />
+                    <span>"Junior / Débutant accepté"</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <IconCheck className="h-4 w-4 text-green-500" />
+                    <span>"Profil senior (5+ ans)"</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <IconCheck className="h-4 w-4 text-green-500" />
+                    <span>"Minimum 2 ans d'expérience"</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Section Localisation */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
+                  <IconMapPinFilled className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <h3 className="font-semibold text-lg">Localisation</h3>
+                <Badge variant="secondary" className="ml-auto">
+                  Poids: 20%
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Précisez le lieu de travail et les options de télétravail.
+              </p>
+              <div className="bg-muted/50 rounded-lg p-3">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <IconCheck className="h-4 w-4 text-green-500" />
+                    <span>"Abidjan, Côte d'Ivoire"</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <IconCheck className="h-4 w-4 text-green-500" />
+                    <span>"Remote / 100% télétravail"</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <IconCheck className="h-4 w-4 text-green-500" />
+                    <span>"Hybride (2j/semaine bureau)"</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <IconCheck className="h-4 w-4 text-green-500" />
+                    <span>"Paris, France ou remote"</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Section Formation */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
+                  <IconSchool className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <h3 className="font-semibold text-lg">Formation requise</h3>
+                <Badge variant="secondary" className="ml-auto">
+                  Poids: 5%
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Mentionnez le niveau de diplôme souhaité si applicable.
+              </p>
+              <div className="bg-muted/50 rounded-lg p-3">
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "Bac+2",
+                    "Bac+3 / Licence",
+                    "Bac+5 / Master",
+                    "Ingénieur",
+                    "BTS/DUT",
+                    "Autodidacte accepté",
+                  ].map((level) => (
+                    <Badge key={level} variant="outline" className="text-xs">
+                      {level}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Exemple complet */}
+            <div className="border-t pt-4">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <IconBulb className="h-5 w-5 text-yellow-500" />
+                Exemple de description optimale
+              </h3>
+              <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-4 text-sm space-y-2 border border-primary/20">
+                <p>
+                  <strong>Missions :</strong> Développer des applications web
+                  avec <strong>React</strong> et <strong>TypeScript</strong>,
+                  concevoir des APIs <strong>GraphQL</strong> avec{" "}
+                  <strong>Node.js</strong>.
+                </p>
+                <p>
+                  <strong>Profil :</strong>{" "}
+                  <strong>2-4 ans d'expérience</strong> en développement web.
+                  Formation <strong>Bac+3</strong> minimum en informatique.
+                </p>
+                <p>
+                  <strong>Stack :</strong> React, TypeScript, Node.js, GraphQL,
+                  PostgreSQL, Docker, AWS.
+                </p>
+                <p>
+                  <strong>Localisation :</strong> Abidjan avec possibilité de{" "}
+                  <strong>télétravail partiel</strong>.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-3">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="dontShowAgain"
+                checked={dontShowAgain}
+                onCheckedChange={(checked) =>
+                  setDontShowAgain(checked as boolean)
+                }
+              />
+              <label
+                htmlFor="dontShowAgain"
+                className="text-sm text-muted-foreground cursor-pointer"
+              >
+                Ne plus afficher ce message
+              </label>
+            </div>
+            <Button onClick={handleCloseTipsModal} className="sm:ml-auto">
+              J'ai compris, créer mon offre
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

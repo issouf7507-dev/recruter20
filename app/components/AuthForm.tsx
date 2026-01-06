@@ -181,6 +181,8 @@ export default function AuthForm({
                       className="w-full"
                       mode="single"
                       selected={dateNaissance}
+                      fromYear={1900}
+                      toYear={2055}
                       {...register("dateNaissance", {
                         valueAsDate: true,
                       })}

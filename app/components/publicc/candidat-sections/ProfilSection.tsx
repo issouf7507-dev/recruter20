@@ -65,6 +65,18 @@ const SITUATIONS_FAMILIALES = [
   "Veuf(ve)",
 ];
 
+// Statuts de disponibilité pour le matching
+const STATUTS_DISPONIBILITE = [
+  { value: "disponible", label: "Disponible immédiatement", emoji: "🟢" },
+  { value: "recherche-active", label: "En recherche active", emoji: "🔍" },
+  { value: "a-lecoute", label: "À l'écoute d'opportunités", emoji: "👂" },
+  { value: "preavis-1-mois", label: "En poste - Préavis 1 mois", emoji: "📅" },
+  { value: "preavis-2-mois", label: "En poste - Préavis 2 mois", emoji: "📅" },
+  { value: "preavis-3-mois", label: "En poste - Préavis 3 mois", emoji: "📅" },
+  { value: "en-poste", label: "En poste - Non disponible", emoji: "🔴" },
+  { value: "etudiant", label: "Étudiant / En formation", emoji: "📚" },
+];
+
 const DONNEES_PREDEFINIES = [
   {
     value: "informatique",
@@ -851,6 +863,7 @@ export function ProfilSection({ candidat }: ProfilSectionProps) {
     linkedinUrl: candidat?.linkedinUrl || "",
     certifications: candidat?.certifications?.map((c: any) => c.nom) || [],
     niveauEtude: candidat?.niveauEtude || "",
+    statut: candidat?.statut || "",
   });
 
   const [competences, setCompetences] = useState<string[]>(
@@ -1002,6 +1015,7 @@ export function ProfilSection({ candidat }: ProfilSectionProps) {
       competences: competences,
       certifications: certifications.map((c) => c.value),
       niveauxEtude: niveauxEtude.map((c) => c.value),
+      statut: formData.statut,
     });
     try {
       const response = await updateCandidat(candidat?.id, {
@@ -1154,6 +1168,40 @@ export function ProfilSection({ candidat }: ProfilSectionProps) {
                 placeholder="France"
               />
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Statut de disponibilité - Important pour le matching */}
+      <Card className="border-2 border-primary/20 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            🎯 Statut de disponibilité
+          </CardTitle>
+          <CardDescription>
+            Ce statut est crucial pour le matching avec les offres d'emploi
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {STATUTS_DISPONIBILITE.map((statut) => (
+              <div
+                key={statut.value}
+                onClick={() =>
+                  setFormData((prev) => ({ ...prev, statut: statut.value }))
+                }
+                className={`cursor-pointer p-3 rounded-lg border-2 transition-all hover:scale-[1.02] ${
+                  formData.statut === statut.value
+                    ? "border-primary bg-primary/10 shadow-md"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                <div className="text-center">
+                  <span className="text-2xl">{statut.emoji}</span>
+                  <p className="text-xs mt-1 font-medium">{statut.label}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

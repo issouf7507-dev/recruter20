@@ -13,13 +13,10 @@ import {
   IconLayoutKanban,
   IconMail,
   IconMoon,
-  IconReport,
-  IconSearch,
+  IconCheck,
   IconSettings,
   IconShare,
   IconSun,
-  IconUser,
-  IconUsers,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -97,12 +94,12 @@ const data = {
       url: "/recruteur/messagerie",
       icon: IconMail,
     },
-    {
-      title: "Statistiques et rapports",
-      url: "/recruteur/statistiques",
-      icon: IconChartBar,
-    },
 
+    {
+      title: "Matching",
+      url: "/recruteur/matching",
+      icon: IconCheck,
+    },
     {
       title: "Multi-diffusion",
       url: "/recruteur/multi-diffusion",
@@ -114,7 +111,11 @@ const data = {
       url: "/recruteur/invitations",
       icon: IconMail,
     },
-
+    {
+      title: "Statistiques et rapports",
+      url: "/recruteur/statistiques",
+      icon: IconChartBar,
+    },
     {
       title: "Aide et support",
       url: "/recruteur/aide-support",
