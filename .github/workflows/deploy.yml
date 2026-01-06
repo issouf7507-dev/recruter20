@@ -32,10 +32,6 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
 
-      # 5️⃣ Build l'application Next.js
-      - name: Build application
-        run: pnpm run build
-
       # 6️⃣ Synchroniser le build sur le VPS via rsync
       - name: Deploy build to VPS
         uses: burnett01/rsync-deployments@7.0.1
@@ -96,6 +92,10 @@ jobs:
             pnpm install --prod --frozen-lockfile
             pnpm prisma generate
             pnpm prisma db push
+
+      # 5️⃣ Build l'application Next.js
+      - name: Build application
+        run: pnpm run build
 
       # 8️⃣ Redémarrer PM2
       - name: Restart PM2
