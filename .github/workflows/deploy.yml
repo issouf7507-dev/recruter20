@@ -1,9 +1,8 @@
-# -old deploys
 name: Deploy to VPS
 
 on:
   push:
-    branches: [dev-issouf]
+    branches: [dev-issssouf]
   workflow_dispatch:
 
 jobs:
@@ -17,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "18"
           cache: ""
 
       - name: Enable pnpm via Corepack
@@ -32,69 +31,60 @@ jobs:
         run: pnpm prisma generate
 
       - name: Build application
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-          BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
-          EDGE_STORE_ACCESS_KEY: ${{ secrets.EDGE_STORE_ACCESS_KEY }}
-          EDGE_STORE_SECRET_KEY: ${{ secrets.EDGE_STORE_SECRET_KEY }}
-          SMTP_HOST: ${{ secrets.SMTP_HOST }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
-          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
-          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-          LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
-          LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
-          LINKEDIN_REDIRECT_URI: ${{ secrets.LINKEDIN_REDIRECT_URI }}
-          SOCKET_PORT: ${{ secrets.SOCKET_PORT }}
-          NEXT_PUBLIC_SOCKET_URL: ${{ secrets.NEXT_PUBLIC_SOCKET_URL }}
-          SOCKET_SERVER_URL: ${{ secrets.SOCKET_SERVER_URL }}
         run: pnpm run build
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{secrets.VPS_HOST}}
-          username: ${{ secrets.VPS_USERNAME }}
+          host: 321.97.193.80
+          username: dev-issouf
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
-          port: ${{ secrets.VPS_PORT }}
+          port: 22
 
           script: |
-            # Naviguer vers le répertoire du projet
-            cd /home/deploy_recruter/apps/recruter
+            # --- CORRECTION DE L'ERREUR PNPM: COMMAND NOT FOUND ---
+            # Ajoute le chemin d'accès global de pnpm (où il a été installé via nvm) au PATH.
+            # C'est nécessaire car l'environnement SSH non-interactif n'a pas ce PATH par défaut.
+            export PATH="$HOME/.nvm/versions/node/v22.17.0/bin:$PATH"
+            # Alternative: utiliser le chemin global de Node.js
+            export PATH="/usr/bin:$PATH"
+            # -----------------------------------------------------
 
-            echo "SSH OK"
+            # Créer le répertoire projects si nécessaire
+            mkdir -p /home/dev-issouf/projects
+            cd /home/dev-issouf/projects
 
-            # Sauvegarder l'ancienne version
-            if [ -d "current" ]; then
-              mv current backup-$(date +%Y%m%d-%H%M%S)
+            # Créer le répertoire du projet si nécessaire
+            mkdir -p recruteur20
+            cd recruteur20
+
+            # Initialiser le dépôt Git si nécessaire
+            if [ ! -d ".git" ]; then
+              git init
+              git remote add origin https://github.com/${{ github.repository }}.git
+              git fetch origin dev-issouf
+              git checkout -b dev-issouf origin/dev-issouf
+            else
+              # Récupérer les dernières modifications depuis GitHub
+              git fetch origin dev-issouf
+              git reset --hard origin/dev-issouf
+              git clean -fd
             fi
 
-            # Créer le répertoire de déploiement
-            mkdir -p current
-
-            # Cloner le code depuis GitHub
-            git clone -b dev-issouf https://github.com/${{ github.repository }}.git temp-deploy
-
-            # Copier les fichiers nécessaires
-            cp -r temp-deploy/* current/
-            cp -r temp-deploy/.* current/ 2>/dev/null || true
-
-            # Nettoyer
-            rm -rf temp-deploy
-
-            # Naviguer vers le répertoire de déploiementS
-            cd current
+            # Sauvegarder l'ancienne version si elle existe
+            if [ -d ".next" ]; then
+              mkdir -p backups
+              tar -czf backups/backup-$(date +%Y%m%d-%H%M%S).tar.gz .next node_modules 2>/dev/null || true
+            fi
 
             # Installer les dépendances
             pnpm install --frozen-lockfile
 
-
             # Générer le client Prisma
             pnpm prisma generate
 
-            # Construire l'applications
+            # Construire l'application
             pnpm run build
 
             # Vérifier que le build existe
@@ -113,298 +103,23 @@ jobs:
             # Démarrer le service PM2 sur le port 3000
             # pm2 start "pnpm start -- -p 3000" --name recruter
 
+
+            # Charger les variables d'environnement depuis .env.production si elles existent
+            if [ -f ".env.production" ]; then
+              export $(cat .env.production | grep -v '^#' | xargs)
+            fi
+
             # Démarrer le service PM2 avec le fichier de configuration
             pm2 start ecosystem.config.js
+
 
             # Sauvegarder la configuration PM2
             pm2 save
 
             # Nettoyer les anciennes sauvegardes (garder les 5 plus récentes)
-            cd /home/deploy_recruter/apps/recruter
-            ls -t backup-* | tail -n +6 | xargs -r rm -rf
+            if [ -d "backups" ]; then
+              cd backups
+              ls -t backup-*.tar.gz 2>/dev/null | tail -n +6 | xargs -r rm -f 2>/dev/null || true
+            fi
 
             echo "Déploiement terminé avec succès!"
-
-# name: Deploy to VPS
-
-# on:
-#   push:
-#     branches: [dev-issouf]
-#   workflow_dispatch:
-
-# jobs:
-#   deploy:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#       # 1️⃣ Checkout du code
-#       - name: Checkout repository
-#         uses: actions/checkout@v4
-
-#       # 2️⃣ Setup Node.js
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: "20"
-#           cache: ""
-
-#       # 3️⃣ Enable pnpm via Corepack
-#       - name: Enable pnpm via Corepack
-#         run: |
-#           corepack enable
-#           corepack prepare pnpm@latest --activate
-
-#       # 4️⃣ Installer les dépendances et générer Prisma client
-#       - name: Install dependencies & Generate Prisma client
-#         run: |
-#           pnpm install --frozen-lockfile
-#           pnpm prisma generate
-#         env:
-#           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-#           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-#           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-#           BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
-#           EDGE_STORE_ACCESS_KEY: ${{ secrets.EDGE_STORE_ACCESS_KEY }}
-#           EDGE_STORE_SECRET_KEY: ${{ secrets.EDGE_STORE_SECRET_KEY }}
-#           SMTP_HOST: ${{ secrets.SMTP_HOST }}
-#           SMTP_PORT: ${{ secrets.SMTP_PORT }}
-#           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
-#           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-#           LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
-#           LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
-#           LINKEDIN_REDIRECT_URI: ${{ secrets.LINKEDIN_REDIRECT_URI }}
-#           SOCKET_PORT: ${{ secrets.SOCKET_PORT }}
-#           NEXT_PUBLIC_SOCKET_URL: ${{ secrets.NEXT_PUBLIC_SOCKET_URL }}
-#           SOCKET_SERVER_URL: ${{ secrets.SOCKET_SERVER_URL }}
-
-#       # 5️⃣ Build l'application Next.js
-#       - name: Build application
-#         run: pnpm run build
-#         env:
-#           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-#           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-#           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-#           BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
-#           EDGE_STORE_ACCESS_KEY: ${{ secrets.EDGE_STORE_ACCESS_KEY }}
-#           EDGE_STORE_SECRET_KEY: ${{ secrets.EDGE_STORE_SECRET_KEY }}
-#           SMTP_HOST: ${{ secrets.SMTP_HOST }}
-#           SMTP_PORT: ${{ secrets.SMTP_PORT }}
-#           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
-#           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-#           LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
-#           LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
-#           LINKEDIN_REDIRECT_URI: ${{ secrets.LINKEDIN_REDIRECT_URI }}
-#           SOCKET_PORT: ${{ secrets.SOCKET_PORT }}
-#           NEXT_PUBLIC_SOCKET_URL: ${{ secrets.NEXT_PUBLIC_SOCKET_URL }}
-#           SOCKET_SERVER_URL: ${{ secrets.SOCKET_SERVER_URL }}
-
-#       # 6️⃣ Synchroniser le build sur le VPS via rsync
-#       - name: Deploy build to VPS
-#         uses: burnett01/rsync-deployments@7.0.1
-#         with:
-#           switches: -avz --delete
-#           path: |
-#             .next/
-#             public/
-#             package.json
-#             pnpm-lock.yaml
-#             ecosystem.config.js
-#             prisma/
-#           remote_path: /home/deploy_recruter/apps/recruter/current
-#           remote_host: ${{ secrets.VPS_HOST }}
-#           remote_user: ${{ secrets.VPS_USERNAME }}
-#           remote_key: ${{ secrets.VPS_SSH_KEY }}
-#           remote_port: ${{ secrets.VPS_PORT }}
-#           legacy_allow_rsa_hostkeys: false
-
-#       # 7️⃣ Installer les dépendances sur le serveur (uniquement production)
-#       - name: Install dependencies on VPS
-#         uses: appleboy/ssh-action@v1.0.3
-#         with:
-#           host: ${{ secrets.VPS_HOST }}
-#           username: ${{ secrets.VPS_USERNAME }}
-#           key: ${{ secrets.VPS_SSH_KEY }}
-#           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
-#           port: ${{ secrets.VPS_PORT }}
-#           script: |
-#             cd /home/deploy_recruter/apps/recruter/current
-
-#             cat > .env.production <<EOF
-#             DATABASE_URL="${{ secrets.DATABASE_URL }}"
-#             BETTER_AUTH_SECRET="${{ secrets.BETTER_AUTH_SECRET }}"
-#             BETTER_AUTH_URL="${{ secrets.BETTER_AUTH_URL }}"
-#             EDGE_STORE_ACCESS_KEY="${{ secrets.EDGE_STORE_ACCESS_KEY }}"
-#             EDGE_STORE_SECRET_KEY="${{ secrets.EDGE_STORE_SECRET_KEY }}"
-#             SMTP_HOST="${{ secrets.SMTP_HOST }}"
-#             SMTP_PORT="${{ secrets.SMTP_PORT }}"
-#             SMTP_USERNAME="${{ secrets.SMTP_USERNAME }}"
-#             SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}"
-#             LINKEDIN_CLIENT_ID="${{ secrets.LINKEDIN_CLIENT_ID }}"
-#             LINKEDIN_CLIENT_SECRET="${{ secrets.LINKEDIN_CLIENT_SECRET }}"
-#             LINKEDIN_REDIRECT_URI="${{ secrets.LINKEDIN_REDIRECT_URI }}"
-#             NEXT_PUBLIC_APP_URL="${{ secrets.NEXT_PUBLIC_APP_URL }}"
-#             SOCKET_PORT="${{ secrets.SOCKET_PORT }}"
-#             NEXT_PUBLIC_SOCKET_URL="${{ secrets.NEXT_PUBLIC_SOCKET_URL }}"
-#             SOCKET_SERVER_URL="${{ secrets.SOCKET_SERVER_URL }}"
-#             EOF
-
-#             chown ${{ secrets.VPS_USERNAME }}:${{ secrets.VPS_USERNAME }} .env.production
-#             chmod 600 .env.production
-
-#             pnpm install --prod --frozen-lockfile
-#             pnpm prisma generate
-
-#       # 8️⃣ Redémarrer PM2
-#       - name: Restart PM2
-#         uses: appleboy/ssh-action@v1.0.3
-#         with:
-#           host: ${{ secrets.VPS_HOST }}
-#           username: ${{ secrets.VPS_USERNAME }}
-#           key: ${{ secrets.VPS_SSH_KEY }}
-#           port: ${{ secrets.VPS_PORT }}
-#           script: |
-#             cd /home/deploy_recruter/apps/recruter/current
-#             pm2 reload ecosystem.config.js --env production
-#             pm2 save
-
-#       # 9️⃣ Nettoyage des anciennes sauvegardes (optionnel)
-#       - name: Cleanup old backups
-#         uses: appleboy/ssh-action@v1.0.3
-#         with:
-#           host: ${{ secrets.VPS_HOST }}
-#           username: ${{ secrets.VPS_USERNAME }}
-#           key: ${{ secrets.VPS_SSH_KEY }}
-#           port: ${{ secrets.VPS_PORT }}
-#           script: |
-#             cd /home/deploy_recruter/apps/recruter
-#             ls -t backup-* 2>/dev/null | tail -n +6 | xargs -r rm -rf
-
-#       # ✅ Confirmation
-#       - name: Deployment complete
-#         run: echo "✅ Déploiement terminé avec succès !"
-# # new deploy
-# # name: Deploy to VPS
-
-# # on:
-# #   push:
-# #     branches: [dev-issouf]
-# #   workflow_dispatch:
-
-# # jobs:
-# #   deploy:
-# #     runs-on: ubuntu-latest
-
-# #     steps:
-# #       # 1️⃣ Checkout du code
-# #       - name: Checkout repository
-# #         uses: actions/checkout@v4
-
-# #       # 2️⃣ Setup Node.js
-# #       - name: Setup Node.js
-# #         uses: actions/setup-node@v4
-# #         with:
-# #           node-version: "20"
-# #           cache: ""
-
-# #       # 3️⃣ Enable pnpm via Corepack
-# #       - name: Enable pnpm via Corepack
-# #         run: |
-# #           corepack enable
-# #           corepack prepare pnpm@latest --activate
-
-# #       # 4️⃣ Installer les dépendances et générer Prisma
-# #       - name: Install dependencies & Generate Prisma client
-# #         run: |
-# #           pnpm install --frozen-lockfile
-
-# #       # 5️⃣ Build l'application Next.js
-# #       - name: Build application
-# #         run: pnpm run build
-
-# #       # 6️⃣ Synchroniser le build sur le VPS via rsync
-# #       - name: Deploy build to VPS
-# #         uses: burnett01/rsync-deployments@7.0.1
-# #         with:
-# #           switches: -avz --delete
-# #           path: |
-# #             .next/
-# #             public/
-# #             package.json
-# #             pnpm-lock.yaml
-# #             ecosystem.config.js
-# #           remote_path: /home/deploy_recruter/apps/recruter/current
-# #           remote_host: ${{ secrets.VPS_HOST }}
-# #           remote_user: ${{ secrets.VPS_USERNAME }}
-# #           remote_key: ${{ secrets.VPS_SSH_KEY }}
-# #           # remote_passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
-# #           remote_port: ${{ secrets.VPS_PORT }}
-
-# #       # 7️⃣ Installer les dépendances sur le serveur (uniquement production)
-# #       - name: Install dependencies on VPS
-# #         uses: appleboy/ssh-action@v1.0.3
-# #         with:
-# #           host: ${{ secrets.VPS_HOST }}
-# #           username: ${{ secrets.VPS_USERNAME }}
-# #           key: ${{ secrets.VPS_SSH_KEY }}
-# #           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
-# #           port: ${{ secrets.VPS_PORT }}
-# #           script: |
-# #             cd /home/deploy_recruter/apps/recruter/current
-
-# #             cat > .env.production <<EOF
-# #             DATABASE_URL="${{ secrets.DATABASE_URL }}"
-# #             BETTER_AUTH_SECRET="${{ secrets.BETTER_AUTH_SECRET }}"
-# #             # GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"
-# #             # GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}"
-# #             BETTER_AUTH_URL="${{ secrets.BETTER_AUTH_URL }}"
-# #             EDGE_STORE_ACCESS_KEY="${{ secrets.EDGE_STORE_ACCESS_KEY }}"
-# #             EDGE_STORE_SECRET_KEY="${{ secrets.EDGE_STORE_SECRET_KEY }}"
-# #             SMTP_HOST="${{ secrets.SMTP_HOST }}"
-# #             SMTP_PORT="${{ secrets.SMTP_PORT }}"
-# #             SMTP_USERNAME="${{ secrets.SMTP_USERNAME }}"
-# #             SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}"
-# #             LINKEDIN_CLIENT_ID="${{ secrets.LINKEDIN_CLIENT_ID }}"
-# #             LINKEDIN_CLIENT_SECRET="${{ secrets.LINKEDIN_CLIENT_SECRET }}"
-# #             LINKEDIN_REDIRECT_URI="${{ secrets.LINKEDIN_REDIRECT_URI }}"
-# #             NEXT_PUBLIC_APP_URL="${{ secrets.NEXT_PUBLIC_APP_URL }}"
-# #             SOCKET_PORT="${{ secrets.SOCKET_PORT }}"
-# #             NEXT_PUBLIC_SOCKET_URL="${{ secrets.NEXT_PUBLIC_SOCKET_URL }}"
-# #             SOCKET_SERVER_URL="${{ secrets.SOCKET_SERVER_URL }}"
-# #             EOF
-
-# #             # changer le propriétaire et les permissions du fichier .env.production
-# #             chown ${{ secrets.VPS_USERNAME }}:${{ secrets.VPS_USERNAME }} .env.production
-# #             chmod 600 .env.production
-
-# #             # installer les dépendances
-# #             cd /home/deploy_recruter/apps/recruter/current
-# #             pnpm install --prod --frozen-lockfile
-
-# #       # 8️⃣ Redémarrer PM2
-# #       - name: Restart PM2
-# #         uses: appleboy/ssh-action@v1.0.3
-# #         with:
-# #           host: ${{ secrets.VPS_HOST }}
-# #           username: ${{ secrets.VPS_USERNAME }}
-# #           key: ${{ secrets.VPS_SSH_KEY }}
-# #           port: ${{ secrets.VPS_PORT }}
-# #           script: |
-# #             cd /home/deploy_recruter/apps/recruter/current
-# #             pm2 reload ecosystem.config.js --env production
-# #             pm2 save
-
-# #       # 9️⃣ Nettoyage des anciennes sauvegardes (optionnel)
-# #       - name: Cleanup old backups
-# #         uses: appleboy/ssh-action@v1.0.3
-# #         with:
-# #           host: ${{ secrets.VPS_HOST }}
-# #           username: ${{ secrets.VPS_USERNAME }}
-# #           key: ${{ secrets.VPS_SSH_KEY }}
-# #           port: ${{ secrets.VPS_PORT }}
-# #           script: |
-# #             cd /home/deploy_recruter/apps/recruter
-# #             ls -t backup-* 2>/dev/null | tail -n +6 | xargs -r rm -rf
-
-# #       # ✅ Confirmation
-# #       - name: Deployment complete
-# #         run: echo "✅ Déploiement terminé avec succès !"
