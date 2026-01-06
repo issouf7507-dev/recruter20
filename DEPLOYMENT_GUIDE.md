@@ -167,12 +167,16 @@ chmod 600 ~/.ssh/authorized_keys
 
 ### 3. Configurer les secrets GitHub
 
-1. Allez sur votre dépôt GitHub
+1. Allez sur votre dépôt GitHub : `https://github.com/recruter20/recruteur20`
 2. **Settings** → **Secrets and variables** → **Actions**
 3. Ajoutez les secrets suivants :
 
 - **VPS_SSH_KEY** : Contenu complet de `~/.ssh/github_actions_deploy` (clé privée)
 - **VPS_SSH_PASSPHRASE** : Passphrase de la clé (si vous en avez mis une, sinon laissez vide)
+- **BETTER_AUTH_SECRET** : Clé secrète pour Better Auth (générez avec `openssl rand -base64 32`)
+- **NEXT_PUBLIC_APP_URL** : `https://ylsix.com` (optionnel, valeur par défaut utilisée si non défini)
+
+**📚 Voir `GITHUB_SECRETS_SETUP.md` pour les instructions détaillées**
 
 ## 🚀 Premier Déploiement
 
