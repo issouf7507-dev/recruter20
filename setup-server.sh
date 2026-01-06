@@ -22,14 +22,14 @@ sudo npm install -g pm2
 echo "📦 Installation de Git..."
 sudo apt install git -y
 
-# Créer les répertoires nécessaires
+# Créer les répertoires nécessaires dans le home de l'utilisateur
 echo "📁 Création des répertoires..."
-sudo mkdir -p /var/www/webapp/recruter/{current,backups,temp,logs}
-sudo chown -R $USER:$USER /var/www/webapp/recruter
+mkdir -p ~/projects/recruteur20/backups
+mkdir -p ~/.pm2/logs
 
-# Rendre le script de déploiement exécutable
-echo "🔧 Configuration des permissions..."
-chmod +x /var/www/webapp/recruter/deploy.sh
+# Installer pnpm globalement
+echo "📦 Installation de pnpm..."
+npm install -g pnpm
 
 # Configurer PM2 pour démarrer au boot
 echo "⚙️ Configuration de PM2..."
@@ -42,27 +42,42 @@ sudo apt install nginx -y
 
 # Configurer Nginx
 echo "⚙️ Configuration de Nginx..."
-sudo tee /etc/nginx/sites-available/recruter << EOF
+sudo tee /etc/nginx/sites-available/recruteur20 << 'EOF'
 server {
     listen 80;
-    server_name ylsix.com;
+    server_name ylsix.com www.ylsix.com;
+
+    client_max_body_size 50M;
+
+    access_log /var/log/nginx/recruteur20-access.log;
+    error_log /var/log/nginx/recruteur20-error.log;
 
     location / {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_cache_bypass \$http_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    location /_next/static {
+        proxy_pass http://localhost:3000;
+        proxy_cache_valid 200 60m;
+        add_header Cache-Control "public, immutable";
     }
 }
 EOF
 
 # Activer le site
-sudo ln -s /etc/nginx/sites-available/recruter /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/recruteur20 /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl restart nginx
 
@@ -73,8 +88,15 @@ sudo ufw allow 80
 sudo ufw allow 443
 sudo ufw --force enable
 
-echo "✅ Configuration du serveur terminée! c est bon"
+# Installer Certbot pour SSL (optionnel, mais recommandé)
+echo "📦 Installation de Certbot pour SSL..."
+sudo apt install certbot python3-certbot-nginx -y
+
+echo "✅ Configuration du serveur terminée!"
 echo "📝 Prochaines étapes:"
-echo "1. Configurez les secrets GitHub Actions"
-echo "2. Configurez le webhook GitHub"
-echo "3. Testez le déploiement" 
+echo "1. Configurez votre DNS pour pointer ylsix.com vers 321.97.193.80"
+echo "2. Configurez les secrets GitHub Actions (VPS_SSH_KEY et VPS_SSH_PASSPHRASE)"
+echo "3. Créez le fichier .env.production dans ~/projects/recruteur20/ avec vos variables d'environnement"
+echo "4. Configurez MySQL et créez la base de données"
+echo "5. Configurez SSL avec: sudo certbot --nginx -d ylsix.com -d www.ylsix.com"
+echo "6. Testez le déploiement en poussant sur la branche dev-issouf" 
