@@ -88,10 +88,10 @@ jobs:
             cd current
 
             # Installer les dépendances
-            # pnpm install --frozen-lockfile
+            pnpm install --frozen-lockfile
 
             # Construire l'applications
-            # pnpm run build
+            pnpm run build
 
             # Vérifier que le build existe
             if [ ! -d ".next" ]; then
