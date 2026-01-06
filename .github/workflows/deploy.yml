@@ -1,4 +1,4 @@
-# old deploys
+# -old deploys
 name: Deploy to VPS
 
 on:
