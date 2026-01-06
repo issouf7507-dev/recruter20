@@ -7,24 +7,29 @@ Ce document explique comment configurer les secrets nécessaires pour le déploi
 ### 1. Secrets pour la connexion SSH au serveur
 
 #### `VPS_SSH_KEY`
+
 - **Description** : Clé privée SSH pour se connecter au serveur
 - **Comment l'obtenir** :
+
   ```bash
   # Sur votre machine locale, générer une clé SSH
   ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/github_actions_deploy
-  
+
   # Afficher la clé privée (à copier dans GitHub Secrets)
   cat ~/.ssh/github_actions_deploy
   ```
+
 - **Important** : Copiez TOUT le contenu, y compris les lignes `-----BEGIN OPENSSH PRIVATE KEY-----` et `-----END OPENSSH PRIVATE KEY-----`
 
 #### `VPS_SSH_PASSPHRASE`
+
 - **Description** : Passphrase de la clé SSH (si vous en avez mis une)
 - **Valeur** : Votre passphrase, ou laissez vide si vous n'en avez pas mis
 
 ### 2. Secrets pour le build de l'application
 
 #### `BETTER_AUTH_SECRET`
+
 - **Description** : Clé secrète pour Better Auth (authentification)
 - **Comment la générer** :
   ```bash
@@ -34,6 +39,7 @@ Ce document explique comment configurer les secrets nécessaires pour le déploi
 - **Important** : Utilisez la MÊME valeur que celle dans votre `.env.production` sur le serveur
 
 #### `NEXT_PUBLIC_APP_URL` (Optionnel)
+
 - **Description** : URL publique de votre application
 - **Valeur** : `https://ylsix.com`
 - **Note** : Si non défini, la valeur par défaut `https://ylsix.com` sera utilisée
@@ -50,6 +56,7 @@ Ce document explique comment configurer les secrets nécessaires pour le déploi
 ## ✅ Vérification
 
 Après avoir configuré les secrets, le workflow GitHub Actions devrait pouvoir :
+
 - ✅ Se connecter au serveur via SSH
 - ✅ Builder l'application sans erreur `BETTER_AUTH_SECRET`
 - ✅ Déployer automatiquement sur le serveur
@@ -62,21 +69,22 @@ Après avoir configuré les secrets, le workflow GitHub Actions devrait pouvoir 
 
 ## 📝 Liste Complète des Secrets
 
-| Secret | Requis | Description |
-|--------|--------|-------------|
-| `VPS_SSH_KEY` | ✅ Oui | Clé privée SSH |
-| `VPS_SSH_PASSPHRASE` | ⚠️ Si applicable | Passphrase de la clé SSH |
-| `BETTER_AUTH_SECRET` | ✅ Oui | Secret pour Better Auth |
-| `NEXT_PUBLIC_APP_URL` | ⚠️ Optionnel | URL de l'application (défaut: https://ylsix.com) |
+| Secret                | Requis           | Description                                      |
+| --------------------- | ---------------- | ------------------------------------------------ |
+| `VPS_SSH_KEY`         | ✅ Oui           | Clé privée SSH                                   |
+| `VPS_SSH_PASSPHRASE`  | ⚠️ Si applicable | Passphrase de la clé SSH                         |
+| `BETTER_AUTH_SECRET`  | ✅ Oui           | Secret pour Better Auth                          |
+| `NEXT_PUBLIC_APP_URL` | ⚠️ Optionnel     | URL de l'application (défaut: https://ylsix.com) |
 
 ## 🐛 Dépannage
 
 ### Erreur "BETTER_AUTH_SECRET not found"
+
 - Vérifiez que le secret `BETTER_AUTH_SECRET` est bien configuré dans GitHub
 - Vérifiez que le nom du secret est exactement `BETTER_AUTH_SECRET` (sensible à la casse)
 
 ### Erreur de connexion SSH
+
 - Vérifiez que `VPS_SSH_KEY` contient bien toute la clé privée (avec les en-têtes)
 - Vérifiez que la clé publique correspondante est dans `~/.ssh/authorized_keys` sur le serveur
 - Testez la connexion manuellement : `ssh -i ~/.ssh/github_actions_deploy dev-issouf@321.97.193.80`
-

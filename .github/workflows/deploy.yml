@@ -87,12 +87,17 @@ jobs:
             # Générer le client Prisma
             pnpm prisma generate
 
-            # Charger les variables d'environnement depuis .env.production pour le build
-            if [ -f ".env.production" ]; then
-              export $(grep -v '^#' .env.production | xargs)
+            # Vérifier que .env.production existe, sinon créer un fichier temporaire avec les variables minimales
+            if [ ! -f ".env.production" ]; then
+              echo "⚠️  .env.production n'existe pas, création d'un fichier temporaire pour le build..."
+              echo "NODE_ENV=production" > .env.production
+              echo "NEXT_PUBLIC_APP_URL=https://ylsix.com" >> .env.production
+              echo "BETTER_AUTH_SECRET=temp-secret-please-configure" >> .env.production
+              echo "BETTER_AUTH_URL=https://ylsix.com" >> .env.production
+              echo "⚠️  ATTENTION: Configurez .env.production avec les vraies valeurs avant de démarrer l'application!"
             fi
 
-            # Construire l'application
+            # Construire l'application (Next.js chargera automatiquement .env.production)
             pnpm run build
 
             # Vérifier que le build existe
@@ -112,12 +117,8 @@ jobs:
             # pm2 start "pnpm start -- -p 3000" --name recruter
 
 
-            # Charger les variables d'environnement depuis .env.production si elles existent
-            if [ -f ".env.production" ]; then
-              export $(cat .env.production | grep -v '^#' | xargs)
-            fi
-
             # Démarrer le service PM2 avec le fichier de configuration
+            # PM2 chargera automatiquement les variables depuis .env.production via env_file dans ecosystem.config.js
             pm2 start ecosystem.config.js
 
 
