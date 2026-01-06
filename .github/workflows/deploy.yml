@@ -90,6 +90,10 @@ jobs:
             # Installer les dépendances
             pnpm install --frozen-lockfile
 
+
+            # Générer le client Prisma
+            pnpm prisma generate
+
             # Construire l'applications
             pnpm run build
 
