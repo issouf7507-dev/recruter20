@@ -27,7 +27,7 @@ jobs:
           corepack enable
           corepack prepare pnpm@latest --activate
 
-      # 4️⃣ Installer les dépendances et générer Prismas
+      # 4️⃣ Installer les dépendances et générer Prism
       - name: Install dependencies & Generate Prisma client
         run: |
           pnpm install --frozen-lockfile
