@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "20"
           cache: ""
 
       - name: Enable pnpm via Corepack
@@ -44,11 +44,11 @@ jobs:
 
           script: |
             # --- CORRECTION DE L'ERREUR PNPM: COMMAND NOT FOUND ---
-            # Ajoute le chemin d'accès global de pnpm (où il a été installé via nvm) au PATH.
+            # Ajoute le chemin d'accès global de Node.js et pnpm au PATH.
             # C'est nécessaire car l'environnement SSH non-interactif n'a pas ce PATH par défaut.
-            export PATH="$HOME/.nvm/versions/node/v22.17.0/bin:$PATH"
-            # Alternative: utiliser le chemin global de Node.js
+            # Node.js est installé globalement via apt, donc on utilise /usr/bin
             export PATH="/usr/bin:$PATH"
+            # Si pnpm est installé via npm globalement, il sera dans /usr/bin aussi
             # -----------------------------------------------------
 
             # Créer le répertoire projects si nécessaire

@@ -103,7 +103,7 @@ sudo systemctl status nginx
 ⚠️ **Le script fait les actions suivantes :**
 
 - Met à jour le système
-- Installe Node.js 18
+- Installe Node.js 20.x LTS
 - Installe PM2
 - Installe Git
 - Crée les répertoires nécessaires

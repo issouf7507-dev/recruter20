@@ -7,7 +7,7 @@ Ce guide explique comment déployer l'application Next.js sur votre serveur Linu
 - Serveur Linux avec IP: `321.97.193.80`
 - Accès root pour la configuration initiale
 - MySQL installé et configuré
-- Node.js 18+ installé
+- Node.js 20.x LTS (sera installé automatiquement par le script)
 - Git installé
 
 ## 🚀 Configuration Initiale du Serveur
@@ -44,7 +44,7 @@ ssh dev-issouf@321.97.193.80
 mkdir -p ~/projects
 
 # Cloner le dépôt (ou copier le script setup-server.sh)
-git clone -b dev-issouf https://github.com/VOTRE_REPO/recruteur20.git ~/projects/recruteur20
+git clone -b dev-issouf https://github.com/recruter20/recruteur20.git ~/projects/recruteur20
 
 # Rendre le script exécutable
 chmod +x ~/projects/recruteur20/setup-server.sh
