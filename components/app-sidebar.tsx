@@ -13,7 +13,6 @@ import {
   IconLayoutKanban,
   IconMail,
   IconMoon,
-  IconCheck,
   IconSettings,
   IconShare,
   IconSun,
