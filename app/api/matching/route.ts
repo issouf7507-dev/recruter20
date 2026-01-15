@@ -9,20 +9,58 @@ import {
   type JobOfferForMatching,
 } from "@/lib/matching/scoring";
 
+// ✅ Cache simple en mémoire (durée: 5 minutes)
+interface CacheEntry {
+  data: any;
+  timestamp: number;
+}
+
+const matchingCache = new Map<string, CacheEntry>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+function getCacheKey(recruteurId: string, minScore: number): string {
+  return `${recruteurId}-${minScore}`;
+}
+
+function getFromCache(key: string): any | null {
+  const entry = matchingCache.get(key);
+  if (!entry) return null;
+
+  const age = Date.now() - entry.timestamp;
+  if (age > CACHE_DURATION) {
+    matchingCache.delete(key);
+    return null;
+  }
+
+  console.log(`[CACHE] Hit pour ${key} (age: ${Math.round(age / 1000)}s)`);
+  return entry.data;
+}
+
+function setCache(key: string, data: any): void {
+  matchingCache.set(key, {
+    data,
+    timestamp: Date.now(),
+  });
+  console.log(`[CACHE] Mise en cache de ${key}`);
+}
+
+// Nettoyer le cache toutes les 10 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of matchingCache.entries()) {
+    if (now - entry.timestamp > CACHE_DURATION) {
+      matchingCache.delete(key);
+    }
+  }
+}, 10 * 60 * 1000);
+
 /**
- * GET /api/matching
- * Récupérer les matchs pour une offre spécifique
- *
- * Query params:
- * - offerId: ID de l'offre (requis)
- * - minScore: Score minimum (défaut: 30)
- * - limit: Nombre de résultats (défaut: 20)
+ * GET /api/matching?offerId=xxx
+ * Matching pour une offre spécifique
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
+    const session = await auth.api.getSession({ headers: request.headers });
 
     if (!session || !session.user) {
       return NextResponse.json(
@@ -31,7 +69,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Vérifier que l'utilisateur est un recruteur
     const recruteur = await recruteurRepository.findByUserId(session.user.id);
     const collaborateur = await collaborateurRepository.findByUserId(
       session.user.id
@@ -57,12 +94,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // ✅ Vérifier le cache
+    const cacheKey = `single-${recruteurId}-${offerId}-${minScore}`;
+    const cached = getFromCache(cacheKey);
+    if (cached) {
+      return NextResponse.json({ success: true, data: cached, cached: true });
+    }
+
     // Récupérer l'offre
     const offre = await prisma.jobOffer.findFirst({
-      where: {
-        id: offerId,
-        recruteurId: recruteurId,
-      },
+      where: { id: offerId, recruteurId },
     });
 
     if (!offre) {
@@ -72,38 +113,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Récupérer tous les candidats avec leurs données complètes
-    // Ordre déterministe pour éviter des résultats aléatoires
+    // Récupérer candidats (ordre déterministe)
     const candidats = await prisma.candidat.findMany({
       include: {
-        user: {
-          select: {
-            email: true,
-            name: true,
-          },
-        },
+        user: { select: { email: true, name: true } },
         candidatCompetences: true,
         competencesList: true,
         experiences: {
-          include: {
-            experienceCompetences: true,
-          },
-          orderBy: {
-            dateDebut: "desc",
-          },
+          include: { experienceCompetences: true },
+          orderBy: { dateDebut: "desc" },
         },
-        formations: {
-          orderBy: {
-            dateDebut: "desc",
-          },
-        },
+        formations: { orderBy: { dateDebut: "desc" } },
         niveauEtude: true,
         certifications: true,
       },
       orderBy: [{ nom: "asc" }, { prenom: "asc" }],
     });
 
-    // Préparer les données pour le matching
     const candidatsForMatching: CandidatForMatching[] = candidats.map((c) => ({
       id: c.id,
       nom: c.nom,
@@ -135,7 +161,6 @@ export async function GET(request: NextRequest) {
       user: c.user,
     }));
 
-    // L'offre contient toutes les infos dans description
     const offreForMatching: JobOfferForMatching = {
       id: offre.id,
       title: offre.title,
@@ -145,26 +170,27 @@ export async function GET(request: NextRequest) {
       type: offre.type,
     };
 
-    // Calculer les matchs
     const matches = calculateMatches(candidatsForMatching, offreForMatching, {
       minScore,
       limit,
     });
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        offre: {
-          id: offre.id,
-          title: offre.title,
-          company: offre.company,
-          location: offre.location,
-        },
-        matches,
-        totalCandidats: candidats.length,
-        matchesCount: matches.length,
+    const result = {
+      offre: {
+        id: offre.id,
+        title: offre.title,
+        company: offre.company,
+        location: offre.location,
       },
-    });
+      matches,
+      totalCandidats: candidats.length,
+      matchesCount: matches.length,
+    };
+
+    // ✅ Mettre en cache
+    setCache(cacheKey, result);
+
+    return NextResponse.json({ success: true, data: result });
   } catch (error) {
     console.error("Error calculating matches:", error);
     return NextResponse.json(
@@ -176,13 +202,11 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/matching
- * Récupérer les matchs pour toutes les offres actives du recruteur
+ * Matching pour toutes les offres actives
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
+    const session = await auth.api.getSession({ headers: request.headers });
 
     if (!session || !session.user) {
       return NextResponse.json(
@@ -207,7 +231,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { minScore = 50, limitPerOffer = 5 } = body;
 
-    // Récupérer toutes les offres actives du recruteur
+    // ✅ Vérifier le cache
+    const cacheKey = getCacheKey(recruteurId, minScore);
+    const cached = getFromCache(cacheKey);
+    if (cached) {
+      console.log("[MATCHING] Retour depuis cache");
+      return NextResponse.json({ success: true, data: cached, cached: true });
+    }
+
+    console.log("[MATCHING] Calcul des matchs (non caché)...");
+
+    // Récupérer offres actives (limite à 10 pour performance)
     const offres = await prisma.jobOffer.findMany({
       where: {
         recruteurId,
@@ -215,42 +249,28 @@ export async function POST(request: NextRequest) {
         deletedAt: null,
       },
       include: {
-        _count: {
-          select: {
-            applications: true,
-          },
-        },
+        _count: { select: { applications: true } },
       },
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: 5,
+      orderBy: { createdAt: "desc" },
+      take: 10,
     });
 
-    // Récupérer tous les candidats (ordre déterministe)
+    // Récupérer candidats (ordre déterministe)
     const candidats = await prisma.candidat.findMany({
       include: {
-        user: {
-          select: {
-            email: true,
-            name: true,
-          },
-        },
+        user: { select: { email: true, name: true } },
         candidatCompetences: true,
         competencesList: true,
         experiences: {
-          include: {
-            experienceCompetences: true,
-          },
+          include: { experienceCompetences: true },
+          orderBy: { dateDebut: "desc" },
         },
-        formations: true,
+        formations: { orderBy: { dateDebut: "desc" } },
         niveauEtude: true,
         certifications: true,
       },
       orderBy: [{ nom: "asc" }, { prenom: "asc" }],
     });
-
-    console.log("candidats", candidats);
 
     const candidatsForMatching: CandidatForMatching[] = candidats.map((c) => ({
       id: c.id,
@@ -283,9 +303,7 @@ export async function POST(request: NextRequest) {
       user: c.user,
     }));
 
-    // Calculer les matchs pour chaque offre
     const results = offres.map((offre) => {
-      // L'offre contient toutes les infos dans description
       const offreForMatching: JobOfferForMatching = {
         id: offre.id,
         title: offre.title,
@@ -319,18 +337,74 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        results,
-        totalOffers: offres.length,
-        totalCandidats: candidats.length,
-      },
-    });
+    const responseData = {
+      results,
+      totalOffers: offres.length,
+      totalCandidats: candidats.length,
+    };
+
+    // ✅ Mettre en cache
+    setCache(cacheKey, responseData);
+
+    return NextResponse.json({ success: true, data: responseData });
   } catch (error) {
     console.error("Error calculating matches:", error);
     return NextResponse.json(
       { success: false, error: "Failed to calculate matches" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/matching
+ * Invalider le cache
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await auth.api.getSession({ headers: request.headers });
+
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const recruteur = await recruteurRepository.findByUserId(session.user.id);
+    const collaborateur = await collaborateurRepository.findByUserId(
+      session.user.id
+    );
+    const recruteurId = recruteur?.id || collaborateur?.recruteurId;
+
+    if (!recruteurId) {
+      return NextResponse.json(
+        { success: false, error: "User is not a recruiter" },
+        { status: 403 }
+      );
+    }
+
+    // Supprimer toutes les entrées de cache pour ce recruteur
+    let deleted = 0;
+    for (const [key] of matchingCache.entries()) {
+      if (key.includes(recruteurId)) {
+        matchingCache.delete(key);
+        deleted++;
+      }
+    }
+
+    console.log(
+      `[CACHE] ${deleted} entrée(s) supprimée(s) pour ${recruteurId}`
+    );
+
+    return NextResponse.json({
+      success: true,
+      message: `Cache invalidé (${deleted} entrées)`,
+    });
+  } catch (error) {
+    console.error("Error clearing cache:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to clear cache" },
       { status: 500 }
     );
   }

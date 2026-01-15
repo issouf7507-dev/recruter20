@@ -22,7 +22,7 @@ export class CandidatRepository {
   }) {
     const {
       page = 1,
-      limit = 10,
+      limit = 20,
       search,
       lieu,
       experience,

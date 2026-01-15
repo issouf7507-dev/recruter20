@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import {
   IconBriefcase,
   IconChartBar,
+  IconCheck,
   IconDashboard,
   IconFileDescription,
   IconHeart,
@@ -16,6 +17,7 @@ import {
   IconSettings,
   IconShare,
   IconSun,
+  IconSparkles,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -94,11 +96,16 @@ const data = {
       icon: IconMail,
     },
 
-    // {
-    //   title: "Matching",
-    //   url: "/recruteur/matching",
-    //   icon: IconCheck,
-    // },
+    {
+      title: "Matching",
+      url: "/recruteur/matching",
+      icon: IconCheck,
+    },
+    {
+      title: "Matching IA",
+      url: "/recruteur/matching-ai",
+      icon: IconSparkles,
+    },
     {
       title: "Multi-diffusion",
       url: "/recruteur/multi-diffusion",

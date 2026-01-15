@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +36,8 @@ import {
   IconPhone,
   IconSchool,
   IconAward,
+  IconChevronLeft,
+  IconChevronRight,
 } from "@tabler/icons-react";
 import { useSearchCandidates } from "@/lib/hooks/use-candidats";
 import { useSession } from "@/lib/auth-client";
@@ -274,9 +276,13 @@ export default function RechercheCVPage() {
     format: "all",
   });
   const [cvsFavoris, setCvsFavoris] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   // Use the search hook
   const { data, isLoading, error } = useSearchCandidates({
+    page: currentPage,
+    limit: itemsPerPage,
     search: searchTerm || undefined,
     lieu: filtres.lieu !== "all" ? filtres.lieu : undefined,
     experience: filtres.experience !== "all" ? filtres.experience : undefined,
@@ -304,13 +310,55 @@ export default function RechercheCVPage() {
   // Get conversation creation hook
   const { createConversation } = useCandidatures(recruteurId || undefined);
 
-  // console.log("data", data);
+  // Get pagination info
+  const pagination = data?.pagination;
 
   // Transform API data to page format
   const cvs = useMemo(() => {
     if (!data?.items) return [];
     return data.items.map(transformCandidatData);
   }, [data]);
+
+  // Réinitialiser la page à 1 quand les filtres changent
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    searchTerm,
+    filtres.lieu,
+    filtres.experience,
+    filtres.competences,
+    filtres.certifications,
+    filtres.domaine,
+    filtres.niveauEtude,
+    filtres.format,
+  ]);
+
+  // Handlers de pagination
+  const handleNextPage = useCallback(() => {
+    if (pagination && currentPage < pagination.totalPages) {
+      setCurrentPage((prev) => prev + 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [currentPage, pagination]);
+
+  const handlePreviousPage = useCallback(() => {
+    if (currentPage > 1) {
+      setCurrentPage((prev) => prev - 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [currentPage]);
+
+  const handleFirstPage = useCallback(() => {
+    setCurrentPage(1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const handleLastPage = useCallback(() => {
+    if (pagination?.totalPages) {
+      setCurrentPage(pagination.totalPages);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [pagination?.totalPages]);
 
   const getInitials = (nom: string) => {
     return nom
@@ -419,6 +467,7 @@ export default function RechercheCVPage() {
       format: "all",
     });
     setSearchTerm("");
+    setCurrentPage(1);
   };
 
   const competencesUniques = useMemo(() => {
@@ -783,197 +832,342 @@ export default function RechercheCVPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="space-y-4">
-                    {cvs.map((cv) => (
-                      <Card
-                        key={cv.id}
-                        className="hover:shadow-md transition-shadow"
-                      >
-                        <CardHeader>
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start gap-4">
-                              <Avatar className="h-16 w-16">
-                                <AvatarImage src={cv.candidat.avatar} />
-                                <AvatarFallback>
-                                  {getInitials(cv.candidat.nom)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <CardTitle className="text-xl">
-                                    {cv.candidat.nom}
-                                  </CardTitle>
-                                </div>
-                                <CardDescription className="space-y-2">
-                                  <div className="flex items-center gap-4 text-sm flex-wrap">
-                                    <span className="flex items-center gap-1">
-                                      <IconMapPin className="h-4 w-4" />
-                                      {cv.candidat.lieu}
-                                    </span>
-
-                                    <span className="flex items-center gap-1">
-                                      <IconBriefcase className="h-4 w-4" />
-                                      {cv.candidat.domaine}
-                                    </span>
+                  <>
+                    <div className="space-y-4">
+                      {cvs.map((cv) => (
+                        <Card
+                          key={cv.id}
+                          className="hover:shadow-md transition-shadow"
+                        >
+                          <CardHeader>
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start gap-4">
+                                <Avatar className="h-16 w-16">
+                                  <AvatarImage src={cv.candidat.avatar} />
+                                  <AvatarFallback>
+                                    {getInitials(cv.candidat.nom)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <CardTitle className="text-xl">
+                                      {cv.candidat.nom}
+                                    </CardTitle>
                                   </div>
-                                  <div className="flex items-center gap-4 text-sm flex-wrap">
-                                    {/* <span className="flex items-center gap-1">
-                                      <IconSchool className="h-4 w-4" />
-                                      {cv.cv.formation}
-                                    </span> */}
-                                    {cv.cv.niveauxEtude.length > 0 && (
-                                      <span className="flex items-center gap-1 uppercase">
-                                        <IconSchool className="h-4 w-4" />
-                                        {cv.cv.niveauxEtude.join(", ")}
-                                      </span>
-                                    )}
-                                    {cv.cv.certifications.length > 0 && (
+                                  <CardDescription className="space-y-2">
+                                    <div className="flex items-center gap-4 text-sm flex-wrap">
                                       <span className="flex items-center gap-1">
-                                        <IconAward className="h-4 w-4" />
-                                        {cv.cv.certifications.length}{" "}
-                                        certification
-                                        {cv.cv.certifications.length > 1
-                                          ? "s"
-                                          : ""}
+                                        <IconMapPin className="h-4 w-4" />
+                                        {cv.candidat.lieu}
                                       </span>
-                                    )}
-                                    {/* <span className="text-muted-foreground">
-                                      Mis à jour: {cv.cv.derniereMiseAJour}
-                                    </span> */}
-                                  </div>
-                                </CardDescription>
+
+                                      <span className="flex items-center gap-1">
+                                        <IconBriefcase className="h-4 w-4" />
+                                        {cv.candidat.domaine}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-sm flex-wrap">
+                                      {/* <span className="flex items-center gap-1">
+                                        <IconSchool className="h-4 w-4" />
+                                        {cv.cv.formation}
+                                      </span> */}
+                                      {cv.cv.niveauxEtude.length > 0 && (
+                                        <span className="flex items-center gap-1 uppercase">
+                                          <IconSchool className="h-4 w-4" />
+                                          {cv.cv.niveauxEtude.join(", ")}
+                                        </span>
+                                      )}
+                                      {cv.cv.certifications.length > 0 && (
+                                        <span className="flex items-center gap-1">
+                                          <IconAward className="h-4 w-4" />
+                                          {cv.cv.certifications.length}{" "}
+                                          certification
+                                          {cv.cv.certifications.length > 1
+                                            ? "s"
+                                            : ""}
+                                        </span>
+                                      )}
+                                      {/* <span className="text-muted-foreground">
+                                        Mis à jour: {cv.cv.derniereMiseAJour}
+                                      </span> */}
+                                    </div>
+                                  </CardDescription>
+                                </div>
                               </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleToggleFavorite(cv.id)}
-                                className={`${
-                                  cvsFavoris.includes(cv.id)
-                                    ? "text-red-500"
-                                    : "text-gray-400"
-                                }`}
-                              >
-                                <IconStar
-                                  className={`h-4 w-4 ${
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleToggleFavorite(cv.id)}
+                                  className={`${
                                     cvsFavoris.includes(cv.id)
-                                      ? "fill-current"
-                                      : ""
+                                      ? "text-red-500"
+                                      : "text-gray-400"
                                   }`}
-                                />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            {/* Compétences */}
-                            <div>
-                              <h4 className="font-medium mb-2">Compétences</h4>
-                              <div className="flex flex-wrap gap-2">
-                                {cv.cv.competences.map(
-                                  (competence: string, index: number) => (
-                                    <Badge key={index} variant="secondary">
-                                      {competence}
-                                    </Badge>
-                                  )
-                                )}
-                              </div>
-                            </div>
-                            {/* Niveaux d'étude */}
-                            <div>
-                              <h4 className="font-medium mb-2">
-                                Niveaux d'étude
-                              </h4>
-                              <div className="flex flex-wrap gap-2">
-                                {cv.cv.niveauxEtude.map(
-                                  (niveau: string, index: number) => (
-                                    <Badge key={index} variant="secondary">
-                                      {niveau}
-                                    </Badge>
-                                  )
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Certifications */}
-                            {cv.cv.certifications.length > 0 && (
-                              <div>
-                                <h4 className="font-medium mb-2">
-                                  Certifications
-                                </h4>
-                                <div className="flex flex-wrap gap-2">
-                                  {cv.cv.certifications.map(
-                                    (certification: string, index: number) => (
-                                      <Badge key={index} variant="outline">
-                                        <IconAward className="h-3 w-3 mr-1" />
-                                        {certification}
-                                      </Badge>
-                                    )
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Niveaux d'étude */}
-                            {cv.cv.niveauxEtude.length > 0 && (
-                              <div>
-                                <h4 className="font-medium mb-2">
-                                  Niveaux d'étude
-                                </h4>
-                                <div className="flex flex-wrap gap-2">
-                                  {cv.cv.niveauxEtude.map(
-                                    (niveau: string, index: number) => (
-                                      <Badge key={index} variant="outline">
-                                        <IconSchool className="h-3 w-3 mr-1" />
-                                        {niveau}
-                                      </Badge>
-                                    )
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Actions */}
-                            <div className="flex gap-2 pt-4 border-t">
-                              <Button variant="outline" size="sm" asChild>
-                                <a
-                                  href={cv.cvUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
                                 >
-                                  <IconEye className="h-4 w-4" />
-                                  Voir CV
-                                </a>
-                              </Button>
+                                  <IconStar
+                                    className={`h-4 w-4 ${
+                                      cvsFavoris.includes(cv.id)
+                                        ? "fill-current"
+                                        : ""
+                                    }`}
+                                  />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4">
+                              {/* Compétences */}
+                              <div>
+                                <h4 className="font-medium mb-2">
+                                  Compétences
+                                </h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {cv.cv.competences.map(
+                                    (competence: string, index: number) => (
+                                      <Badge key={index} variant="secondary">
+                                        {competence}
+                                      </Badge>
+                                    )
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Niveaux d'étude */}
+                              {cv.cv.niveauxEtude.length > 0 && (
+                                <div>
+                                  <h4 className="font-medium mb-2">
+                                    Niveaux d'étude
+                                  </h4>
+                                  <div className="flex flex-wrap gap-2">
+                                    {cv.cv.niveauxEtude.map(
+                                      (niveau: string, index: number) => (
+                                        <Badge key={index} variant="outline">
+                                          <IconSchool className="h-3 w-3 mr-1" />
+                                          {niveau}
+                                        </Badge>
+                                      )
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Certifications */}
+                              {cv.cv.certifications.length > 0 && (
+                                <div>
+                                  <h4 className="font-medium mb-2">
+                                    Certifications
+                                  </h4>
+                                  <div className="flex flex-wrap gap-2">
+                                    {cv.cv.certifications.map(
+                                      (
+                                        certification: string,
+                                        index: number
+                                      ) => (
+                                        <Badge key={index} variant="outline">
+                                          <IconAward className="h-3 w-3 mr-1" />
+                                          {certification}
+                                        </Badge>
+                                      )
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Actions */}
+                              <div className="flex gap-2 pt-4 border-t">
+                                <Button variant="outline" size="sm" asChild>
+                                  <a
+                                    href={cv.cvUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <IconEye className="h-4 w-4" />
+                                    Voir CV
+                                  </a>
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleDownloadCV(cv.cvUrl, cv.candidat.nom)
+                                  }
+                                  disabled={!cv.cvUrl || cv.cvUrl === "#"}
+                                >
+                                  <IconDownload className="h-4 w-4" />
+                                  Télécharger
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleContactCandidat(cv.id)}
+                                  disabled={createConversation.isPending}
+                                >
+                                  <IconMail className="h-4 w-4" />
+                                  {createConversation.isPending
+                                    ? "En cours..."
+                                    : "Contacter"}
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+
+                    {/* Pagination */}
+                    {pagination && pagination.totalPages > 1 && (
+                      <Card className="mt-6">
+                        <CardContent className="p-4">
+                          {/* Mobile pagination */}
+                          <div className="flex sm:hidden flex-col gap-4">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">
+                                {cvs.length} résultat
+                                {cvs.length > 1 ? "s" : ""} sur{" "}
+                                {pagination.total}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-muted-foreground">
+                                  Par page
+                                </span>
+                                <Select
+                                  value={itemsPerPage.toString()}
+                                  onValueChange={(value) => {
+                                    setItemsPerPage(parseInt(value));
+                                    setCurrentPage(1);
+                                  }}
+                                >
+                                  <SelectTrigger className="w-[60px] h-8 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="10">10</SelectItem>
+                                    <SelectItem value="20">20</SelectItem>
+                                    <SelectItem value="50">50</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-center gap-2">
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() =>
-                                  handleDownloadCV(cv.cvUrl, cv.candidat.nom)
-                                }
-                                disabled={!cv.cvUrl || cv.cvUrl === "#"}
+                                onClick={handlePreviousPage}
+                                disabled={currentPage === 1}
+                                className="flex-1"
                               >
-                                <IconDownload className="h-4 w-4" />
-                                Télécharger
+                                <IconChevronLeft className="h-4 w-4 mr-1" />
+                                Préc.
                               </Button>
+                              <span className="px-3 py-1 text-sm font-medium bg-primary text-primary-foreground rounded">
+                                {pagination.page}
+                              </span>
                               <Button
+                                variant="outline"
                                 size="sm"
-                                onClick={() => handleContactCandidat(cv.id)}
-                                disabled={createConversation.isPending}
+                                onClick={handleNextPage}
+                                disabled={
+                                  currentPage === pagination.totalPages ||
+                                  !pagination.totalPages
+                                }
+                                className="flex-1"
                               >
-                                <IconMail className="h-4 w-4" />
-                                {createConversation.isPending
-                                  ? "En cours..."
-                                  : "Contacter"}
+                                Suiv.
+                                <IconChevronRight className="h-4 w-4 ml-1" />
                               </Button>
+                            </div>
+                          </div>
+
+                          {/* Desktop pagination */}
+                          <div className="hidden sm:flex flex-col md:flex-row items-center justify-between gap-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">
+                                Afficher
+                              </span>
+                              <Select
+                                value={itemsPerPage.toString()}
+                                onValueChange={(value) => {
+                                  setItemsPerPage(parseInt(value));
+                                  setCurrentPage(1);
+                                }}
+                              >
+                                <SelectTrigger className="w-[70px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="10">10</SelectItem>
+                                  <SelectItem value="20">20</SelectItem>
+                                  <SelectItem value="50">50</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <span className="text-sm text-muted-foreground">
+                                par page
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 flex-wrap justify-center">
+                              <span className="text-sm text-muted-foreground">
+                                Page {pagination.page} sur{" "}
+                                {pagination.totalPages} ({pagination.total}{" "}
+                                résultat{pagination.total > 1 ? "s" : ""})
+                              </span>
+                              <div className="flex items-center gap-1 sm:gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleFirstPage}
+                                  disabled={currentPage === 1}
+                                  className="hidden md:flex"
+                                >
+                                  <IconChevronLeft className="h-4 w-4 mr-1" />
+                                  Première
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handlePreviousPage}
+                                  disabled={currentPage === 1}
+                                >
+                                  <IconChevronLeft className="h-4 w-4" />
+                                </Button>
+
+                                <span className="px-3 sm:px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded">
+                                  {pagination.page}
+                                </span>
+
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleNextPage}
+                                  disabled={
+                                    currentPage === pagination.totalPages ||
+                                    !pagination.totalPages
+                                  }
+                                >
+                                  <IconChevronRight className="h-4 w-4" />
+                                </Button>
+
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleLastPage}
+                                  disabled={
+                                    currentPage === pagination.totalPages ||
+                                    !pagination.totalPages
+                                  }
+                                  className="hidden md:flex"
+                                >
+                                  Dernière
+                                  <IconChevronRight className="h-4 w-4 ml-1" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </CardContent>
                       </Card>
-                    ))}
-                  </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
