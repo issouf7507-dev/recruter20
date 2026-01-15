@@ -309,7 +309,6 @@ Le token est actuellement hardcodé dans `scoringai.ts` (ligne 11). **À corrige
 
 ```typescript
 // ❌ MAUVAIS (actuel)
-const HF_API_KEY = process.env.NEXT_PUBLIC_HUGGINGFACE_API_KEY;
 
 // ✅ BON (à utiliser)
 const HF_API_KEY =
