@@ -70,7 +70,17 @@ jobs:
             git clean -fd
 
             # Install dependencies + Prisma (VPS)
-            corepack enable
+            # Setup pnpm (try sudo first, fallback to npm install if needed)
+            if ! command -v pnpm &> /dev/null; then
+              echo "📦 Configuration de pnpm..."
+              sudo corepack enable 2>/dev/null || {
+                echo "⚠️  corepack enable nécessite sudo, tentative avec npm..."
+                npm install -g pnpm@10.27.0 || {
+                  echo "⚠️  Installation pnpm échouée, vérification si déjà installé..."
+                }
+              }
+            fi
+            pnpm --version || { echo "❌ pnpm n'est pas disponible"; exit 1; }
             pnpm install --frozen-lockfile
             pnpm prisma generate
 
