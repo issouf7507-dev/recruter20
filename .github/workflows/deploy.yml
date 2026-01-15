@@ -15,27 +15,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Node + Corepack + pnpm
-      - name: Setup Node.js + pnpm
+      # 2️⃣ Setup pnpm
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.27.0
+      
+      # 3️⃣ Setup Node.js with pnpm cache
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "pnpm"
-      - name: Enable pnpm via Corepack
-        run: |
-          corepack enable
-          corepack prepare pnpm@10.27.0 --activate
-          pnpm -v   # Vérifie que pnpm est disponible
 
-      # 3️⃣ Install dependencies
+      # 4️⃣ Install dependencies
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # 4️⃣ Prisma
+      # 5️⃣ Prisma
       - name: Generate Prisma Client
         run: pnpm prisma generate
 
-      # 5️⃣ Build Next.js
+      # 6️⃣ Build Next.js
       - name: Build application
         env:
           NODE_ENV: production
@@ -43,7 +44,7 @@ jobs:
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
         run: pnpm build
 
-      # 6️⃣ Déploiement SSH
+      # 7️⃣ Déploiement SSH
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
