@@ -305,15 +305,17 @@ Activez les logs détaillés en vérifiant la console :
 
 ⚠️ **IMPORTANT** : Ne commitez JAMAIS votre token API dans le code !
 
-Le token est actuellement hardcodé dans `scoringai.ts` (ligne 11). **À corriger** :
+✅ **Le code utilise maintenant les variables d'environnement** :
 
 ```typescript
-// ❌ MAUVAIS (actuel)
+// ✅ CORRECT (actuel)
+const HF_API_KEY = process.env.NEXT_PUBLIC_HUGGINGFACE_API_KEY;
+```
 
-// ✅ BON (à utiliser)
-const HF_API_KEY =
-  process.env.NEXT_PUBLIC_HUGGINGFACE_API_KEY ||
-  process.env.HUGGINGFACE_API_KEY;
+Ajoutez votre token dans `.env.local` :
+
+```bash
+NEXT_PUBLIC_HUGGINGFACE_API_KEY=hf_votre_token_ici
 ```
 
 ## 📞 Support
