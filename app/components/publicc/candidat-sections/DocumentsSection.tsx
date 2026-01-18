@@ -176,7 +176,7 @@ export function DocumentsSection({ candidatId }: DocumentsSectionProps) {
         <CardFooter>
           <Button
             className="bg-[#a590ff] text-white hover:bg-[#a590ff]/90"
-            onClick={() => window.open("http://localhost:3001", "_blank")}
+            onClick={() => window.open("https://cv.ylsix.com/", "_blank")}
           >
             <Plus className="h-4 w-4 mr-2" />
             Créer un CV
