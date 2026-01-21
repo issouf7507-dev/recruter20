@@ -17,10 +17,7 @@ import {
   IconSettings,
   IconShare,
   IconSun,
-<<<<<<< HEAD
   IconSparkles,
-=======
->>>>>>> 2c4d271fc97d9e15104d3e0711f18296d2c327c2
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -99,19 +96,16 @@ const data = {
       icon: IconMail,
     },
 
-    // {
-    //   title: "Matching",
-    //   url: "/recruteur/matching",
-    //   icon: IconCheck,
-    // },
-<<<<<<< HEAD
-    // {
-    //   title: "Matching IA",
-    //   url: "/recruteur/matching-ai",
-    //   icon: IconSparkles,
-    // },
-=======
->>>>>>> 2c4d271fc97d9e15104d3e0711f18296d2c327c2
+    {
+      title: "Matching",
+      url: "/recruteur/matching",
+      icon: IconCheck,
+    },
+    {
+      title: "Matching IA",
+      url: "/recruteur/matching-ai",
+      icon: IconSparkles,
+    },
     {
       title: "Multi-diffusion",
       url: "/recruteur/multi-diffusion",
