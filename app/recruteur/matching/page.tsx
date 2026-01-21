@@ -471,7 +471,11 @@ export default function MatchingPage() {
     enabled: !!recruteur?.id,
   });
 
+<<<<<<< HEAD
   // console.log("matchingData", matchingData);
+=======
+  console.log("matchingData", matchingData);
+>>>>>>> 2c4d271fc97d9e15104d3e0711f18296d2c327c2
 
   // Filtrer les résultats par offre sélectionnée
   const filteredResults = matchingData?.results.filter(

@@ -376,7 +376,7 @@ function extractFormationLevel(description: string | null): number {
 // ✅ FIX 5: Calcul compétences amélioré
 function calculateCompetenceScore(
   candidat: CandidatForMatching,
-  offre: JobOfferForMatching
+  offre: JobOfferForMatching,
 ): { score: number; matched: string[]; missing: string[] } {
   log("\n🔍 === CALCUL SCORE COMPÉTENCES ===");
 
@@ -384,16 +384,16 @@ function calculateCompetenceScore(
 
   // Collecter compétences du candidat
   candidat.candidatCompetences.forEach((c) =>
-    candidatCompetences.add(normalize(c.competence))
+    candidatCompetences.add(normalize(c.competence)),
   );
 
   candidat.competencesList.forEach((c) =>
-    candidatCompetences.add(normalize(c.nom))
+    candidatCompetences.add(normalize(c.nom)),
   );
 
   candidat.experiences.forEach((exp) => {
     exp.experienceCompetences.forEach((c) =>
-      candidatCompetences.add(normalize(c.competence))
+      candidatCompetences.add(normalize(c.competence)),
     );
 
     // Extraire compétences du poste
@@ -441,8 +441,8 @@ function calculateCompetenceScore(
   const score = (matched.length / offreCompetences.size) * 100;
   log(
     `📊 RÉSULTAT: ${matched.length}/${offreCompetences.size} = ${Math.round(
-      score
-    )}%`
+      score,
+    )}%`,
   );
 
   return {
@@ -455,7 +455,7 @@ function calculateCompetenceScore(
 // Calcul localisation
 function calculateLocationScore(
   candidat: CandidatForMatching,
-  offre: JobOfferForMatching
+  offre: JobOfferForMatching,
 ): number {
   if (!offre.location) return 100;
 
@@ -478,7 +478,7 @@ function calculateLocationScore(
 
   const similarity = stringSimilarity(
     candidatVille || candidatPays,
-    offreLocation
+    offreLocation,
   );
   return similarity * 100;
 }
@@ -502,7 +502,7 @@ function calculateTotalExperience(candidat: CandidatForMatching): number {
 // ✅ FIX 6: Scoring expérience corrigé
 function calculateExperienceScore(
   candidat: CandidatForMatching,
-  offre: JobOfferForMatching
+  offre: JobOfferForMatching,
 ): number {
   const candidatYears = calculateTotalExperience(candidat);
   const { min: requiredMin, max: requiredMax } =
@@ -510,8 +510,8 @@ function calculateExperienceScore(
 
   log(
     `   Candidat: ${candidatYears.toFixed(
-      1
-    )} ans vs requis ${requiredMin}-${requiredMax} ans`
+      1,
+    )} ans vs requis ${requiredMin}-${requiredMax} ans`,
   );
 
   // Pas de contrainte
@@ -589,7 +589,7 @@ function inferCandidatDomaine(candidat: CandidatForMatching): string[] {
 
   Object.entries(DOMAINE_KEYWORDS).forEach(([domaine, keywords]) => {
     const matchCount = keywords.filter((kw) =>
-      normalizedTexts.includes(normalize(kw))
+      normalizedTexts.includes(normalize(kw)),
     ).length;
     if (matchCount >= 2) inferredDomaines.add(domaine);
   });
@@ -603,7 +603,7 @@ function extractOffreDomaines(offre: JobOfferForMatching): string[] {
 
   Object.entries(DOMAINE_KEYWORDS).forEach(([domaine, keywords]) => {
     const matchCount = keywords.filter((kw) =>
-      offreText.includes(normalize(kw))
+      offreText.includes(normalize(kw)),
     ).length;
     if (matchCount >= 1) domaines.add(domaine);
   });
@@ -614,7 +614,7 @@ function extractOffreDomaines(offre: JobOfferForMatching): string[] {
 // ✅ FIX 7: Scoring domaine corrigé
 function calculateDomaineScore(
   candidat: CandidatForMatching,
-  offre: JobOfferForMatching
+  offre: JobOfferForMatching,
 ): number {
   const candidatDomaines = inferCandidatDomaine(candidat);
   const candidatDomaineExplicite = normalize(candidat.domaine);
@@ -633,7 +633,7 @@ function calculateDomaineScore(
       offreDomaines.some(
         (d) =>
           d.includes(candidatDomaineExplicite) ||
-          candidatDomaineExplicite.includes(d)
+          candidatDomaineExplicite.includes(d),
       )
     ) {
       return 100;
@@ -643,7 +643,7 @@ function calculateDomaineScore(
   // Match domaines déduits
   if (candidatDomaines.length > 0) {
     const commonDomaines = candidatDomaines.filter((d) =>
-      offreDomaines.includes(d)
+      offreDomaines.includes(d),
     );
     if (commonDomaines.length > 0) {
       log(`   → ${commonDomaines.length} domaine(s) commun(s) → 85%`);
@@ -663,7 +663,7 @@ function calculateDomaineScore(
   // Compétences communes suggèrent un domaine proche
   const candidatSkills = new Set<string>();
   candidat.candidatCompetences.forEach((c) =>
-    candidatSkills.add(normalize(c.competence))
+    candidatSkills.add(normalize(c.competence)),
   );
   const offreSkills = extractSkillsFromDescription(offre.description);
   const commonSkills = [...candidatSkills].filter((s) => offreSkills.has(s));
@@ -723,7 +723,7 @@ function calculateDisponibiliteScore(candidat: CandidatForMatching): number {
 // ✅ FIX 9: Scoring formation corrigé
 function calculateFormationScore(
   candidat: CandidatForMatching,
-  offre: JobOfferForMatching
+  offre: JobOfferForMatching,
 ): number {
   const hasFormationData =
     candidat.formations.length > 0 ||
@@ -786,7 +786,7 @@ function generateHighlights(
   candidat: CandidatForMatching,
   offre: JobOfferForMatching,
   scoreDetails: MatchResult["scoreDetails"],
-  matchedCompetences: string[]
+  matchedCompetences: string[],
 ): string[] {
   const highlights: string[] = [];
 
@@ -801,7 +801,7 @@ function generateHighlights(
   const years = calculateTotalExperience(candidat);
   if (years > 0) {
     highlights.push(
-      `${Math.round(years)} an${years > 1 ? "s" : ""} d'expérience`
+      `${Math.round(years)} an${years > 1 ? "s" : ""} d'expérience`,
     );
   }
 
@@ -809,7 +809,7 @@ function generateHighlights(
     highlights.push(
       `${candidat.certifications.length} certification${
         candidat.certifications.length > 1 ? "s" : ""
-      }`
+      }`,
     );
   }
 
@@ -834,7 +834,7 @@ function generateHighlights(
 // Calcul du score global
 export function calculateMatchScore(
   candidat: CandidatForMatching,
-  offre: JobOfferForMatching
+  offre: JobOfferForMatching,
 ): MatchResult {
   log("\n" + "═".repeat(60));
   log(`🎯 MATCHING: ${candidat.prenom} ${candidat.nom} ↔ ${offre.title}`);
@@ -884,7 +884,7 @@ export function calculateMatchScore(
     candidat,
     offre,
     scoreDetails,
-    competenceResult.matched
+    competenceResult.matched,
   );
 
   return {
@@ -900,7 +900,7 @@ export function calculateMatchScore(
 export function calculateMatches(
   candidats: CandidatForMatching[],
   offre: JobOfferForMatching,
-  options: { minScore?: number; limit?: number } = {}
+  options: { minScore?: number; limit?: number } = {},
 ): MatchResult[] {
   const { minScore = 30, limit = 50 } = options;
 

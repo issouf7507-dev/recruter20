@@ -1,0 +1,217 @@
+name: Deploy to VPS (Production)
+
+on:
+  push:
+    branches:
+      - dev-issouf
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Node + Corepack + pnpm
+      - name: Setup Node.js + pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+      - name: Enable pnpm via Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.27.0 --activate
+          pnpm -v   # Vérifie que pnpm est disponible
+
+      # 3️⃣ Install dependencies
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # 4️⃣ Prisma
+      - name: Generate Prisma Client
+        run: pnpm prisma generate
+
+      # 5️⃣ Build Next.js
+      - name: Build application
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+        run: pnpm build
+
+      # 6️⃣ Déploiement SSH
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            export PATH="/usr/bin:/usr/local/bin:$PATH"
+            APP_DIR="/home/dev-issouf/projects/recruteur20"
+            mkdir -p $APP_DIR
+            cd $APP_DIR
+
+            # Git sync
+            if [ ! -d ".git" ]; then
+              git init
+              git remote add origin https://github.com/${{ github.repository }}.git
+            fi
+            git fetch origin dev-issouf
+            git reset --hard origin/dev-issouf
+            git clean -fd
+
+            # Install dependencies + Prisma (VPS)
+            corepack enable
+            pnpm install --frozen-lockfile
+            pnpm prisma generate
+
+            # Build (VPS)
+            pnpm build
+
+            # PM2
+            pm2 stop recruter || true
+            pm2 delete recruter || true
+            pm2 start ecosystem.config.js
+            pm2 save
+
+            echo "✅ Déploiement terminé avec succès"
+
+# name: Deploy to VPS
+
+# on:
+#   push:
+#     branches: [dev-issouf]
+#   workflow_dispatch:
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: "20"
+#           cache: ""
+
+#       - name: Enable pnpm via Corepack
+#         run: |
+#           corepack enable
+#           corepack prepare pnpm@latest --activate
+
+#       - name: Install dependencies
+#         run: pnpm install --frozen-lockfile
+
+#       - name: Generate Prisma client
+#         run: pnpm prisma generate
+
+#       - name: Build application
+#         env:
+#           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET || 'temp-secret-for-build-only' }}
+#           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || 'https://ylsix.com' }}
+#         run: pnpm run build
+
+#       - name: Deploy to VPS
+#         uses: appleboy/ssh-action@v1.0.3
+#         with:
+#           host: 31.97.193.80
+#           username: dev-issouf
+#           key: ${{ secrets.VPS_SSH_KEY }}
+#           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
+#           port: 22
+
+#           script: |
+#             # --- CORRECTION DE L'ERREUR PNPM: COMMAND NOT FOUND ---
+#             # Ajoute le chemin d'accès global de Node.js et pnpm au PATH.
+#             # C'est nécessaire car l'environnement SSH non-interactif n'a pas ce PATH par défaut.
+#             # Node.js est installé globalement via apt, donc on utilise /usr/bin
+#             export PATH="/usr/bin:$PATH"
+#             # Si pnpm est installé via npm globalement, il sera dans /usr/bin aussi
+#             # -----------------------------------------------------
+
+#             # Créer le répertoire projects si nécessaire
+#             mkdir -p /home/dev-issouf/projects
+#             cd /home/dev-issouf/projects
+
+#             # Créer le répertoire du projet si nécessaire
+#             mkdir -p recruteur20
+#             cd recruteur20
+
+#             # Initialiser le dépôt Git si nécessaire
+#             if [ ! -d ".git" ]; then
+#               git init
+#               git remote add origin https://github.com/${{ github.repository }}.git
+#               git fetch origin dev-issouf
+#               git checkout -b dev-issouf origin/dev-issouf
+#             else
+#               # Récupérer les dernières modifications depuis GitHub
+#               git fetch origin dev-issouf
+#               git reset --hard origin/dev-issouf
+#               git clean -fd
+#             fi
+
+#             # Sauvegarder l'ancienne version si elle existe
+#             if [ -d ".next" ]; then
+#               mkdir -p backups
+#               tar -czf backups/backup-$(date +%Y%m%d-%H%M%S).tar.gz .next node_modules 2>/dev/null || true
+#             fi
+
+#             # Installer les dépendances
+#             pnpm install --frozen-lockfile
+
+#             # Générer le client Prisma
+#             pnpm prisma generate
+
+#             # Vérifier que .env.production existe, sinon créer un fichier temporaire avec les variables minimales
+#             if [ ! -f ".env.production" ]; then
+#               echo "⚠️  .env.production n'existe pas, création d'un fichier temporaire pour le build..."
+#               echo "NODE_ENV=production" > .env.production
+#               echo "NEXT_PUBLIC_APP_URL=https://ylsix.com" >> .env.production
+#               echo "BETTER_AUTH_SECRET=temp-secret-please-configure" >> .env.production
+#               echo "BETTER_AUTH_URL=https://ylsix.com" >> .env.production
+#               echo "⚠️  ATTENTION: Configurez .env.production avec les vraies valeurs avant de démarrer l'application!"
+#             fi
+
+#             # Construire l'application (Next.js chargera automatiquement .env.production)
+#             pnpm run build
+
+#             # Vérifier que le build existe
+#             if [ ! -d ".next" ]; then
+#               echo "Erreur: Le build .next n'existe pas!"
+#               exit 1
+#             fi
+
+#             # Arrêter le processus PM2 existant s'il existe
+#             pm2 stop recruter 2>/dev/null || true
+#             pm2 delete recruter 2>/dev/null || true
+
+#             # Tuer tout processus utilisant le port 3000
+#             lsof -ti:3000 | xargs kill -9 2>/dev/null || true
+
+#             # Démarrer le service PM2 sur le port 3000
+#             # pm2 start "pnpm start -- -p 3000" --name recruter
+
+#             # Démarrer le service PM2 avec le fichier de configuration
+#             # PM2 chargera automatiquement les variables depuis .env.production via env_file dans ecosystem.config.js
+#             pm2 start ecosystem.config.js
+
+#             # Sauvegarder la configuration PM2
+#             pm2 save
+
+#             # Nettoyer les anciennes sauvegardes (garder les 5 plus récentes)
+#             if [ -d "backups" ]; then
+#               cd backups
+#               ls -t backup-*.tar.gz 2>/dev/null | tail -n +6 | xargs -r rm -f 2>/dev/null || true
+#             fi
+
+#             echo "Déploiement terminé avec succès!"

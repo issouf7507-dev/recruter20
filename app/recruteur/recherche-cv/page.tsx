@@ -1,6 +1,10 @@
 "use client";
 
+<<<<<<< HEAD
 import { useState, useMemo, useEffect, useCallback } from "react";
+=======
+import { useState, useMemo } from "react";
+>>>>>>> 2c4d271fc97d9e15104d3e0711f18296d2c327c2
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -310,8 +314,12 @@ export default function RechercheCVPage() {
   // Get conversation creation hook
   const { createConversation } = useCandidatures(recruteurId || undefined);
 
+<<<<<<< HEAD
   // Get pagination info
   const pagination = data?.pagination;
+=======
+  // console.log("data", data);
+>>>>>>> 2c4d271fc97d9e15104d3e0711f18296d2c327c2
 
   // Transform API data to page format
   const cvs = useMemo(() => {
@@ -860,6 +868,7 @@ export default function RechercheCVPage() {
                                         <IconMapPin className="h-4 w-4" />
                                         {cv.candidat.lieu}
                                       </span>
+<<<<<<< HEAD
 
                                       <span className="flex items-center gap-1">
                                         <IconBriefcase className="h-4 w-4" />
@@ -913,6 +922,14 @@ export default function RechercheCVPage() {
                                     }`}
                                   />
                                 </Button>
+=======
+                                    )}
+                                    {/* <span className="text-muted-foreground">
+                                      Mis à jour: {cv.cv.derniereMiseAJour}
+                                    </span> */}
+                                  </div>
+                                </CardDescription>
+>>>>>>> 2c4d271fc97d9e15104d3e0711f18296d2c327c2
                               </div>
                             </div>
                           </CardHeader>
@@ -1120,6 +1137,7 @@ export default function RechercheCVPage() {
                                   disabled={currentPage === 1}
                                   className="hidden md:flex"
                                 >
+<<<<<<< HEAD
                                   <IconChevronLeft className="h-4 w-4 mr-1" />
                                   Première
                                 </Button>
@@ -1162,6 +1180,33 @@ export default function RechercheCVPage() {
                                   <IconChevronRight className="h-4 w-4 ml-1" />
                                 </Button>
                               </div>
+=======
+                                  <IconEye className="h-4 w-4" />
+                                  Voir CV
+                                </a>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleDownloadCV(cv.cvUrl, cv.candidat.nom)
+                                }
+                                disabled={!cv.cvUrl || cv.cvUrl === "#"}
+                              >
+                                <IconDownload className="h-4 w-4" />
+                                Télécharger
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => handleContactCandidat(cv.id)}
+                                disabled={createConversation.isPending}
+                              >
+                                <IconMail className="h-4 w-4" />
+                                {createConversation.isPending
+                                  ? "En cours..."
+                                  : "Contacter"}
+                              </Button>
+>>>>>>> 2c4d271fc97d9e15104d3e0711f18296d2c327c2
                             </div>
                           </div>
                         </CardContent>

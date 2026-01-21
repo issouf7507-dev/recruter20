@@ -45,14 +45,17 @@ function setCache(key: string, data: any): void {
 }
 
 // Nettoyer le cache toutes les 10 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of matchingCache.entries()) {
-    if (now - entry.timestamp > CACHE_DURATION) {
-      matchingCache.delete(key);
+setInterval(
+  () => {
+    const now = Date.now();
+    for (const [key, entry] of matchingCache.entries()) {
+      if (now - entry.timestamp > CACHE_DURATION) {
+        matchingCache.delete(key);
+      }
     }
-  }
-}, 10 * 60 * 1000);
+  },
+  10 * 60 * 1000,
+);
 
 /**
  * GET /api/matching?offerId=xxx
@@ -65,20 +68,20 @@ export async function GET(request: NextRequest) {
     if (!session || !session.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const recruteur = await recruteurRepository.findByUserId(session.user.id);
     const collaborateur = await collaborateurRepository.findByUserId(
-      session.user.id
+      session.user.id,
     );
     const recruteurId = recruteur?.id || collaborateur?.recruteurId;
 
     if (!recruteurId) {
       return NextResponse.json(
         { success: false, error: "User is not a recruiter" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -90,7 +93,7 @@ export async function GET(request: NextRequest) {
     if (!offerId) {
       return NextResponse.json(
         { success: false, error: "offerId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -109,7 +112,7 @@ export async function GET(request: NextRequest) {
     if (!offre) {
       return NextResponse.json(
         { success: false, error: "Offer not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -195,7 +198,7 @@ export async function GET(request: NextRequest) {
     console.error("Error calculating matches:", error);
     return NextResponse.json(
       { success: false, error: "Failed to calculate matches" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -211,20 +214,20 @@ export async function POST(request: NextRequest) {
     if (!session || !session.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const recruteur = await recruteurRepository.findByUserId(session.user.id);
     const collaborateur = await collaborateurRepository.findByUserId(
-      session.user.id
+      session.user.id,
     );
     const recruteurId = recruteur?.id || collaborateur?.recruteurId;
 
     if (!recruteurId) {
       return NextResponse.json(
         { success: false, error: "User is not a recruiter" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -331,7 +334,7 @@ export async function POST(request: NextRequest) {
         averageScore:
           matches.length > 0
             ? Math.round(
-                matches.reduce((sum, m) => sum + m.score, 0) / matches.length
+                matches.reduce((sum, m) => sum + m.score, 0) / matches.length,
               )
             : 0,
       };
@@ -351,7 +354,7 @@ export async function POST(request: NextRequest) {
     console.error("Error calculating matches:", error);
     return NextResponse.json(
       { success: false, error: "Failed to calculate matches" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -367,20 +370,20 @@ export async function DELETE(request: NextRequest) {
     if (!session || !session.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const recruteur = await recruteurRepository.findByUserId(session.user.id);
     const collaborateur = await collaborateurRepository.findByUserId(
-      session.user.id
+      session.user.id,
     );
     const recruteurId = recruteur?.id || collaborateur?.recruteurId;
 
     if (!recruteurId) {
       return NextResponse.json(
         { success: false, error: "User is not a recruiter" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -394,7 +397,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     console.log(
-      `[CACHE] ${deleted} entrée(s) supprimée(s) pour ${recruteurId}`
+      `[CACHE] ${deleted} entrée(s) supprimée(s) pour ${recruteurId}`,
     );
 
     return NextResponse.json({
@@ -405,7 +408,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Error clearing cache:", error);
     return NextResponse.json(
       { success: false, error: "Failed to clear cache" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
