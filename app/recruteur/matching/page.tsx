@@ -124,8 +124,8 @@ function ScoreCircle({
             score >= 70
               ? "text-green-500"
               : score >= 50
-              ? "text-blue-500"
-              : "text-orange-500"
+                ? "text-blue-500"
+                : "text-orange-500"
           }
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
@@ -165,24 +165,22 @@ function CandidatMatchCard({
       transition={{ delay: rank * 0.1 }}
     >
       <Card
-        className={`overflow-hidden hover:shadow-lg transition-all ${
-          rank === 0 ? "ring-2 ring-yellow-400" : ""
-        }`}
+        className={`overflow-hidden hover:shadow-lg transition-all ${rank === 0 ? "ring-2 ring-yellow-400" : ""
+          }`}
       >
         <CardContent className="p-4">
           <div className="flex items-start gap-4">
             {/* Rang */}
             <div
               className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
-              ${
-                rank === 0
+              ${rank === 0
                   ? "bg-yellow-100 text-yellow-700"
                   : rank === 1
-                  ? "bg-gray-100 text-gray-700"
-                  : rank === 2
-                  ? "bg-orange-100 text-orange-700"
-                  : "bg-gray-50 text-gray-500"
-              }`}
+                    ? "bg-gray-100 text-gray-700"
+                    : rank === 2
+                      ? "bg-orange-100 text-orange-700"
+                      : "bg-gray-50 text-gray-500"
+                }`}
             >
               {rank + 1}
             </div>
@@ -391,9 +389,8 @@ function OfferMatchSection({ offerMatch }: { offerMatch: OfferMatch }) {
             </div>
           )}
           <IconChevronRight
-            className={`h-5 w-5 transition-transform ${
-              isOpen ? "rotate-90" : ""
-            }`}
+            className={`h-5 w-5 transition-transform ${isOpen ? "rotate-90" : ""
+              }`}
           />
         </div>
       </button>
@@ -471,11 +468,7 @@ export default function MatchingPage() {
     enabled: !!recruteur?.id,
   });
 
-<<<<<<< HEAD
   // console.log("matchingData", matchingData);
-=======
-  console.log("matchingData", matchingData);
->>>>>>> 2c4d271fc97d9e15104d3e0711f18296d2c327c2
 
   // Filtrer les résultats par offre sélectionnée
   const filteredResults = matchingData?.results.filter(
@@ -489,9 +482,9 @@ export default function MatchingPage() {
       0,
     avgScore: matchingData?.results.length
       ? Math.round(
-          matchingData.results.reduce((sum, r) => sum + r.averageScore, 0) /
-            matchingData.results.filter((r) => r.averageScore > 0).length
-        ) || 0
+        matchingData.results.reduce((sum, r) => sum + r.averageScore, 0) /
+        matchingData.results.filter((r) => r.averageScore > 0).length
+      ) || 0
       : 0,
     topScore: Math.max(
       ...(matchingData?.results.flatMap((r) =>
