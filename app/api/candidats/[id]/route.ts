@@ -1,6 +1,6 @@
-import { candidatRepository } from "@/lib/api/candidats";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { candidatRepository } from "@/lib/api/candidats/repository";
 
 export async function GET(
   request: NextRequest,

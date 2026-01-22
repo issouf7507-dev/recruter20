@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { candidatRepository } from "@/lib/api/candidats";
+import { candidatRepository } from "@/lib/api/candidats/repository";
 
 /**
  * GET /api/candidats

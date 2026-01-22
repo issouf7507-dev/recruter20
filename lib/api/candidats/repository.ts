@@ -7,6 +7,7 @@ import { Candidat, User } from "./types";
 export class CandidatRepository {
   /**
    * Search candidates with filters
+   * ksa
    */
   async search(params: {
     page?: number;
