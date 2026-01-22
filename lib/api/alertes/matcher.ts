@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import type { AlerteEmploi } from "./types";
 
 /**
@@ -117,7 +117,7 @@ export class AlerteMatcher {
    * Get the count of matching offers for an alert
    */
   async getMatchingOffersCount(
-    alerte: AlerteEmploi & { alerteMotsCles?: any[] }
+    alerte: AlerteEmploi & { alerteMotsCles?: any[] },
   ): Promise<number> {
     const offers = await this.findMatchingOffers(alerte);
     return offers.length;
@@ -148,11 +148,11 @@ export class AlerteMatcher {
         } catch (error) {
           console.error(
             `Erreur lors de la mise à jour de l'alerte ${alerte.id}:`,
-            error
+            error,
           );
           // Continue avec les autres alertes même en cas d'erreur
         }
-      })
+      }),
     );
   }
 }

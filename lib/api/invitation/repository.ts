@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import type {
   CreateInvitation,
   Invitation,
@@ -69,7 +69,7 @@ export class InvitationRepository {
 
       if (existingCollaborateur) {
         throw new Error(
-          "Cet utilisateur est déjà collaborateur pour ce recruteur"
+          "Cet utilisateur est déjà collaborateur pour ce recruteur",
         );
       }
     }
@@ -143,7 +143,7 @@ export class InvitationRepository {
   async accept(
     id: string,
     userId: string,
-    collaborateurData: { nom: string; prenom: string }
+    collaborateurData: { nom: string; prenom: string },
   ) {
     // Utiliser une transaction pour garantir la cohérence
     return prisma.$transaction(async (tx) => {
@@ -174,7 +174,7 @@ export class InvitationRepository {
 
       if (!user || user.email !== invitation.email) {
         throw new Error(
-          "L'email de l'invitation ne correspond pas à votre compte"
+          "L'email de l'invitation ne correspond pas à votre compte",
         );
       }
 
@@ -223,7 +223,7 @@ export class InvitationRepository {
       } catch (error) {
         console.error(
           "Erreur lors de l'envoi de l'email de confirmation:",
-          error
+          error,
         );
         // Ne pas faire échouer l'acceptation si l'email échoue
       }

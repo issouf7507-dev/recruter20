@@ -1,10 +1,10 @@
 import { candidatRepository } from "@/lib/api/candidats";
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -45,7 +45,7 @@ export async function GET(
     if (!candidat) {
       return NextResponse.json(
         { success: false, error: "Candidat non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -54,14 +54,14 @@ export async function GET(
     console.error("Error fetching candidat:", error);
     return NextResponse.json(
       { success: false, error: "Erreur lors de la récupération du candidat" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
   const body = await request.json();

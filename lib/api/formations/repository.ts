@@ -1,5 +1,9 @@
-import prisma from "@/lib/prisma";
-import type { Formation, CreateFormationData, UpdateFormationData } from "./types";
+import { prisma } from "@/lib/prisma";
+import type {
+  Formation,
+  CreateFormationData,
+  UpdateFormationData,
+} from "./types";
 
 /**
  * Repository for formations - Database operations
@@ -72,4 +76,3 @@ export class FormationRepository {
 }
 
 export const formationRepository = new FormationRepository();
-

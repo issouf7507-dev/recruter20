@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { RecruteurInformation, RecruteurInformationEntreprise } from "./types";
 
 /**
@@ -111,7 +111,7 @@ export class RecruteurRepository {
    */
   async updateRecruteurInformationEntreprise(
     id: string,
-    data: RecruteurInformationEntreprise
+    data: RecruteurInformationEntreprise,
   ) {
     return await prisma.recruteur.update({
       where: { id },

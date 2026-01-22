@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 /**
  * POST /api/offres/[id]/views
@@ -7,7 +7,7 @@ import prisma from "@/lib/prisma";
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -21,7 +21,7 @@ export async function POST(
     if (!existingOffer) {
       return NextResponse.json(
         { success: false, error: "Offer not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -49,7 +49,7 @@ export async function POST(
     console.error("Error incrementing views:", error);
     return NextResponse.json(
       { success: false, error: "Failed to increment views" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -60,7 +60,7 @@ export async function POST(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -76,7 +76,7 @@ export async function GET(
     if (!offer) {
       return NextResponse.json(
         { success: false, error: "Offer not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -90,7 +90,7 @@ export async function GET(
     console.error("Error fetching views:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch views" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

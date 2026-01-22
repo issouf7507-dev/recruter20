@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { documentService } from "@/lib/api/documents";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 /**
  * POST /api/upload
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     if (!session || !session.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
           error:
             "Missing required fields: candidatId, fileName, fileUrl, fileType, fileSize, documentType",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     if (!candidat || candidat.userId !== session.user.id) {
       return NextResponse.json(
         { success: false, error: "Forbidden" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
           url: fileUrl,
         },
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error: any) {
     console.error("Error uploading document:", error);
@@ -82,8 +82,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: error.message || "Failed to upload document",
       },
-      { status: error.message?.includes("Missing required") ? 400 : 500 }
+      { status: error.message?.includes("Missing required") ? 400 : 500 },
     );
   }
 }
-

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 // import { deleteInvitation } from "@/lib/api/invitation/service";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 /**
  * DELETE /api/invitations/[id]
@@ -9,7 +9,7 @@ import prisma from "@/lib/prisma";
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth.api.getSession({
@@ -19,7 +19,7 @@ export async function DELETE(
     if (!session || !session.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
     const user = await prisma.user.findUnique({
@@ -33,7 +33,7 @@ export async function DELETE(
           success: false,
           error: "Seuls les recruteurs peuvent supprimer des invitations",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -47,7 +47,7 @@ export async function DELETE(
     if (!recruteur) {
       return NextResponse.json(
         { success: false, error: "Recruteur non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -59,7 +59,7 @@ export async function DELETE(
     if (!invitation) {
       return NextResponse.json(
         { success: false, error: "Invitation non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -69,7 +69,7 @@ export async function DELETE(
           success: false,
           error: "Vous n'avez pas le droit de supprimer cette invitation",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -89,7 +89,7 @@ export async function DELETE(
         success: false,
         error: error.message || "Failed to delete invitation",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -100,7 +100,7 @@ export async function DELETE(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth.api.getSession({
@@ -110,7 +110,7 @@ export async function GET(
     if (!session || !session.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -124,20 +124,19 @@ export async function GET(
     if (!recruteur) {
       return NextResponse.json(
         { success: false, error: "Recruteur non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     // Importer dynamiquement pour éviter les erreurs circulaires
-    const { invitationRepository } = await import(
-      "@/lib/api/invitation/repository"
-    );
+    const { invitationRepository } =
+      await import("@/lib/api/invitation/repository");
     const invitation = await invitationRepository.findById(id);
 
     if (!invitation) {
       return NextResponse.json(
         { success: false, error: "Invitation non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -147,7 +146,7 @@ export async function GET(
           success: false,
           error: "Vous n'avez pas le droit de voir cette invitation",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -162,7 +161,7 @@ export async function GET(
         success: false,
         error: error.message || "Failed to fetch invitation",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

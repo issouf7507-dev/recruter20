@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 /**
  * GET /api/candidats/[id]/conversations
@@ -7,7 +7,7 @@ import prisma from "@/lib/prisma";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id: candidatId } = await params;
@@ -15,7 +15,7 @@ export async function GET(
     if (!candidatId) {
       return NextResponse.json(
         { success: false, error: "Candidat ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -53,10 +53,7 @@ export async function GET(
     console.error("Error fetching conversations:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch conversations" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
-
-

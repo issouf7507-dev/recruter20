@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
 import { invitationRepository } from "@/lib/api/invitation/repository";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 const acceptInvitationSchema = z.object({
   nom: z.string().min(1, "Le nom est requis"),
@@ -19,7 +19,7 @@ const acceptInvitationSchema = z.object({
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
+  { params }: { params: Promise<{ token: string }> },
 ) {
   try {
     const { token } = await params;
@@ -32,21 +32,21 @@ export async function POST(
     if (!invitation) {
       return NextResponse.json(
         { success: false, error: "Invitation non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (invitation.accepted) {
       return NextResponse.json(
         { success: false, error: "Cette invitation a déjà été acceptée" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (new Date() > invitation.expiresAt) {
       return NextResponse.json(
         { success: false, error: "Cette invitation a expiré" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -78,7 +78,7 @@ export async function POST(
             requiresLogin: true,
             email: invitation.email,
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
     } else {
@@ -89,7 +89,7 @@ export async function POST(
             success: false,
             error: "Un mot de passe est requis pour créer votre compte",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -111,7 +111,7 @@ export async function POST(
               password: validatedData.password,
               name: `${validatedData.prenom} ${validatedData.nom}`,
             }),
-          }
+          },
         );
 
         const signUpData = await signUpResponse.json();
@@ -130,12 +130,12 @@ export async function POST(
               userId = user.id;
             } else {
               throw new Error(
-                "Un compte existe déjà avec cet email. Veuillez vous connecter."
+                "Un compte existe déjà avec cet email. Veuillez vous connecter.",
               );
             }
           } else {
             throw new Error(
-              signUpData.message || "Erreur lors de la création du compte"
+              signUpData.message || "Erreur lors de la création du compte",
             );
           }
         } else {
@@ -171,7 +171,7 @@ export async function POST(
             userId = user.id;
           } else {
             throw new Error(
-              "Un compte existe déjà avec cet email. Veuillez vous connecter."
+              "Un compte existe déjà avec cet email. Veuillez vous connecter.",
             );
           }
         } else {
@@ -194,7 +194,7 @@ export async function POST(
         message: "Invitation acceptée avec succès",
         userId: userId,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     console.error("Error accepting invitation:", error);
@@ -207,7 +207,7 @@ export async function POST(
           error: "Données invalides",
           errors: error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -224,7 +224,7 @@ export async function POST(
           success: false,
           error: error.message,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -233,7 +233,7 @@ export async function POST(
         success: false,
         error: error.message || "Failed to accept invitation",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -244,36 +244,35 @@ export async function POST(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
+  { params }: { params: Promise<{ token: string }> },
 ) {
   try {
     const { token } = await params;
 
     // Importer dynamiquement pour éviter les erreurs circulaires
-    const { invitationRepository } = await import(
-      "@/lib/api/invitation/repository"
-    );
+    const { invitationRepository } =
+      await import("@/lib/api/invitation/repository");
 
     const invitation = await invitationRepository.findByToken(token);
 
     if (!invitation) {
       return NextResponse.json(
         { success: false, error: "Invitation non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (invitation.accepted) {
       return NextResponse.json(
         { success: false, error: "Cette invitation a déjà été acceptée" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (new Date() > invitation.expiresAt) {
       return NextResponse.json(
         { success: false, error: "Cette invitation a expiré" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -297,7 +296,7 @@ export async function GET(
         success: false,
         error: error.message || "Failed to fetch invitation",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

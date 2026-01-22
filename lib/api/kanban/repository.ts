@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import type {
   KanbanColumn,
   KanbanCard,
@@ -137,7 +137,7 @@ export class KanbanRepository {
    */
   async createColumn(
     recruteurId: string,
-    data: CreateKanbanColumnData
+    data: CreateKanbanColumnData,
   ): Promise<KanbanColumn> {
     // Get the maximum order for this recruteur
     const maxOrderColumn = await prisma.kanbanColumn.findFirst({
@@ -172,7 +172,7 @@ export class KanbanRepository {
    */
   async updateColumn(
     id: string,
-    data: UpdateKanbanColumnData
+    data: UpdateKanbanColumnData,
   ): Promise<KanbanColumn> {
     const column = await prisma.kanbanColumn.update({
       where: { id },
@@ -195,15 +195,15 @@ export class KanbanRepository {
    * Reorder columns
    */
   async reorderColumns(
-    updates: Array<{ id: string; order: number }>
+    updates: Array<{ id: string; order: number }>,
   ): Promise<void> {
     await prisma.$transaction(
       updates.map(({ id, order }) =>
         prisma.kanbanColumn.update({
           where: { id },
           data: { order },
-        })
-      )
+        }),
+      ),
     );
   }
 
@@ -258,7 +258,7 @@ export class KanbanRepository {
    */
   async updateApplicationStatus(
     applicationId: string,
-    newStatus: ApplicationStatus
+    newStatus: ApplicationStatus,
   ) {
     const application = await prisma.application.update({
       where: { id: applicationId },
@@ -300,7 +300,7 @@ export class KanbanRepository {
    */
   async verifyColumnOwnership(
     columnId: string,
-    recruteurId: string
+    recruteurId: string,
   ): Promise<boolean> {
     const column = await prisma.kanbanColumn.findFirst({
       where: {
@@ -317,7 +317,7 @@ export class KanbanRepository {
    */
   async verifyApplicationOwnership(
     applicationId: string,
-    recruteurId: string
+    recruteurId: string,
   ): Promise<boolean> {
     const application = await prisma.application.findFirst({
       where: {
@@ -337,7 +337,7 @@ export class KanbanRepository {
   async createCard(
     recruteurId: string,
     data: CreateKanbanCardData,
-    userId?: string
+    userId?: string,
   ): Promise<KanbanCard> {
     // Verify column ownership
     const column = await prisma.kanbanColumn.findFirst({
@@ -446,7 +446,7 @@ export class KanbanRepository {
     id: string,
     data: UpdateKanbanCardData,
     recruteurId: string,
-    userId?: string
+    userId?: string,
   ): Promise<KanbanCard> {
     // Verify ownership
     const card = await prisma.kanbanCard.findFirst({
@@ -570,7 +570,7 @@ export class KanbanRepository {
     targetColumnId: string,
     newOrder?: number,
     recruteurId?: string,
-    userId?: string
+    userId?: string,
   ): Promise<KanbanCard> {
     // Verify column ownership if recruteurId provided
     if (recruteurId) {
@@ -654,7 +654,7 @@ export class KanbanRepository {
             JSON.stringify({
               targetColumnId,
               newOrder: finalOrder,
-            })
+            }),
           ),
         },
       });
@@ -667,15 +667,15 @@ export class KanbanRepository {
    * Reorder cards in a column
    */
   async reorderCards(
-    updates: Array<{ cardId: string; newOrder: number }>
+    updates: Array<{ cardId: string; newOrder: number }>,
   ): Promise<void> {
     await prisma.$transaction(
       updates.map(({ cardId, newOrder }) =>
         prisma.kanbanCard.update({
           where: { id: cardId },
           data: { order: newOrder },
-        })
-      )
+        }),
+      ),
     );
   }
 
@@ -686,7 +686,7 @@ export class KanbanRepository {
     cardId: string,
     userIds: string[],
     recruteurId: string,
-    userId?: string
+    userId?: string,
   ): Promise<KanbanCard> {
     // Verify card ownership
     const card = await prisma.kanbanCard.findFirst({
@@ -732,7 +732,7 @@ export class KanbanRepository {
     cardId: string,
     userId: string,
     recruteurId: string,
-    actorUserId?: string
+    actorUserId?: string,
   ): Promise<KanbanCard> {
     // Verify card ownership
     const card = await prisma.kanbanCard.findFirst({
@@ -775,7 +775,7 @@ export class KanbanRepository {
    */
   private async findCardById(
     cardId: string,
-    recruteurId: string
+    recruteurId: string,
   ): Promise<KanbanCard> {
     const card = await prisma.kanbanCard.findFirst({
       where: {
@@ -904,7 +904,7 @@ export class KanbanRepository {
     cardId: string,
     labelId: string,
     recruteurId: string,
-    userId?: string
+    userId?: string,
   ): Promise<KanbanCard> {
     // Verify card ownership
     const card = await prisma.kanbanCard.findFirst({
@@ -956,7 +956,7 @@ export class KanbanRepository {
     cardId: string,
     labelId: string,
     recruteurId: string,
-    actorUserId?: string
+    actorUserId?: string,
   ): Promise<KanbanCard> {
     // Verify card ownership
     const card = await prisma.kanbanCard.findFirst({
@@ -1001,7 +1001,7 @@ export class KanbanRepository {
     cardId: string,
     content: string,
     authorId: string,
-    recruteurId: string
+    recruteurId: string,
   ): Promise<KanbanCard> {
     // Verify card ownership
     const card = await prisma.kanbanCard.findFirst({
@@ -1044,7 +1044,7 @@ export class KanbanRepository {
   async createCheckItem(
     cardId: string,
     label: string,
-    recruteurId: string
+    recruteurId: string,
   ): Promise<KanbanCard> {
     // Verify card ownership
     const card = await prisma.kanbanCard.findFirst({
@@ -1062,9 +1062,10 @@ export class KanbanRepository {
     }
 
     // Get the max order value
-    const maxOrder = card.checklist.length > 0
-      ? Math.max(...card.checklist.map((item) => item.order))
-      : -1;
+    const maxOrder =
+      card.checklist.length > 0
+        ? Math.max(...card.checklist.map((item) => item.order))
+        : -1;
 
     // Create check item
     await prisma.checkItem.create({
@@ -1086,7 +1087,7 @@ export class KanbanRepository {
   async updateCheckItem(
     checkItemId: string,
     data: { label?: string; isDone?: boolean },
-    recruteurId: string
+    recruteurId: string,
   ): Promise<KanbanCard> {
     // Find the check item and verify card ownership
     const checkItem = await prisma.checkItem.findUnique({
@@ -1122,7 +1123,7 @@ export class KanbanRepository {
    */
   async deleteCheckItem(
     checkItemId: string,
-    recruteurId: string
+    recruteurId: string,
   ): Promise<KanbanCard> {
     // Find the check item and verify card ownership
     const checkItem = await prisma.checkItem.findUnique({
@@ -1155,7 +1156,7 @@ export class KanbanRepository {
   async createCardDueDate(
     cardId: string,
     dueAt: Date,
-    recruteurId: string
+    recruteurId: string,
   ): Promise<KanbanCard> {
     // Verify card ownership
     const card = await prisma.kanbanCard.findFirst({
@@ -1187,7 +1188,7 @@ export class KanbanRepository {
   async updateCardDueDate(
     dueDateId: string,
     dueAt: Date,
-    recruteurId: string
+    recruteurId: string,
   ): Promise<KanbanCard> {
     // Find the due date and verify card ownership
     const dueDate = await prisma.cardDueDate.findUnique({
@@ -1222,7 +1223,7 @@ export class KanbanRepository {
    */
   async deleteCardDueDate(
     dueDateId: string,
-    recruteurId: string
+    recruteurId: string,
   ): Promise<KanbanCard> {
     // Find the due date and verify card ownership
     const dueDate = await prisma.cardDueDate.findUnique({
@@ -1261,7 +1262,7 @@ export class KanbanRepository {
       fileSize?: number;
       uploadedById: string;
     },
-    recruteurId: string
+    recruteurId: string,
   ): Promise<KanbanCard> {
     // Verify card ownership
     const card = await prisma.kanbanCard.findFirst({
@@ -1295,7 +1296,7 @@ export class KanbanRepository {
    */
   async deleteCardAttachment(
     attachmentId: string,
-    recruteurId: string
+    recruteurId: string,
   ): Promise<KanbanCard> {
     // Find the attachment and verify card ownership
     const attachment = await prisma.cardAttachment.findUnique({

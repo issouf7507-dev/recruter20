@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import type {
   Application,
   ApplicationStatus,
@@ -75,7 +75,7 @@ export class ApplicationRepository {
    */
   async existsForCandidateAndOffer(
     candidatId: string,
-    jobOfferId: string
+    jobOfferId: string,
   ): Promise<boolean> {
     const count = await prisma.application.count({
       where: {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { invitationRepository } from "@/lib/api/invitation/repository";
 
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     if (!session || !session.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
           success: false,
           error: "Seuls les recruteurs peuvent voir les invitations",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     if (!recruteur) {
       return NextResponse.json(
         { success: false, error: "Recruteur non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
         success: false,
         error: error.message || "Failed to fetch invitations",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     if (!session || !session.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Seuls les recruteurs peuvent créer des invitations",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     if (!recruteur) {
       return NextResponse.json(
         { success: false, error: "Recruteur non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
         data: invitation,
         message: "Invitation créée et email envoyé avec succès",
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error: any) {
     console.error("Error creating invitation:", error);
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
           error: "Données invalides",
           errors: error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: error.message,
         },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: error.message || "Failed to create invitation",
       },
-      { status: error.message?.includes("non trouvé") ? 404 : 500 }
+      { status: error.message?.includes("non trouvé") ? 404 : 500 },
     );
   }
 }

@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import type { JobOffer, CreateOfferData } from "./types";
 
 /**
@@ -278,7 +278,7 @@ export class JobOfferRepository {
       salaryCurrency?: string;
       datePosted?: string;
       experience?: string[];
-    }
+    },
   ) {
     const {
       page = 1,

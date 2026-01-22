@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { resendInvitationEmail } from "@/lib/api/invitation/service.server";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 /**
  * POST /api/invitations/[id]/resend
@@ -9,7 +9,7 @@ import prisma from "@/lib/prisma";
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth.api.getSession({
@@ -19,7 +19,7 @@ export async function POST(
     if (!session || !session.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -34,7 +34,7 @@ export async function POST(
           success: false,
           error: "Seuls les recruteurs peuvent renvoyer des invitations",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -48,7 +48,7 @@ export async function POST(
     if (!recruteur) {
       return NextResponse.json(
         { success: false, error: "Recruteur non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -60,7 +60,7 @@ export async function POST(
     if (!invitation) {
       return NextResponse.json(
         { success: false, error: "Invitation non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -70,7 +70,7 @@ export async function POST(
           success: false,
           error: "Vous n'avez pas le droit de renvoyer cette invitation",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -87,7 +87,7 @@ export async function POST(
         success: false,
         error: error.message || "Failed to resend invitation email",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

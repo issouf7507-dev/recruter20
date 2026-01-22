@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { emailService } from "@/lib/email";
 import { emitNewMessage } from "@/lib/socket-server";
 
@@ -9,7 +9,7 @@ import { emitNewMessage } from "@/lib/socket-server";
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id: conversationId } = await params;
@@ -22,7 +22,7 @@ export async function POST(
           success: false,
           error: "senderId, senderType et content sont requis",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -61,7 +61,7 @@ export async function POST(
     if (!conversation) {
       return NextResponse.json(
         { success: false, error: "Conversation not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -121,18 +121,18 @@ export async function POST(
         .then((result) => {
           if (result.success) {
             console.log(
-              `Email de notification envoyé à ${candidatEmail} pour la conversation ${conversationId}`
+              `Email de notification envoyé à ${candidatEmail} pour la conversation ${conversationId}`,
             );
           } else {
             console.warn(
-              `Échec de l'envoi de l'email de notification: ${result.error}`
+              `Échec de l'envoi de l'email de notification: ${result.error}`,
             );
           }
         })
         .catch((error) => {
           console.error(
             "Erreur lors de l'envoi de l'email de notification:",
-            error
+            error,
           );
         });
     }
@@ -142,7 +142,7 @@ export async function POST(
     console.error("Error creating message:", error);
     return NextResponse.json(
       { success: false, error: "Failed to create message" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -153,7 +153,7 @@ export async function POST(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id: conversationId } = await params;
@@ -168,7 +168,7 @@ export async function GET(
     console.error("Error fetching messages:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch messages" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

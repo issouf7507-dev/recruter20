@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { conversationRepository } from "@/lib/api/conversations/repository";
 
 /**
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     if (!recruteurId) {
       return NextResponse.json(
         { success: false, error: "Recruteur ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching conversations:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch conversations" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "jobOfferId, candidatId et recruteurId sont requis",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     console.error("Error creating/fetching conversation:", error);
     return NextResponse.json(
       { success: false, error: "Failed to create/fetch conversation" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

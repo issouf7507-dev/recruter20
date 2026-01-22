@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { recruteurRepository } from "@/lib/api/recruteurs/repository";
 import { collaborateurRepository } from "@/lib/api/collaborateur";
@@ -10,7 +10,7 @@ import { collaborateurRepository } from "@/lib/api/collaborateur";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -40,7 +40,7 @@ export async function GET(
     if (!offre) {
       return NextResponse.json(
         { success: false, error: "Offer not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -52,7 +52,7 @@ export async function GET(
     console.error("Error fetching offer:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch offer" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -63,7 +63,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth.api.getSession({
@@ -73,7 +73,7 @@ export async function PUT(
     if (!session || !session.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -95,13 +95,13 @@ export async function PUT(
     if (!existingOffre) {
       return NextResponse.json(
         { success: false, error: "Offer not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     const recruteur = await recruteurRepository.findByUserId(session.user.id);
     const collaborateur = await collaborateurRepository.findByUserId(
-      session.user.id
+      session.user.id,
     );
     const recruteurId = recruteur
       ? recruteur?.id
@@ -110,7 +110,7 @@ export async function PUT(
     if (!recruteurId) {
       return NextResponse.json(
         { success: false, error: "User is not a recruiter or collaborateur" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -151,7 +151,7 @@ export async function PUT(
     console.error("Error updating offer:", error);
     return NextResponse.json(
       { success: false, error: "Failed to update offer" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -162,7 +162,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth.api.getSession({
@@ -172,7 +172,7 @@ export async function DELETE(
     if (!session || !session.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -193,13 +193,13 @@ export async function DELETE(
     if (!existingOffre) {
       return NextResponse.json(
         { success: false, error: "Offer not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     const recruteur = await recruteurRepository.findByUserId(session.user.id);
     const collaborateur = await collaborateurRepository.findByUserId(
-      session.user.id
+      session.user.id,
     );
     const recruteurId = recruteur
       ? recruteur?.id
@@ -208,7 +208,7 @@ export async function DELETE(
     if (!recruteurId) {
       return NextResponse.json(
         { success: false, error: "User is not a recruiter or collaborateur" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -229,7 +229,7 @@ export async function DELETE(
     console.error("Error deleting offer:", error);
     return NextResponse.json(
       { success: false, error: "Failed to delete offer" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

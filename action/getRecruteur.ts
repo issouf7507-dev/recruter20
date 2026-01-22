@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 export async function getRecruteur(userId: string) {
   const recruteur = await prisma.recruteur.findUnique({

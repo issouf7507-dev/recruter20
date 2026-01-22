@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import type { Document, CreateDocumentData } from "./types";
 
 /**
@@ -58,7 +58,7 @@ export class DocumentRepository {
   async updateCandidatFile(
     candidatId: string,
     type: "cv" | "lettre",
-    url: string
+    url: string,
   ) {
     return prisma.candidat.update({
       where: { id: candidatId },

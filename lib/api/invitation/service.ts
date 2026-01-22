@@ -1,7 +1,7 @@
 import { ApiResponse, CreateInvitation, Invitation } from "./types";
 
 export async function createInvitation(
-  data: CreateInvitation
+  data: CreateInvitation,
 ): Promise<Invitation> {
   const response = await fetch("/api/invitations", {
     method: "POST",
@@ -22,7 +22,7 @@ export async function createInvitation(
 export async function acceptInvitation(
   token: string,
   userId: string,
-  collaborateurData: { nom: string; prenom: string }
+  collaborateurData: { nom: string; prenom: string },
 ): Promise<Invitation> {
   const response = await fetch(`/api/invitations/accept/${token}`, {
     method: "POST",
@@ -57,7 +57,7 @@ export async function fetchInvitations(): Promise<Invitation[]> {
 // import type { Invitation, CreateInvitation, InvitationResponse } from "./types";
 // import { invitationRepository } from "./repository";
 // import { emailService } from "@/lib/email";
-// import prisma from "@/lib/prisma";
+// import { prisma } from "@/lib/prisma";
 
 // /**
 //  * Fetch all invitations

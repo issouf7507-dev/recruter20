@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { sendEmail } from "@/lib/email";
 
@@ -62,7 +62,7 @@ export const auth = betterAuth({
     },
     onPasswordReset: async ({ user }, request) => {
       console.log(
-        `Le mot de passe de l'utilisateur ${user.email} a été réinitialisé.`
+        `Le mot de passe de l'utilisateur ${user.email} a été réinitialisé.`,
       );
       // Vous pouvez ajouter ici d'autres logiques, comme envoyer un email de confirmation
     },

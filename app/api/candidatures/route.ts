@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { applicationService } from "@/lib/api/candidatures";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 /**
  * POST /api/candidatures
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     if (!session || !session.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     if (!candidat) {
       return NextResponse.json(
         { success: false, error: "Candidat profile not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
         data: application,
         message: "Candidature envoyée avec succès",
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error: any) {
     console.error("Error creating application:", error);
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Vous avez déjà postulé à cette offre",
         },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: error.message || "Failed to create application",
       },
-      { status: error.message?.includes("Missing required") ? 400 : 500 }
+      { status: error.message?.includes("Missing required") ? 400 : 500 },
     );
   }
 }

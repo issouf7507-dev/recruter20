@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 /**
  * GET /api/collaborateurs?recruteurId=xxx
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     if (!session || !session.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     if (!recruteurId) {
       return NextResponse.json(
         { success: false, error: "recruteurId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "User not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       if (!recruteur || recruteur.id !== recruteurId) {
         return NextResponse.json(
           { success: false, error: "Access denied" },
-          { status: 403 }
+          { status: 403 },
         );
       }
     } else if (user.type === "COLLABORATEUR") {
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       if (!collaborateur || collaborateur.recruteurId !== recruteurId) {
         return NextResponse.json(
           { success: false, error: "Access denied" },
-          { status: 403 }
+          { status: 403 },
         );
       }
     }
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
         success: false,
         error: error.message || "Failed to fetch collaborateurs",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

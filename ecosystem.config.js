@@ -11,7 +11,7 @@ module.exports = {
       env_file: ".env.production",
       env: {
         NODE_ENV: "production",
-        PORT: 3000,
+        PORT: 3004,
       },
       error_file: "/home/issouf/.pm2/logs/recruter-test-nextjs-error.log",
       out_file: "/home/issouf/.pm2/logs/recruter-test-nextjs-out.log",

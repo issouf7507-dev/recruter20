@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { formationService } from "@/lib/api/formations";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 /**
  * POST /api/formations
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     if (!session || !session.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     if (!candidat || candidat.userId !== session.user.id) {
       return NextResponse.json(
         { success: false, error: "Forbidden" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -42,17 +42,16 @@ export async function POST(request: NextRequest) {
         success: true,
         data: formation,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error: any) {
     console.error("Error creating formation:", error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error.message || "Failed to create formation" 
+      {
+        success: false,
+        error: error.message || "Failed to create formation",
       },
-      { status: error.message?.includes("Missing required") ? 400 : 500 }
+      { status: error.message?.includes("Missing required") ? 400 : 500 },
     );
   }
 }
-
