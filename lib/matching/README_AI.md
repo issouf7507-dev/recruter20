@@ -193,7 +193,7 @@ Score final = 50% scoring classique + 30% similarité IA + 20% classification IA
 
 ### Sortie
 
-```typescript
+```typescriptsss
 {
   semanticScore: number; // 0-100
   classificationFit: string; // "excellent" | "good" | "average" | "poor"
@@ -246,7 +246,7 @@ const result = await analyzeMatchHuggingFacePure(
   {
     title: "Développeur Fullstack React",
     description: "Recherche développeur React expérimenté...",
-  }
+  },
 );
 
 console.log(result);
