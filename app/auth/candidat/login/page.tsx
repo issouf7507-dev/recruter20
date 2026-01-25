@@ -26,30 +26,46 @@ export default function CandidateLoginPage() {
     setIsLoading(true);
 
     try {
-      // TODO: Implémenter l'authentification avec votre backend
       const res = await signIn.email({
         email: data.email,
         password: data.password,
       });
-      if (res.data) {
-        const candidat = await getCandidat(res.data.user.id);
 
-        if (candidat?.user.type === "CANDIDAT") {
-          window.location.href = "/";
-        } else {
-          toast.error("Vous n'êtes pas un candidat");
-
-          return;
-        }
-      }
       if (res.error) {
         console.error(res.error);
-        toast.error("Erreur de connexion");
+        // Gérer les erreurs spécifiques
+        const errorMessage = res.error.message || String(res.error);
+        if (errorMessage.includes("Invalid credentials") || errorMessage.includes("invalid") || errorMessage.includes("incorrect")) {
+          toast.error("Email ou mot de passe incorrect.");
+        } else if (errorMessage.includes("not found") || errorMessage.includes("introuvable")) {
+          toast.error("Aucun compte trouvé avec cet email.");
+        } else if (errorMessage.includes("password") || errorMessage.includes("mot de passe")) {
+          toast.error("Le mot de passe est incorrect.");
+        } else {
+          toast.error("Erreur de connexion. Veuillez réessayer.");
+        }
         return;
+      }
+
+      if (res.data) {
+        try {
+          const candidat = await getCandidat(res.data.user.id);
+
+          if (candidat?.user.type === "CANDIDAT") {
+            toast.success("Connexion réussie ! Redirection...");
+            window.location.href = "/";
+          } else {
+            toast.error("Vous n'êtes pas un candidat. Veuillez vous connecter avec un compte candidat.");
+            return;
+          }
+        } catch (fetchError) {
+          console.error("Erreur lors de la récupération du profil:", fetchError);
+          toast.error("Erreur lors de la récupération de votre profil. Veuillez réessayer.");
+        }
       }
     } catch (error) {
       console.error("Erreur de connexion:", error);
-      // TODO: Afficher un message d'erreur à l'utilisateur
+      toast.error("Une erreur inattendue s'est produite. Veuillez réessayer.");
     } finally {
       setIsLoading(false);
     }

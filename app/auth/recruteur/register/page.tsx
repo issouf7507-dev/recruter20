@@ -36,27 +36,44 @@ export default function RecruiterRegisterPage() {
         name: data.firstName + " " + data.lastName || "",
       });
 
-      if (res.data) {
-        await completeSignupRecruteur({
-          email: data.email,
-          typeUser: "RECRUTEUR",
-          firstName: data.firstName || "",
-          lastName: data.lastName || "",
-          companyName: data.companyName || "",
-          description: "",
-          type: "ENTREPRISE",
-          phone: data.phone || "",
-        });
-      }
       if (res.error) {
         console.error(res.error);
+        // Gérer les erreurs spécifiques
+        const errorMessage = res.error.message || String(res.error);
+        if (errorMessage.includes("existing email") || errorMessage.includes("already exists") || errorMessage.includes("déjà")) {
+          toast.error("Cet email est déjà utilisé. Veuillez vous connecter ou utiliser un autre email.");
+        } else if (errorMessage.includes("password") || errorMessage.includes("mot de passe")) {
+          toast.error("Le mot de passe ne respecte pas les critères requis.");
+        } else if (errorMessage.includes("email") || errorMessage.includes("invalid")) {
+          toast.error("L'adresse email n'est pas valide.");
+        } else {
+          toast.error("Erreur lors de l'inscription. Veuillez réessayer.");
+        }
         return;
       }
 
-      router.push("/auth/recruteur/login");
+      if (res.data) {
+        try {
+          await completeSignupRecruteur({
+            email: data.email,
+            typeUser: "RECRUTEUR",
+            firstName: data.firstName || "",
+            lastName: data.lastName || "",
+            companyName: data.companyName || "",
+            description: "",
+            type: "ENTREPRISE",
+            phone: data.phone || "",
+          });
+          toast.success("Inscription réussie ! Redirection...");
+          router.push("/auth/recruteur/login");
+        } catch (signupError) {
+          console.error("Erreur lors de la finalisation de l'inscription:", signupError);
+          toast.error("Erreur lors de la finalisation de l'inscription. Veuillez contacter le support.");
+        }
+      }
     } catch (error) {
       console.error("Erreur d'inscription:", error);
-      toast.error("Erreur d'inscription");
+      toast.error("Une erreur inattendue s'est produite. Veuillez réessayer.");
     } finally {
       setIsLoading(false);
     }

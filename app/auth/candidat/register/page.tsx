@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowLeftIcon } from "lucide-react";
 import { signUp } from "@/lib/auth-client";
 import { completeSignupCandidat } from "@/action/signup";
+import { toast } from "sonner";
 
 interface AuthFormData {
   email: string;
@@ -33,37 +34,54 @@ export default function CandidateRegisterPage() {
         name: data.firstName + " " + data.lastName || "",
       });
 
-      if (res.data) {
-        // Convertir la date en string ISO si c'est une Date, sinon utiliser une chaîne vide
-        let dateNaissanceStr = "";
-        if (data.dateNaissance) {
-          if (data.dateNaissance instanceof Date) {
-            dateNaissanceStr = data.dateNaissance.toISOString();
-          } else if (typeof data.dateNaissance === "string") {
-            dateNaissanceStr = data.dateNaissance;
-          }
-        }
-
-        await completeSignupCandidat({
-          email: data.email,
-          nom: data.firstName || "",
-          prenom: data.lastName || "",
-          telephone: data.phone || "",
-          pays: "CIV",
-          dateNaissance: dateNaissanceStr,
-          nationalite: "CIV",
-          type: "CANDIDAT",
-        });
-      }
       if (res.error) {
         console.error(res.error);
+        // Gérer les erreurs spécifiques
+        const errorMessage = res.error.message || String(res.error);
+        if (errorMessage.includes("existing email") || errorMessage.includes("already exists") || errorMessage.includes("déjà")) {
+          toast.error("Cet email est déjà utilisé. Veuillez vous connecter ou utiliser un autre email.");
+        } else if (errorMessage.includes("password") || errorMessage.includes("mot de passe")) {
+          toast.error("Le mot de passe ne respecte pas les critères requis.");
+        } else if (errorMessage.includes("email") || errorMessage.includes("invalid")) {
+          toast.error("L'adresse email n'est pas valide.");
+        } else {
+          toast.error("Erreur lors de l'inscription. Veuillez réessayer.");
+        }
         return;
       }
 
-      router.push("/auth/candidat/login");
+      if (res.data) {
+        try {
+          // Convertir la date en string ISO si c'est une Date, sinon utiliser une chaîne vide
+          let dateNaissanceStr = "";
+          if (data.dateNaissance) {
+            if (data.dateNaissance instanceof Date) {
+              dateNaissanceStr = data.dateNaissance.toISOString();
+            } else if (typeof data.dateNaissance === "string") {
+              dateNaissanceStr = data.dateNaissance;
+            }
+          }
+
+          await completeSignupCandidat({
+            email: data.email,
+            nom: data.firstName || "",
+            prenom: data.lastName || "",
+            telephone: data.phone || "",
+            pays: "CIV",
+            dateNaissance: dateNaissanceStr,
+            nationalite: "CIV",
+            type: "CANDIDAT",
+          });
+          toast.success("Inscription réussie ! Redirection...");
+          router.push("/auth/candidat/login");
+        } catch (signupError) {
+          console.error("Erreur lors de la finalisation de l'inscription:", signupError);
+          toast.error("Erreur lors de la finalisation de l'inscription. Veuillez contacter le support.");
+        }
+      }
     } catch (error) {
       console.error("Erreur d'inscription:", error);
-      // TODO: Afficher un message d'erreur à l'utilisateur
+      toast.error("Une erreur inattendue s'est produite. Veuillez réessayer.");
     } finally {
       setIsLoading(false);
     }

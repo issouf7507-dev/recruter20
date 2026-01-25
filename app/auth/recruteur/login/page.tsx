@@ -26,33 +26,51 @@ export default function RecruiterLoginPage() {
     setIsLoading(true);
 
     try {
-      // TODO: Implémenter l'authentification avec votre backend
       const res = await signIn.email({
         email: data.email,
         password: data.password,
       });
-      if (res.data) {
-        console.log("res.data", res.data);
-        const recruteur = await getRecruteur(res.data.user.id);
-        console.log("recruteur", recruteur);
-        if (
-          recruteur?.user.type === "RECRUTEUR" ||
-          recruteur?.user.type === "COLLABORATEUR"
-        ) {
-          window.location.href = "/recruteur/dashboard";
-        } else {
-          toast.error("Vous n'êtes pas un recruteur");
-          return;
-        }
-      }
+
       if (res.error) {
         console.error(res.error);
-        toast.error("Erreur de connexion");
+        // Gérer les erreurs spécifiques
+        const errorMessage = res.error.message || String(res.error);
+        if (errorMessage.includes("Invalid credentials") || errorMessage.includes("invalid") || errorMessage.includes("incorrect")) {
+          toast.error("Email ou mot de passe incorrect.");
+        } else if (errorMessage.includes("not found") || errorMessage.includes("introuvable")) {
+          toast.error("Aucun compte trouvé avec cet email.");
+        } else if (errorMessage.includes("password") || errorMessage.includes("mot de passe")) {
+          toast.error("Le mot de passe est incorrect.");
+        } else {
+          toast.error("Erreur de connexion. Veuillez réessayer.");
+        }
         return;
+      }
+
+      if (res.data) {
+        try {
+          console.log("res.data", res.data);
+          const recruteur = await getRecruteur(res.data.user.id);
+          console.log("recruteur", recruteur);
+
+          if (
+            recruteur?.user.type === "RECRUTEUR" ||
+            recruteur?.user.type === "COLLABORATEUR"
+          ) {
+            toast.success("Connexion réussie ! Redirection...");
+            window.location.href = "/recruteur/dashboard";
+          } else {
+            toast.error("Vous n'êtes pas un recruteur. Veuillez vous connecter avec un compte recruteur.");
+            return;
+          }
+        } catch (fetchError) {
+          console.error("Erreur lors de la récupération du profil:", fetchError);
+          toast.error("Erreur lors de la récupération de votre profil. Veuillez réessayer.");
+        }
       }
     } catch (error) {
       console.error("Erreur de connexion:", error);
-      // TODO: Afficher un message d'erreur à l'utilisateur
+      toast.error("Une erreur inattendue s'est produite. Veuillez réessayer.");
     } finally {
       setIsLoading(false);
     }
