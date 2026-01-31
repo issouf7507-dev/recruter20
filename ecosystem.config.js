@@ -2,8 +2,8 @@ module.exports = {
   apps: [
     {
       name: "recruter-nextjs",
-      script: "node_modules/next/dist/bin/next",
-      args: "start -p 3000",
+      script: "npm",
+      args: "start -- -p 3000",
       instances: 1,
       exec_mode: "fork",
       watch: false,
@@ -17,11 +17,12 @@ module.exports = {
       out_file: "/home/issouf/.pm2/logs/recruter-nextjs-out.log",
       log_file: "/home/issouf/.pm2/logs/recruter-nextjs-combined.log",
       time: true,
-      cwd: "/home/issouf/apps/recruter20",
+      cwd: "/var/www/app/recruter20",
     },
     {
       name: "recruter-socket",
-      script: "dist/server/socket.js",
+      script: "npm",
+      args: "run start:socket",
       // Alternative si compilation échoue: utiliser "node_modules/.bin/tsx server/socket.ts"
       instances: 1,
       exec_mode: "fork",
@@ -36,7 +37,7 @@ module.exports = {
       out_file: "/home/issouf/.pm2/logs/recruter-socket-out.log",
       log_file: "/home/issouf/.pm2/logs/recruter-socket-combined.log",
       time: true,
-      cwd: "/home/issouf/apps/recruter20",
+      cwd: "/var/www/app/recruter20",
     },
   ],
 };
