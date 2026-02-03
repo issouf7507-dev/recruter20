@@ -35,31 +35,65 @@ export class CandidatRepository {
 
     const where: any = {};
 
-    // Recherche textuelle (nom, prénom, bio, compétences)
-    // Note: MySQL doesn't support case-insensitive mode, so we use contains
+    // Recherche textuelle : on découpe en mots pour que "NIAMKE Motchian christian"
+    // matche un candidat dont nom/prénom contiennent chaque mot (pas la phrase entière).
     if (search) {
-      where.OR = [
-        { nom: { contains: search } },
-        { prenom: { contains: search } },
-        { bio: { contains: search } },
-        {
-          candidatCompetences: {
-            some: {
-              competence: { contains: search },
+      const words = search
+        .trim()
+        .split(/\s+/)
+        .filter((w) => w.length > 0);
+      const searchConditions = words.map((word) => ({
+        OR: [
+          { nom: { contains: word } },
+          { prenom: { contains: word } },
+          { bio: { contains: word } },
+          {
+            candidatCompetences: {
+              some: {
+                competence: { contains: word },
+              },
             },
           },
-        },
-        {
-          experiences: {
-            some: {
-              OR: [
-                { poste: { contains: search } },
-                { entreprise: { contains: search } },
-              ],
+          {
+            experiences: {
+              some: {
+                OR: [
+                  { poste: { contains: word } },
+                  { entreprise: { contains: word } },
+                ],
+              },
             },
           },
-        },
-      ];
+        ],
+      }));
+      // Chaque mot doit matcher dans au moins un champ (AND entre les mots)
+      where.AND =
+        searchConditions.length > 0
+          ? searchConditions
+          : [
+              {
+                OR: [
+                  { nom: { contains: search } },
+                  { prenom: { contains: search } },
+                  { bio: { contains: search } },
+                  {
+                    candidatCompetences: {
+                      some: { competence: { contains: search } },
+                    },
+                  },
+                  {
+                    experiences: {
+                      some: {
+                        OR: [
+                          { poste: { contains: search } },
+                          { entreprise: { contains: search } },
+                        ],
+                      },
+                    },
+                  },
+                ],
+              },
+            ];
     }
 
     // Filtre par lieu (ville ou pays)
@@ -184,6 +218,54 @@ export class CandidatRepository {
         total: filteredTotal,
         totalPages: Math.ceil(filteredTotal / limit),
       },
+    };
+  }
+
+  /**
+   * Get distinct values for filter facets (all candidates, not only current page)
+   */
+  async getFacets(): Promise<{
+    lieux: string[];
+    competences: string[];
+    certifications: string[];
+  }> {
+    const [villesGroup, paysGroup, competencesGroup, certificationsGroup] =
+      await Promise.all([
+        prisma.candidat.groupBy({
+          by: ["ville"],
+          where: { ville: { not: null } },
+        }),
+        prisma.candidat.groupBy({
+          by: ["pays"],
+        }),
+        prisma.candidatCompetence.groupBy({
+          by: ["competence"],
+        }),
+        prisma.certification.groupBy({
+          by: ["nom"],
+        }),
+      ]);
+
+    const lieuxSet = new Set<string>();
+    for (const r of villesGroup) {
+      const v = typeof r.ville === "string" ? r.ville.trim() : "";
+      if (v) lieuxSet.add(v);
+    }
+    for (const r of paysGroup) {
+      const p = typeof r.pays === "string" ? r.pays.trim() : "";
+      if (p) lieuxSet.add(p);
+    }
+
+    return {
+      lieux: Array.from(lieuxSet).sort(),
+      competences: competencesGroup
+        .map((c) => (typeof c.competence === "string" ? c.competence.trim() : ""))
+        .filter(Boolean)
+        .sort(),
+      certifications: certificationsGroup
+        .map((c) => (typeof c.nom === "string" ? c.nom.trim() : ""))
+        .filter(Boolean)
+        .sort(),
     };
   }
 

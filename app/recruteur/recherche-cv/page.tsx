@@ -39,7 +39,10 @@ import {
   IconChevronLeft,
   IconChevronRight,
 } from "@tabler/icons-react";
-import { useSearchCandidates } from "@/lib/hooks/use-candidats";
+import {
+  useSearchCandidates,
+  useCandidatsFacets,
+} from "@/lib/hooks/use-candidats";
 import { useSession } from "@/lib/auth-client";
 import {
   useRecruteurByUserId,
@@ -279,7 +282,15 @@ export default function RechercheCVPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
 
-  // Use the search hook
+  // Facets = distinct values from ALL candidates (for filter dropdowns)
+  const { data: facetsData } = useCandidatsFacets();
+  const facets = facetsData ?? {
+    lieux: [],
+    competences: [],
+    certifications: [],
+  };
+
+  // Use the search hook (searches across ALL data server-side)
   const { data, isLoading, error } = useSearchCandidates({
     page: currentPage,
     limit: itemsPerPage,
@@ -470,17 +481,10 @@ export default function RechercheCVPage() {
     setCurrentPage(1);
   };
 
-  const competencesUniques = useMemo(() => {
-    return Array.from(new Set(cvs.flatMap((cv) => cv.cv.competences)));
-  }, [cvs]);
-
-  const lieuxUniques = useMemo(() => {
-    return Array.from(new Set(cvs.map((cv) => cv.candidat.lieu.split(",")[0])));
-  }, [cvs]);
-
-  const certificationsUniques = useMemo(() => {
-    return Array.from(new Set(cvs.flatMap((cv) => cv.cv.certifications)));
-  }, [cvs]);
+  // Use facets from API (all candidates) for filter options
+  const competencesUniques = facets.competences;
+  const lieuxUniques = facets.lieux;
+  const certificationsUniques = facets.certifications;
 
   return (
     <>
@@ -578,7 +582,7 @@ export default function RechercheCVPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Tous les lieux</SelectItem>
-                          {lieuxUniques.map((lieu) => (
+                          {lieuxUniques.map((lieu: string) => (
                             <SelectItem key={lieu} value={lieu}>
                               {lieu}
                             </SelectItem>
@@ -672,7 +676,7 @@ export default function RechercheCVPage() {
                           <SelectItem value="all">
                             Ajouter une certification
                           </SelectItem>
-                          {certificationsUniques.map((certification) => (
+                          {certificationsUniques.map((certification: string) => (
                             <SelectItem
                               key={certification}
                               value={certification}

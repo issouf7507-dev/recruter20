@@ -51,6 +51,28 @@ export async function searchCandidates(params?: {
 }
 
 /**
+ * Get distinct filter values (facets) for all candidates
+ */
+export async function getCandidatsFacets(): Promise<{
+  lieux: string[];
+  competences: string[];
+  certifications: string[];
+}> {
+  const response = await fetch("/api/candidats/facets");
+  const result: ApiResponse<{
+    lieux: string[];
+    competences: string[];
+    certifications: string[];
+  }> = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.error || "Failed to fetch facets");
+  }
+
+  return result.data;
+}
+
+/**
  * Update a candidat
  */
 export async function updateCandidat(
