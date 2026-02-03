@@ -96,16 +96,16 @@ const data = {
       icon: IconMail,
     },
 
-    // {
-    //   title: "Matching",
-    //   url: "/recruteur/matching",
-    //   icon: IconCheck,
-    // },
-    // {
-    //   title: "Matching IA",
-    //   url: "/recruteur/matching-ai",
-    //   icon: IconSparkles,
-    // },
+    {
+      title: "Matching",
+      url: "/recruteur/matching",
+      icon: IconCheck,
+    },
+    {
+      title: "Matching IA",
+      url: "/recruteur/matching-ai",
+      icon: IconSparkles,
+    },
     {
       title: "Multi-diffusion",
       url: "/recruteur/multi-diffusion",
