@@ -23,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { CvRequiredModal } from "@/app/components/publicc/CvRequiredModal";
 
 const teamMembers = [
   {
@@ -248,6 +249,7 @@ export default function LandingPage() {
   };
   return (
     <div className="container mx-auto px-4 pt-24 pb-10">
+      <CvRequiredModal />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
