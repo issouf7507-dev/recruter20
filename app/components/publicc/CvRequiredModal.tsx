@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText } from "lucide-react";
+import { Upload, FileText, Plus, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 export function CvRequiredModal() {
@@ -142,6 +142,22 @@ export function CvRequiredModal() {
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4 py-4">
+          <div className="rounded-lg border border-[#a590ff]/30 bg-[#a590ff]/5 p-4">
+            <p className="text-sm font-medium mb-2">Vous n&apos;avez pas encore de CV ?</p>
+            <a
+              href="https://cv.ylsix.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-[#a590ff] hover:underline font-medium"
+            >
+              <Plus className="h-4 w-4" />
+              Créer un CV en ligne sur cv.ylsix.com
+              <ExternalLink className="size-4" />
+            </a>
+            <p className="text-xs text-muted-foreground mt-1">
+              Choisissez un modèle, renseignez vos infos puis téléchargez votre CV avant de le déposer ici.
+            </p>
+          </div>
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium">
               Choisir un fichier (PDF, DOC, DOCX)
