@@ -118,11 +118,11 @@ export function CvRequiredModal() {
     }
     e.target.value = "";
   };
-
+  //si le fichier est trop grand, afficher un message d'erreur
   if (loading || !showModal) return null;
 
   return (
-    <Dialog open={true} onOpenChange={() => {}}>
+    <Dialog open={true} onOpenChange={() => { }}>
       <DialogContent
         className="sm:max-w-md"
         onPointerDownOutside={(e) => e.preventDefault()}
