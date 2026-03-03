@@ -13,7 +13,7 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, Eye, EyeOff } from "lucide-react";
 
 import { Button as ButtonUI } from "@/components/ui/button";
 
@@ -86,8 +86,8 @@ export default function AuthForm({
     type === "login"
       ? loginSchema
       : userType === "recruteur"
-      ? registerRecruteurSchema
-      : registerCandidatSchema;
+        ? registerRecruteurSchema
+        : registerCandidatSchema;
 
   const {
     register,
@@ -98,15 +98,15 @@ export default function AuthForm({
     resolver: zodResolver(schema),
   });
 
+  const [show, setShow] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const title = type === "login" ? "Connexion" : "Inscription";
   const subtitle =
     type === "login"
-      ? `Connectez-vous à votre compte ${
-          userType === "candidat" ? "candidat" : "recruteur"
-        }`
-      : `Créez votre compte ${
-          userType === "candidat" ? "candidat" : "recruteur"
-        }`;
+      ? `Connectez-vous à votre compte ${userType === "candidat" ? "candidat" : "recruteur"
+      }`
+      : `Créez votre compte ${userType === "candidat" ? "candidat" : "recruteur"
+      }`;
 
   const [open, setOpen] = useState(false);
   const [dateNaissance, setDateNaissance] = useState<Date | undefined>(
@@ -217,22 +217,49 @@ export default function AuthForm({
             placeholder="Email"
           />
 
-          <Input
+          {/* <Input
             type="password"
             label="Mot de passe"
             {...register("password")}
             error={errors.password?.message as string | undefined}
             placeholder="Mot de passe"
-          />
+          /> */}
+
+          <div className="relative ">
+            <Input
+              type={show ? "text" : "password"}
+              label="Mot de passe"
+              error={errors.password?.message as string | undefined}
+              placeholder="Mot de passe"
+              {...register("password")}
+            />
+            <button
+              type="button"
+              onClick={() => setShow((prev) => !prev)}
+              className="absolute right-3 top-[40px] text-gray-400 hover:text-gray-600"
+            >
+              {show ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
 
           {type === "register" && (
-            <Input
-              type="password"
-              label="Confirmer le mot de passe"
-              {...register("confirmPassword")}
-              error={errors.confirmPassword?.message as string | undefined}
-              placeholder="Confirmer le mot de passe"
-            />
+            <div className="relative ">
+
+              <Input
+                type="password"
+                label="Confirmer le mot de passe"
+                {...register("confirmPassword")}
+                error={errors.confirmPassword?.message as string | undefined}
+                placeholder="Confirmer le mot de passe"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm((prev) => !prev)}
+                className="absolute right-3 top-[40px] text-gray-400 hover:text-gray-600"
+              >
+                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           )}
 
           {type === "login" && (

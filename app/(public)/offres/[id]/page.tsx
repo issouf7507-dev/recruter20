@@ -123,8 +123,8 @@ export default function OffreDetailPage({
           offer.salaryMin && offer.salaryMax
             ? `${offer.salaryMin.toLocaleString()}-${offer.salaryMax.toLocaleString()}`
             : offer.salaryMin
-            ? `${offer.salaryMin.toLocaleString()}+`
-            : "",
+              ? `${offer.salaryMin.toLocaleString()}+`
+              : "",
         logo: offer.logo || null,
         salaryCurrency: offer.salaryCurrency || "",
       }));
@@ -358,13 +358,12 @@ export default function OffreDetailPage({
                   </span>
                   {dueDateInfo && (
                     <span
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium ${
-                        dueDateInfo.isExpired
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium ${dueDateInfo.isExpired
                           ? "bg-red-50 text-red-700"
                           : dueDateInfo.isSoon
-                          ? "bg-orange-50 text-orange-700"
-                          : "bg-blue-50 text-blue-700"
-                      }`}
+                            ? "bg-orange-50 text-orange-700"
+                            : "bg-blue-50 text-blue-700"
+                        }`}
                     >
                       <Calendar className="w-4 h-4 md:w-5 md:h-5" />
                       {dueDateInfo.isExpired
@@ -393,8 +392,8 @@ export default function OffreDetailPage({
                   {hasApplied(jobDetail?.id)
                     ? "Candidature envoyée"
                     : candidat
-                    ? "Postuler maintenant"
-                    : "Connectez-vous pour postuler"}
+                      ? "Postuler maintenant"
+                      : "Connectez-vous pour postuler"}
                 </button>
               </div>
             </div>
@@ -448,8 +447,8 @@ export default function OffreDetailPage({
                 {hasApplied(jobDetail?.id)
                   ? "Candidature envoyée"
                   : candidat
-                  ? "Postuler maintenant"
-                  : "Connectez-vous pour postuler"}
+                    ? "Postuler maintenant"
+                    : "Connectez-vous pour postuler"}
               </button>
               <p className="text-sm text-gray-500 text-center mb-4 flex items-center justify-center gap-1">
                 <Clock className="w-4 h-4" />
@@ -466,13 +465,12 @@ export default function OffreDetailPage({
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-500">Date limite</span>
                     <span
-                      className={`font-medium ${
-                        dueDateInfo.isExpired
+                      className={`font-medium ${dueDateInfo.isExpired
                           ? "text-red-600"
                           : dueDateInfo.isSoon
-                          ? "text-orange-600"
-                          : "text-blue-600"
-                      }`}
+                            ? "text-orange-600"
+                            : "text-blue-600"
+                        }`}
                     >
                       {dueDateInfo.formatted}
                     </span>
@@ -484,12 +482,12 @@ export default function OffreDetailPage({
                     {jobDetail.applications?.length || 0} reçues
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
+                {/* <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-500">Vues</span>
                   <span className="text-gray-700 font-medium">
                     {jobDetail.views || 0}
                   </span>
-                </div>
+                </div>*/}
               </div>
             </motion.div>
 
@@ -754,7 +752,7 @@ export default function OffreDetailPage({
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
               className="bg-[#a590ff] hover:bg-[#9580ef] text-white"
-              // onClick={handleDocuments}
+            // onClick={handleDocuments}
             >
               Ok
             </AlertDialogAction>

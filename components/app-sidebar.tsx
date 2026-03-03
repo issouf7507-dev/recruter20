@@ -96,11 +96,11 @@ const data = {
       icon: IconMail,
     },
 
-    {
-      title: "Matching",
-      url: "/recruteur/matching",
-      icon: IconCheck,
-    },
+    // {
+    //   title: "Matching",
+    //   url: "/recruteur/matching",
+    //   icon: IconCheck,
+    // },
     // {
     //   title: "Matching IA",
     //   url: "/recruteur/matching-ai",
