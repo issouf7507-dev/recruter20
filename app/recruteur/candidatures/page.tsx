@@ -148,6 +148,8 @@ export default function CandidaturesRecuesPage() {
     createConversation,
   } = useCandidatures(recruteurId);
 
+  console.log("candidaturesRecruteur", JSON.stringify(candidaturesRecruteur, null, 2));
+
   const handleContactCandidat = (candidatId: string, jobOfferId: string) => {
     if (!recruteurId) {
       toast.error("Erreur: Recruteur non trouvé");
@@ -396,8 +398,8 @@ export default function CandidaturesRecuesPage() {
                       </h3>
                       <p className="text-muted-foreground mb-4">
                         {searchTerm ||
-                        filterStatut !== "all" ||
-                        filterOffre !== "all"
+                          filterStatut !== "all" ||
+                          filterOffre !== "all"
                           ? "Aucune candidature ne correspond à vos critères de recherche."
                           : "Vous n'avez pas encore reçu de candidatures."}
                       </p>

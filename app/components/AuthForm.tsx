@@ -16,6 +16,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { ChevronDownIcon, Eye, EyeOff } from "lucide-react";
 
 import { Button as ButtonUI } from "@/components/ui/button";
+import Link from "next/link";
 
 interface AuthFormProps {
   type: "login" | "register";
@@ -271,12 +272,12 @@ export default function AuthForm({
                 </label>
               </div>
 
-              <a
-                href="#"
+              <Link
+                href="/auth/recruteur/forgot-password"
                 className="text-base text-[#a590ff] hover:text-[#a590ff]/80"
               >
                 Mot de passe oublié ?
-              </a>
+              </Link>
             </div>
           )}
 

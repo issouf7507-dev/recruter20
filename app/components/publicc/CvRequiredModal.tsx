@@ -26,6 +26,10 @@ export function CvRequiredModal() {
   const [uploading, setUploading] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
+
+  // console.log("session", session);
+
+
   // Charger le candidat et ses documents
   useEffect(() => {
     if (!session?.user?.id) {

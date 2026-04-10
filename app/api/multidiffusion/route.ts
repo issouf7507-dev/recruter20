@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Non authentifié" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -37,21 +37,21 @@ export async function POST(request: NextRequest) {
     if (!offerId || !platforms || platforms.length === 0) {
       return NextResponse.json(
         { success: false, error: "Paramètres manquants" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Récupérer le recruteurId
     const recruteur = await recruteurRepository.findByUserId(session.user.id);
     const collaborateur = await collaborateurRepository.findByUserId(
-      session.user.id
+      session.user.id,
     );
     const recruteurId = recruteur?.id || collaborateur?.recruteurId;
 
     if (!recruteurId) {
       return NextResponse.json(
         { success: false, error: "Profil recruteur non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     if (!offer) {
       return NextResponse.json(
         { success: false, error: "Offre non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
         const linkedInResult = await publishToLinkedIn(
           recruteurId,
           offer,
-          message
+          message,
         );
         results.push(linkedInResult);
 
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
           offerId,
           platform,
           linkedInResult,
-          message || generateDefaultMessage(offer)
+          message || generateDefaultMessage(offer),
         );
       }
       // Ajouter d'autres plateformes ici
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     console.error("Multi-diffusion error:", error);
     return NextResponse.json(
       { success: false, error: "Erreur lors de la publication" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     await prisma.$disconnect();
@@ -123,21 +123,21 @@ export async function GET(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Non authentifié" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     // Récupérer le recruteurId
     const recruteur = await recruteurRepository.findByUserId(session.user.id);
     const collaborateur = await collaborateurRepository.findByUserId(
-      session.user.id
+      session.user.id,
     );
     const recruteurId = recruteur?.id || collaborateur?.recruteurId;
 
     if (!recruteurId) {
       return NextResponse.json(
         { success: false, error: "Profil recruteur non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -173,7 +173,7 @@ export async function GET(request: NextRequest) {
         success: false,
         error: "Erreur lors de la récupération de l'historique",
       },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     await prisma.$disconnect();
@@ -186,7 +186,7 @@ export async function GET(request: NextRequest) {
 async function publishToLinkedIn(
   recruteurId: string,
   offer: any,
-  customMessage?: string
+  customMessage?: string,
 ): Promise<{
   platform: string;
   success: boolean;
@@ -349,7 +349,7 @@ async function saveToHistory(
     postUrl?: string;
     error?: string;
   },
-  message: string
+  message: string,
 ) {
   try {
     const id = `dh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -359,10 +359,10 @@ async function saveToHistory(
     await prisma.$executeRaw`
       INSERT INTO diffusion_history (id, recruteurId, jobOfferId, platform, status, postId, postUrl, message, error, publishedAt, createdAt)
       VALUES (${id}, ${recruteurId}, ${jobOfferId}, ${platform}, ${status}, ${
-      result.postId || null
-    }, ${result.postUrl || null}, ${message}, ${
-      result.error || null
-    }, ${publishedAt}, NOW())
+        result.postId || null
+      }, ${result.postUrl || null}, ${message}, ${
+        result.error || null
+      }, ${publishedAt}, NOW())
     `;
   } catch (error) {
     console.error("Save to history error:", error);

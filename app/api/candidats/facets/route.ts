@@ -17,7 +17,7 @@ export async function GET() {
     console.error("Error fetching candidats facets:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch facets" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
+
 }
 
 model User {
@@ -22,6 +22,8 @@ model User {
   candidat            Candidat?      @relation("UserAsCandidat")
   collaborateur       Collaborateur?
   recruteur           Recruteur?     @relation("UserAsRecruteur")
+  resetPasswordToken  String?
+  resetPasswordExpiry DateTime?
   accounts            Account[]
   sessions            Session[]
   notifications       Notification[]

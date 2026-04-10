@@ -20,21 +20,21 @@ export async function GET(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Non authentifié" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     // Récupérer le recruteurId
     const recruteur = await recruteurRepository.findByUserId(session.user.id);
     const collaborateur = await collaborateurRepository.findByUserId(
-      session.user.id
+      session.user.id,
     );
     const recruteurId = recruteur?.id || collaborateur?.recruteurId;
 
     if (!recruteurId) {
       return NextResponse.json(
         { success: false, error: "Profil recruteur non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
     console.error("LinkedIn status error:", error);
     return NextResponse.json(
       { success: false, error: "Erreur lors de la vérification" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     await prisma.$disconnect();
@@ -107,21 +107,21 @@ export async function DELETE(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Non authentifié" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     // Récupérer le recruteurId
     const recruteur = await recruteurRepository.findByUserId(session.user.id);
     const collaborateur = await collaborateurRepository.findByUserId(
-      session.user.id
+      session.user.id,
     );
     const recruteurId = recruteur?.id || collaborateur?.recruteurId;
 
     if (!recruteurId) {
       return NextResponse.json(
         { success: false, error: "Profil recruteur non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -138,7 +138,7 @@ export async function DELETE(request: NextRequest) {
     console.error("LinkedIn disconnect error:", error);
     return NextResponse.json(
       { success: false, error: "Erreur lors de la déconnexion" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     await prisma.$disconnect();

@@ -25,7 +25,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Upload, X, Save } from "lucide-react";
-import { updateCandidat } from "@/lib/api/candidats";
+import { updateCandidat } from "@/lib/api/candidats/service";
 import { toast } from "sonner";
 import { useEdgeStore } from "@/lib/edgestore";
 import type { Option } from "@/components/ui/multi-select";
@@ -1190,11 +1190,10 @@ export function ProfilSection({ candidat }: ProfilSectionProps) {
                 onClick={() =>
                   setFormData((prev) => ({ ...prev, statut: statut.value }))
                 }
-                className={`cursor-pointer p-3 rounded-lg border-2 transition-all hover:scale-[1.02] ${
-                  formData.statut === statut.value
-                    ? "border-primary bg-primary/10 shadow-md"
-                    : "border-border hover:border-primary/50"
-                }`}
+                className={`cursor-pointer p-3 rounded-lg border-2 transition-all hover:scale-[1.02] ${formData.statut === statut.value
+                  ? "border-primary bg-primary/10 shadow-md"
+                  : "border-border hover:border-primary/50"
+                  }`}
               >
                 <div className="text-center">
                   <span className="text-2xl">{statut.emoji}</span>

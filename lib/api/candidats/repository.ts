@@ -259,7 +259,9 @@ export class CandidatRepository {
     return {
       lieux: Array.from(lieuxSet).sort(),
       competences: competencesGroup
-        .map((c) => (typeof c.competence === "string" ? c.competence.trim() : ""))
+        .map((c) =>
+          typeof c.competence === "string" ? c.competence.trim() : "",
+        )
         .filter(Boolean)
         .sort(),
       certifications: certificationsGroup

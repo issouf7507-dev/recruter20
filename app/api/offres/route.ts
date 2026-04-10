@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching offers:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch offers" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     if (!session || !session.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -92,14 +92,14 @@ export async function POST(request: NextRequest) {
     if (!title || !company) {
       return NextResponse.json(
         { success: false, error: "Title and company are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Get recruteur info from the user using repository
     const recruteur = await recruteurRepository.findByUserId(session.user.id);
     const collaborateur = await collaborateurRepository.findByUserId(
-      session.user.id
+      session.user.id,
     );
     const recruteurId = recruteur
       ? recruteur?.id
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     if (!recruteurId) {
       return NextResponse.json(
         { success: false, error: "User is not a recruiter or collaborateur" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     console.error("Error creating offer:", error);
     return NextResponse.json(
       { success: false, error: "Failed to create offer" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

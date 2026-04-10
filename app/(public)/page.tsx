@@ -206,9 +206,8 @@ function FAQItem({
       >
         <span className="text-lg font-semibold text-gray-900">{question}</span>
         <ChevronDown
-          className={`w-5 h-5 text-gray-500 shrink-0 transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`w-5 h-5 text-gray-500 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""
+            }`}
         />
       </button>
       <AnimatePresence initial={false}>

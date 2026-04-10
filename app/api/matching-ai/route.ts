@@ -21,20 +21,20 @@ export async function POST(request: NextRequest) {
     if (!session || !session.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const recruteur = await recruteurRepository.findByUserId(session.user.id);
     const collaborateur = await collaborateurRepository.findByUserId(
-      session.user.id
+      session.user.id,
     );
     const recruteurId = recruteur?.id || collaborateur?.recruteurId;
 
     if (!recruteurId) {
       return NextResponse.json(
         { success: false, error: "User is not a recruiter" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
           error:
             "Hugging Face API key not configured. Please set NEXT_PUBLIC_HUGGINGFACE_API_KEY in your environment variables.",
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -151,12 +151,12 @@ export async function POST(request: NextRequest) {
           {
             minScore: 0, // Pas de préfiltre - on veut tous les candidats
             limit: limitPerOffer * 5, // Analyser 5x plus
-          }
+          },
         );
 
         // Créer un map pour accéder rapidement aux détails du scoring classique
         const ruleBasedMap = new Map(
-          ruleBasedMatches.map((m) => [m.candidat.id, m])
+          ruleBasedMatches.map((m) => [m.candidat.id, m]),
         );
 
         // Limiter le nombre de candidats à analyser avec l'IA (pour performance)
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
         let aiMatches: any[] = [];
         try {
           console.log(
-            `[MATCHING-AI] Analyse IA pure pour ${offre.title} (${candidatsToAnalyze.length} candidats)...`
+            `[MATCHING-AI] Analyse IA pure pour ${offre.title} (${candidatsToAnalyze.length} candidats)...`,
           );
           aiMatches = await analyzeBatchHuggingFacePure(candidatsToAnalyze);
         } catch (error) {
@@ -245,11 +245,11 @@ export async function POST(request: NextRequest) {
             filteredMatches.length > 0
               ? Math.round(
                   filteredMatches.reduce((sum, m) => sum + m.score, 0) /
-                    filteredMatches.length
+                    filteredMatches.length,
                 )
               : 0,
         };
-      })
+      }),
     );
 
     const responseData = {
@@ -269,7 +269,7 @@ export async function POST(request: NextRequest) {
         error: "Failed to calculate AI matches",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

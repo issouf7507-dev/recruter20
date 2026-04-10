@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     console.error("Error searching candidates:", error);
     return NextResponse.json(
       { success: false, error: "Failed to search candidates" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
