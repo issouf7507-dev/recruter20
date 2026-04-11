@@ -5,6 +5,7 @@ import { QueryProvider } from "./providers/QueryProvider";
 import { EdgeStoreProvider } from "@/lib/edgestore";
 import { Toaster } from "@/components/ui/sonner";
 import Script from "next/script";
+import { Suspense } from "react";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -78,7 +79,12 @@ export default function RootLayout({
       >
         <QueryProvider>
           <Toaster />
-          <EdgeStoreProvider>{children}</EdgeStoreProvider>
+          <EdgeStoreProvider>
+            <Suspense fallback={<div>Loading...</div>}>
+              {children
+              }
+            </Suspense>
+          </EdgeStoreProvider>
         </QueryProvider>
       </body>
     </html>

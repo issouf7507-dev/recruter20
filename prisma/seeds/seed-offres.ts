@@ -139,7 +139,7 @@ async function seedOffres() {
     }
 
     console.log(
-      `✅ Found recruteur: ${recruteur.companyName || recruteur.email}`
+      `✅ Found recruteur: ${recruteur.companyName || recruteur.email}`,
     );
 
     // Créer 50 offres d'emploi

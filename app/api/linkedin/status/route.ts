@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@/app/generated/prisma";
+// import { PrismaClient } from "@/app/generated/prisma";
 import { auth } from "@/lib/auth";
 import { recruteurRepository } from "@/lib/api/recruteurs/repository";
 import { collaborateurRepository } from "@/lib/api/collaborateur";
+import prisma from "@/lib/prisma";
 
-const prisma = new PrismaClient();
+// const prisma = new PrismaClient();
 
 /**
  * GET /api/linkedin/status
