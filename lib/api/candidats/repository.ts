@@ -173,8 +173,14 @@ export class CandidatRepository {
           certifications: true,
           niveauEtude: true,
           experiences: {
+            where: {
+              dateFin: {
+                not: null,
+              },
+            },
             orderBy: { dateDebut: "desc" },
           },
+
           formations: {
             orderBy: { dateDebut: "desc" },
             take: 1, // Prendre la formation la plus récente
@@ -198,7 +204,10 @@ export class CandidatRepository {
 
     if (experience && experience !== "all") {
       filteredCandidats = candidats.filter((candidat) => {
+        console.log("candidat", candidat);
+
         const totalYears = this.calculateTotalExperience(candidat.experiences);
+
         if (experience === "junior") return totalYears >= 0 && totalYears < 4;
         if (experience === "senior") return totalYears >= 4 && totalYears < 7;
         if (experience === "expert") return totalYears >= 7;
@@ -281,17 +290,45 @@ export class CandidatRepository {
     const now = new Date();
 
     for (const exp of experiences) {
-      const start = new Date(exp.dateDebut);
-      const end = exp.dateFin ? new Date(exp.dateFin) : now;
+      try {
+        const start = this.parseDate(exp.dateDebut);
+        if (!start) continue;
 
-      const months =
-        (end.getFullYear() - start.getFullYear()) * 12 +
-        (end.getMonth() - start.getMonth());
+        const end = this.parseDate(exp.dateFin) ?? now;
 
-      totalMonths += months;
+        const months =
+          (end.getFullYear() - start.getFullYear()) * 12 +
+          (end.getMonth() - start.getMonth());
+
+        if (!isNaN(months) && months > 0) {
+          totalMonths += months;
+        }
+      } catch {
+        // On ignore les expériences avec dates corrompues
+        continue;
+      }
     }
 
     return Math.floor(totalMonths / 12);
+  }
+
+  private parseDate(value: any): Date | null {
+    if (!value) return null;
+
+    // Prisma peut retourner un objet Date déjà parsé
+    if (value instanceof Date) {
+      return isNaN(value.getTime()) ? null : value;
+    }
+
+    // Cas string : nettoyer le format MySQL avec millisecondes
+    if (typeof value === "string") {
+      // "2021-06-02 00:00:00.000" → "2021-06-02T00:00:00.000Z"
+      const normalized = value.replace(" ", "T").replace(/(\.\d+)?$/, "$1Z");
+      const d = new Date(normalized);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    return null;
   }
 
   /**

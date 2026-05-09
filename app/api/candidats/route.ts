@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       data: result,
     });
   } catch (error) {
-    console.error("Error searching candidates:", error);
+    console.error("Error searching candidatewws:", error);
     return NextResponse.json(
       { success: false, error: "Failed to search candidates" },
       { status: 500 },

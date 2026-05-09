@@ -42,7 +42,7 @@ export function CandidatSheet({ open, onOpenChange }: CandidatSheetProps) {
 
   // Reset tab when sheet closes
 
-  console.log("candidat", candidat);
+  // console.log("candidat", candidat);
   useEffect(() => {
     if (!open) {
       setActiveTab("profil");

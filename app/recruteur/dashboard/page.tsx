@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
+import { PaymentButton } from "@/app/components/PaymentButton";
 
 const STATUS_LABELS: Record<string, string> = {
   EN_ATTENTE: "En attente",
@@ -154,6 +155,8 @@ export default function RecruteurDashboardPage() {
                       Voir les offres <IconArrowRight className="ml-1 h-4 w-4" />
                     </Link>
                   </Button>
+
+                  <PaymentButton planId="pro">Essayer 14 jours gratuits</PaymentButton>
                 </CardContent>
               </Card>
               <Card>
@@ -337,8 +340,8 @@ export default function RecruteurDashboardPage() {
                               <TableCell className="font-medium">
                                 {c.candidat
                                   ? `${c.candidat.prenom ?? ""} ${c.candidat.nom ?? ""}`.trim() ||
-                                    c.candidat.email ||
-                                    "—"
+                                  c.candidat.email ||
+                                  "—"
                                   : "—"}
                               </TableCell>
                               <TableCell>

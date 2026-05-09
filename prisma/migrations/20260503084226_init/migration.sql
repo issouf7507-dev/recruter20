@@ -10,6 +10,8 @@ CREATE TABLE `user` (
     `type` ENUM('CANDIDAT', 'RECRUTEUR', 'COLLABORATEUR') NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
+    `resetPasswordToken` VARCHAR(191) NULL,
+    `resetPasswordExpiry` DATETIME(3) NULL,
 
     UNIQUE INDEX `user_email_key`(`email`),
     PRIMARY KEY (`id`)
@@ -54,6 +56,8 @@ CREATE TABLE `Candidat` (
     `linkedinUrl` VARCHAR(191) NULL,
     `domaine` VARCHAR(191) NULL,
     `portfolioUrl` VARCHAR(191) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `Candidat_userId_key`(`userId`),
     PRIMARY KEY (`id`)

@@ -24,6 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CvRequiredModal } from "@/app/components/publicc/CvRequiredModal";
+import { PaymentButton } from "../components/PaymentButton";
 
 const teamMembers = [
   {
@@ -248,7 +249,7 @@ export default function LandingPage() {
   };
   return (
     <div className="container mx-auto px-4 pt-24 pb-10">
-      <CvRequiredModal />
+      {/* <CvRequiredModal /> */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -726,11 +727,7 @@ export default function LandingPage() {
                     <span>Support par email</span>
                   </li>
                 </ul>
-                <Link href="/recruteur/dashboard">
-                  <button className="w-full py-3 px-6 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold transition-colors">
-                    Commencer
-                  </button>
-                </Link>
+                <PaymentButton planId="pro">Essayer 14 jours gratuits</PaymentButton>
               </motion.div>
 
               {/* Plan Pro */}
@@ -772,11 +769,8 @@ export default function LandingPage() {
                     <span>Support prioritaire 24/7</span>
                   </li>
                 </ul>
-                <Link href="/recruteur/dashboard">
-                  <button className="w-full py-3 px-6 bg-white text-purple-600 hover:bg-gray-100 rounded-lg font-semibold transition-colors">
-                    Essayer 14 jours gratuits
-                  </button>
-                </Link>
+
+                <PaymentButton planId="pro">Essayer 14 jours gratuits</PaymentButton>
               </motion.div>
 
               {/* Plan Entreprise */}
@@ -814,7 +808,7 @@ export default function LandingPage() {
                     <span>Formation sur site</span>
                   </li>
                 </ul>
-                <Link href="/contact">
+                <Link href="/Contact">
                   <button className="w-full py-3 px-6 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold transition-colors">
                     Nous contacter
                   </button>

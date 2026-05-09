@@ -127,7 +127,7 @@ export default function OffresPage() {
   const { data: offersData, isLoading: isLoadingOffers } =
     useOffers(filterParams);
 
-  console.log("offersData", offersData);
+  // console.log("offersData", offersData);
 
   const pagination = offersData?.pagination;
 
@@ -201,8 +201,8 @@ export default function OffresPage() {
             offer.salaryMin && offer.salaryMax
               ? `${offer.salaryMin.toLocaleString()}-${offer.salaryMax.toLocaleString()}`
               : offer.salaryMin
-              ? `${offer.salaryMin.toLocaleString()}+`
-              : "",
+                ? `${offer.salaryMin.toLocaleString()}+`
+                : "",
           experience: "Non spécifié",
           remote: offer.location ? "Sur site" : "Télétravail",
           logo: offer.logo || null,
@@ -371,9 +371,8 @@ export default function OffresPage() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className={`${
-              showFilters ? "block" : "hidden"
-            } lg:block w-full lg:w-72 xl:w-80 bg-white rounded-xl p-4 sm:p-6 h-fit lg:sticky lg:top-24 shadow-sm`}
+            className={`${showFilters ? "block" : "hidden"
+              } lg:block w-full lg:w-72 xl:w-80 bg-white rounded-xl p-4 sm:p-6 h-fit lg:sticky lg:top-24 shadow-sm`}
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold">Filtres</h2>
@@ -611,15 +610,14 @@ export default function OffresPage() {
                               {/* Tags */}
                               <div className="flex flex-wrap gap-2 mb-2 sm:mb-3">
                                 <span
-                                  className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium ${
-                                    job.type === "CDI"
-                                      ? "bg-green-100 text-green-700"
-                                      : job.type === "FREELANCE"
+                                  className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium ${job.type === "CDI"
+                                    ? "bg-green-100 text-green-700"
+                                    : job.type === "FREELANCE"
                                       ? "bg-orange-100 text-orange-700"
                                       : job.type === "CDD"
-                                      ? "bg-blue-100 text-blue-700"
-                                      : "bg-purple-100 text-purple-700"
-                                  }`}
+                                        ? "bg-blue-100 text-blue-700"
+                                        : "bg-purple-100 text-purple-700"
+                                    }`}
                                 >
                                   {job.type}
                                 </span>
@@ -630,13 +628,12 @@ export default function OffresPage() {
                                 )}
                                 {job.dueDateFormatted && (
                                   <span
-                                    className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium ${
-                                      job.isDueDateExpired
-                                        ? "bg-red-100 text-red-700"
-                                        : job.isDueDateSoon
+                                    className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium ${job.isDueDateExpired
+                                      ? "bg-red-100 text-red-700"
+                                      : job.isDueDateSoon
                                         ? "bg-orange-100 text-orange-700"
                                         : "bg-blue-100 text-blue-700"
-                                    }`}
+                                      }`}
                                   >
                                     {job.isDueDateExpired
                                       ? "" + job.dueDateFormatted

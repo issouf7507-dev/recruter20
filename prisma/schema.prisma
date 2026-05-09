@@ -72,6 +72,8 @@ model Candidat {
   linkedinUrl         String?
   domaine             String?
   portfolioUrl        String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
   niveauEtude         NiveauEtude[]
   alertes             AlerteEmploi[]
   applications        Application[]
@@ -121,6 +123,7 @@ model Recruteur {
   JobOffer            JobOffer[]
   KanbanColumns       KanbanColumn[]
   OfferTemplate       OfferTemplate[]
+  abonnement  Abonnement?
   user                User                  @relation("UserAsRecruteur", fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -736,32 +739,7 @@ model CardDueDate {
   card      KanbanCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
 }
 
-// model ApplicationCollaborateurCustom {
-//   id              String              @id @default(cuid())
-//   applicationId   String
-//   collaborateurId String
-//   assignedAt      DateTime            @default(now())
-//   assignedBy      String
-//     application     Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-//     collaborateur   Collaborateur @relation(fields: [collaborateurId], references: [id], onDelete: Cascade)
 
-//   @@unique([applicationId, collaborateurId])
-//   @@index([collaborateurId], map: "ApplicationCollaborateurCustom_collaborateurId_fkey")
-// }
-
-// model ApplicationNote {
-//   id            String            @id @default(cuid())
-//   applicationId String
-//   content       String
-//   authorId      String
-//   authorName    String?
-//   authorType    String
-//   createdAt     DateTime          @default(now())
-//   updatedAt     DateTime          @updatedAt
-//   application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-
-//   @@index([applicationId], map: "ApplicationNote_applicationId_fkey")
-// }
 
 model ChecklistItem {
   id            String            @id @default(cuid())
@@ -777,34 +755,6 @@ model ChecklistItem {
 
   @@index([applicationId], map: "ChecklistItem_applicationId_fkey")
 }
-
-// model CandidatCustom {
-//   id            String             @id @unique @default(cuid())
-//   createdAt     DateTime           @default(now())
-//   updatedAt     DateTime           @updatedAt
-//   userId        String
-//   cv            String?
-//   cvUrl         String?            @unique
-//   applicationId String
-//   application   Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-//   documents     CandidatDocument[]
-
-//   @@index([applicationId], map: "CandidatCustom_applicationId_fkey")
-// }
-
-// model CandidatDocument {
-//   id         String         @id @default(cuid())
-//   createdAt  DateTime       @default(now())
-//   updatedAt  DateTime       @updatedAt
-//   fileName   String
-//   fileUrl    String
-//   fileType   String
-//   fileSize   Int
-//   candidatId String
-//   candidat   CandidatCustom @relation(fields: [candidatId], references: [id], onDelete: Cascade)
-
-//   @@index([candidatId], map: "CandidatDocument_candidatId_fkey")
-// }
 
 
 
@@ -902,3 +852,63 @@ model DiffusionHistory {
 }
 
 
+// ========================================
+// ABONNEMENTS & PAIEMENTS
+// ========================================
+// Ajouter ces modèles à la fin de ton schema.prisma
+// Puis lancer : npx prisma migrate dev --name add_abonnements
+
+model Abonnement {
+  id          String           @id @default(cuid())
+  recruteurId String           @unique   // Un recruteur = un abonnement actif
+  plan        PlanType
+  statut      AbonnementStatut @default(INACTIF)
+  dateDebut   DateTime?
+  dateFin     DateTime?        // null = pas de date de fin (mensuel renouvelé via paiement)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  recruteur   Recruteur        @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
+  paiements   PaiementHistory[]
+
+  @@map("abonnement")
+}
+
+model PaiementHistory {
+  id             String         @id @default(cuid())
+  abonnementId   String
+  reference      String         @unique  // Référence GeniusPay (ex: MTX-XXXXX)
+  montant        Float
+  devise         String         @default("XOF")
+  statut         PaiementStatut @default(EN_ATTENTE)
+  plan           PlanType
+  geniuspayData  Json?          // Stocker la réponse brute du webhook
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  abonnement     Abonnement     @relation(fields: [abonnementId], references: [id], onDelete: Cascade)
+
+  @@index([reference])
+  @@map("paiement_history")
+}
+
+enum PlanType {
+  STARTER   // Gratuit
+  PRO       // Payant mensuel
+  ENTREPRISE // Sur mesure
+}
+
+enum AbonnementStatut {
+  INACTIF
+  ACTIF
+  EXPIRE
+  SUSPENDU
+}
+
+enum PaiementStatut {
+  EN_ATTENTE
+  COMPLETE
+  ECHOUE
+  EXPIRE
+  REMBOURSE
+}
