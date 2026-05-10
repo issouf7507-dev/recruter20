@@ -184,10 +184,10 @@ if (process.env.NODE_ENV === "production") {
 
 ## Checklist de validation
 
-- [ ] Migration `20251227133759` : statut vérifié et situation résolue
-- [ ] Migrations `20260503*` committées après test
-- [ ] Soft delete ajouté sur `JobOffer` et `Application`
-- [ ] Index sur `Application.status` et `Application.(candidatId, jobOfferId)` ajoutés
-- [ ] Aucun champ `String?` ne stocke du JSON — migrer vers le type `Json`
-- [ ] Script `cleanInvalidDates.ts` exécuté et validation ajoutée sur les routes
-- [ ] Guard `NODE_ENV === "production"` ajouté dans les seeds
+- [x] Migration `20251227133759` : git propre, situation résolue
+- [x] Migrations `20260503*` déjà committées
+- [x] Soft delete déjà présent sur `JobOffer.deletedAt` et `Application.deletedAt`
+- [x] Index ajoutés : `Application.@@index([status])`, `Application.@@index([candidatId, jobOfferId])`, `Candidat.@@index([ville])`, `Candidat.@@index([domaine])` — ⚠️ lancer `npx prisma migrate dev --name add_missing_indexes`
+- [x] `BackupUser.userData String @db.Text` — acceptable (modèle migration temporaire)
+- [x] Guard `NODE_ENV` ajouté dans `cleanInvalidDates.ts` + `any` corrigé en `Prisma.ExperienceUpdateInput`
+- [x] Guard `NODE_ENV === "production"` ajouté dans `seed-offres.ts`

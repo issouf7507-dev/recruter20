@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeftIcon, EyeIcon, EyeOffIcon, CheckCircleIcon } from "lucide-react";
 import { toast } from "sonner";
-import { resetPassword } from "@/lib/auth-client";
 
 export default function ResetPasswordPage() {
     const [password, setPassword] = useState("");
@@ -79,41 +78,27 @@ export default function ResetPasswordPage() {
         setIsLoading(true);
 
         try {
-            // Utiliser la fonction resetPassword de Better Auth
-            // await resetPassword({
-            //     newPassword: password,
-            //     token,
-            // });
-
-            // toast.success("Mot de passe réinitialisé avec succès !");
-            // setTimeout(() => {
-            //     router.push("/auth/recruteur/login");
-            // }, 2000);
-
-            console.log("Token envoyé:", token); // 👈
-            console.log("Password:", password);  // 👈
-
-
-            const { error } = await resetPassword({
-                newPassword: password,
-                token: token!, // le token vient de l'URL
+            const res = await fetch("/api/auth/reset-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token, newPassword: password }),
             });
 
-            if (error) {
-                toast.error(error.message || "Lien invalide ou expiré");
+            const data = await res.json();
+
+            if (!res.ok) {
+                toast.error(data.message || "Lien invalide ou expiré");
+                if (res.status === 400) {
+                    setTimeout(() => router.push("/auth/recruteur/forgot-password"), 2000);
+                }
                 return;
             }
 
-            // ✅ Ajoute ça
             toast.success("Mot de passe réinitialisé avec succès !");
-            setTimeout(() => {
-                router.push("/auth/recruteur/login");
-            }, 2000);
+            setTimeout(() => router.push("/auth/recruteur/login"), 2000);
 
-
-        } catch (error: any) {
-            console.error("Erreur:", error);
-            toast.error(error.message || "Erreur lors de la réinitialisation");
+        } catch (error: unknown) {
+            toast.error("Erreur lors de la réinitialisation. Veuillez réessayer.");
         } finally {
             setIsLoading(false);
         }

@@ -8,7 +8,7 @@ import {
   useRecruteurByUserId,
 } from "@/lib/hooks/use-recruteurs";
 import { useCandidatures } from "@/lib/hooks/use-candidatures";
-import { MatchingParOffre } from "@/app/components/recruteur/MatchingParOffre";
+import { MatchingParOffre } from "@/components/recruteur/MatchingParOffre";
 
 export default function MatchingOffrePage() {
   const { data: session, isPending: isSessionLoading } = useSession();

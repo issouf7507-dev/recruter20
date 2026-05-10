@@ -6,9 +6,6 @@ import Link from "next/link";
 import { ArrowLeftIcon, MailIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { forgetPassword } from "@/lib/auth-client";
-
-
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -19,18 +16,25 @@ export default function ForgotPasswordPage() {
         setIsLoading(true);
 
         try {
-            // Utiliser l'API native de Better Auth
-            await forgetPassword({
-                email,
-                redirectTo: `${window.location.origin}/auth/recruteur/reset-password`,
+            const res = await fetch("/api/auth/forgot-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
             });
 
-            // Better Auth renvoie toujours une réponse positive pour éviter l'énumération
+            if (!res.ok) {
+                const data = await res.json();
+                // 403 = compte non recruteur, message spécifique
+                if (res.status === 403) {
+                    toast.error(data.message || "Accès refusé");
+                    return;
+                }
+                throw new Error(data.message);
+            }
+
             setIsSent(true);
             toast.success("Si un compte existe, un email de réinitialisation a été envoyé");
-        } catch (error: any) {
-            console.error("Erreur:", error);
-            // Ne pas révéler d'information spécifique
+        } catch (error: unknown) {
             toast.error("Une erreur est survenue. Veuillez réessayer.");
         } finally {
             setIsLoading(false);

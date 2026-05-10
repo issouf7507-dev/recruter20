@@ -178,10 +178,10 @@ cat ecosystem.config.js
 
 ## Checklist de validation
 
-- [ ] `lib/logger.ts` créé et utilisé dans les routes payment et auth
-- [ ] `.env.example` créé avec toutes les variables documentées
-- [ ] `README.md` mis à jour avec le guide de démarrage
-- [ ] Fichier listant les features incomplètes créé
-- [ ] En-têtes ajoutés dans les scripts `scripts/`
-- [ ] `npm audit` passé sans vulnérabilités critiques
-- [ ] `RUN_SETUP_SERVER.md` à jour avec les commandes PM2
+- [x] `lib/logger.ts` créé — JSON structuré en prod, lisible en dev — utilisé dans `api-error.ts`, `payment/webhook`, `auth/forgot-password`
+- [x] `.env.example` créé avec toutes les variables documentées et commentées
+- [x] `README.md` mis à jour : stack, architecture, démarrage local, déploiement PM2
+- [x] `audit/08-features-en-cours.md` créé : LinkedIn OAuth, Google OAuth, paiement, multi-diffusion, tests
+- [x] En-têtes ajoutés dans `cleanInvalidDates.ts` — `test-matching.ts` avait déjà un header
+- [ ] `npm audit` — à lancer manuellement : `npm audit`
+- [x] `ecosystem.config.js` déjà configuré (Next.js :3000 + Socket.io :3001) — commandes PM2 documentées dans README

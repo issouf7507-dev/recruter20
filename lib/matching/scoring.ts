@@ -76,7 +76,9 @@ const WEIGHTS = {
 };
 
 // ✅ FIX 1: Mode debug corrigé
-const DEBUG_MODE = process.env.MATCHING_DEBUG === "true";
+import { env } from "@/lib/env";
+
+const DEBUG_MODE = env.MATCHING_DEBUG === "true";
 
 function log(...args: unknown[]) {
   if (DEBUG_MODE) {

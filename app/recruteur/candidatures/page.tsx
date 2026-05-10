@@ -47,7 +47,7 @@ import { useCandidatures } from "@/lib/hooks/use-candidatures";
 import { toast } from "sonner";
 import { LoaderCircle, Star } from "lucide-react";
 import { ApplicationStatus } from "@/lib/api/candidatures";
-import { CandidatProfilDialog } from "@/app/components/recruteur/CandidatProfilDialog";
+import { CandidatProfilDialog } from "@/components/recruteur/CandidatProfilDialog";
 
 interface CandidatureRecruteur {
   id: string;

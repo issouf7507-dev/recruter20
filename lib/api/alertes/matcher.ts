@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
-import type { AlerteEmploi } from "./types";
+import { Prisma } from "@/app/generated/prisma";
+import type { AlerteEmploi, AlerteMotCle } from "./types";
 
 /**
  * Matcher service - Find job offers matching alert criteria
@@ -10,9 +11,9 @@ export class AlerteMatcher {
    * Critères obligatoires : titre + typeContrat
    * Critères optionnels : localisation, experience, salaireMin, salaireMax
    */
-  async findMatchingOffers(alerte: AlerteEmploi & { alerteMotsCles?: any[] }) {
+  async findMatchingOffers(alerte: AlerteEmploi & { alerteMotsCles?: AlerteMotCle[] }) {
     // Construction des conditions de recherche (filtres SQL simples)
-    const conditions: any = {
+    const conditions: Prisma.JobOfferWhereInput = {
       etat: "active", // Seulement les offres actives
       deletedAt: null,
     };
@@ -117,7 +118,7 @@ export class AlerteMatcher {
    * Get the count of matching offers for an alert
    */
   async getMatchingOffersCount(
-    alerte: AlerteEmploi & { alerteMotsCles?: any[] }
+    alerte: AlerteEmploi & { alerteMotsCles?: AlerteMotCle[] }
   ): Promise<number> {
     const offers = await this.findMatchingOffers(alerte);
     return offers.length;

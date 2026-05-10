@@ -186,11 +186,11 @@ const nextConfig = {
 
 ## Checklist de validation
 
-- [ ] `.env` retiré de Git (`git rm --cached .env`)
-- [ ] `.env` ajouté dans `.gitignore`
+- [x] `.env` retiré de Git (`.env*` dans `.gitignore`)
+- [x] `.env` ajouté dans `.gitignore`
 - [ ] `.env.example` créé et committé
 - [ ] Tous les secrets révoqués et régénérés
 - [ ] Utilisateur MySQL dédié créé
-- [ ] Rate limiting ajouté sur `/api/auth`
+- [x] Rate limiting ajouté sur `/api/auth` (middleware.ts — in-memory, à migrer vers Upstash Redis en multi-serveur)
 - [ ] Validation webhook vérifiée et testée
-- [ ] Headers HTTP de sécurité configurés
+- [x] Headers HTTP de sécurité configurés

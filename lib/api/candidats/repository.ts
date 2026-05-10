@@ -1,5 +1,11 @@
 import prisma from "@/lib/prisma";
+import { Prisma } from "@/app/generated/prisma";
 import { Candidat, User } from "./types";
+
+interface ExperienceRecord {
+  dateDebut: Date | string | null;
+  dateFin?: Date | string | null;
+}
 
 /**
  * Repository for candidates - Database operations
@@ -33,7 +39,7 @@ export class CandidatRepository {
       format,
     } = params;
 
-    const where: any = {};
+    const where: Prisma.CandidatWhereInput = {};
 
     // Recherche textuelle : on découpe en mots pour que "NIAMKE Motchian christian"
     // matche un candidat dont nom/prénom contiennent chaque mot (pas la phrase entière).
@@ -96,13 +102,19 @@ export class CandidatRepository {
             ];
     }
 
-    // Filtre par lieu (ville ou pays)
+    // Filtre par lieu (ville ou pays) — via AND pour ne pas écraser la condition texte
     if (lieu && lieu !== "all") {
-      where.OR = [
-        ...(where.OR || []),
-        { ville: { contains: lieu } },
-        { pays: { contains: lieu } },
-      ];
+      const lieuCondition = {
+        OR: [
+          { ville: { contains: lieu } },
+          { pays: { contains: lieu } },
+        ],
+      };
+      where.AND = Array.isArray(where.AND)
+        ? [...where.AND, lieuCondition]
+        : where.AND
+        ? [where.AND, lieuCondition]
+        : [lieuCondition];
     }
 
     // Filtre par compétences
@@ -173,11 +185,7 @@ export class CandidatRepository {
           certifications: true,
           niveauEtude: true,
           experiences: {
-            where: {
-              dateFin: {
-                not: null,
-              },
-            },
+            // Inclure postes actuels (dateFin: null) pour calcul d'expérience correct
             orderBy: { dateDebut: "desc" },
           },
 
@@ -204,10 +212,7 @@ export class CandidatRepository {
 
     if (experience && experience !== "all") {
       filteredCandidats = candidats.filter((candidat) => {
-        console.log("candidat", candidat);
-
         const totalYears = this.calculateTotalExperience(candidat.experiences);
-
         if (experience === "junior") return totalYears >= 0 && totalYears < 4;
         if (experience === "senior") return totalYears >= 4 && totalYears < 7;
         if (experience === "expert") return totalYears >= 7;
@@ -215,17 +220,15 @@ export class CandidatRepository {
       });
     }
 
-    // Recalculate total count after filtering
-    // Note: This is approximate since we only have the current page
-    const filteredTotal = experience ? filteredCandidats.length : total;
-
+    // Total réel : total DB pour toutes les pages (le filtre expérience est post-SQL)
     return {
-      items: candidats,
+      items: filteredCandidats,
+      totalAll: [],
       pagination: {
         page,
         limit,
-        total: filteredTotal,
-        totalPages: Math.ceil(filteredTotal / limit),
+        total,
+        totalPages: Math.ceil(total / limit),
       },
     };
   }
@@ -283,7 +286,7 @@ export class CandidatRepository {
   /**
    * Calculate total years of experience from experiences
    */
-  private calculateTotalExperience(experiences: any[]): number {
+  private calculateTotalExperience(experiences: ExperienceRecord[]): number {
     if (!experiences || experiences.length === 0) return 0;
 
     let totalMonths = 0;
@@ -312,7 +315,7 @@ export class CandidatRepository {
     return Math.floor(totalMonths / 12);
   }
 
-  private parseDate(value: any): Date | null {
+  private parseDate(value: unknown): Date | null {
     if (!value) return null;
 
     // Prisma peut retourner un objet Date déjà parsé
@@ -358,6 +361,37 @@ export class CandidatRepository {
         documents: true,
       },
     });
+  }
+
+  async findWithDetails(id: string) {
+    return prisma.candidat.findUnique({
+      where: { id },
+      include: {
+        user: { select: { id: true, email: true, name: true } },
+        candidatCompetences: true,
+        experiences: { orderBy: { dateDebut: "desc" } },
+        formations: { orderBy: { dateDebut: "desc" } },
+        documents: true,
+        applications: {
+          include: {
+            jobOffer: { select: { id: true, title: true, company: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+  }
+
+  async findByUserId(userId: string) {
+    return prisma.candidat.findUnique({ where: { userId } });
+  }
+
+  async findOwnerUserId(candidatId: string): Promise<string | null> {
+    const candidat = await prisma.candidat.findUnique({
+      where: { id: candidatId },
+      select: { userId: true },
+    });
+    return candidat?.userId ?? null;
   }
 
   /**

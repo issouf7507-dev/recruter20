@@ -1,5 +1,10 @@
 import { PrismaClient } from "../../app/generated/prisma";
 
+if (process.env.NODE_ENV === "production") {
+  console.error("❌ Ne jamais exécuter le seed en production !");
+  process.exit(1);
+}
+
 const prisma = new PrismaClient();
 
 const recruteurId = "cmhhu1y3f000154wr8buk50dg";

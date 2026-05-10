@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "@/lib/auth-client";
-import { getCandidat } from "@/action/getCandidat";
+import { getCandidat } from "@/lib/actions/getCandidat";
 import { useEdgeStore } from "@/lib/edgestore";
 import { useQueryClient } from "@tanstack/react-query";
 import {

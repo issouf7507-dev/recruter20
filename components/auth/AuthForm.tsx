@@ -3,9 +3,7 @@ import React, { useState } from "react";
 import { useForm, FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import Button from "./Button";
-import Input from "./Input";
-import Image from "next/image";
+
 import { Label } from "@/components/ui/label";
 import {
   Popover,
@@ -17,6 +15,7 @@ import { ChevronDownIcon, Eye, EyeOff } from "lucide-react";
 
 import { Button as ButtonUI } from "@/components/ui/button";
 import Link from "next/link";
+import { Input } from "../shared";
 
 interface AuthFormProps {
   type: "login" | "register";

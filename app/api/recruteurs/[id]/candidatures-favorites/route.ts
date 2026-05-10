@@ -1,24 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { applicationService } from "@/lib/api/candidatures/service";
+import { withErrorHandler } from "@/lib/api-error";
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const applicationId = (await params)?.id;
+type Ctx = { params: Promise<{ id: string }> };
 
-    const { favorite } = await request.json();
-    await applicationService.updateFavorite(applicationId, favorite);
-    return NextResponse.json({
-      success: true,
-      message: "Favorite updated successfully",
-    });
-  } catch (error) {
-    console.error("Error updating status:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to update status" },
-      { status: 500 }
-    );
-  }
-}
+export const PUT = withErrorHandler(async (req, ctx) => {
+  const { id: applicationId } = await (ctx as Ctx).params;
+  const { favorite } = await (req as NextRequest).json();
+  await applicationService.updateFavorite(applicationId, favorite);
+  return NextResponse.json({ success: true, message: "Favorite updated successfully" });
+});

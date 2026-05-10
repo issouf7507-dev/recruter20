@@ -4,7 +4,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
-import AuthGuard from "@/app/components/AuthGuard";
+import AuthGuard from "@/components/auth/AuthGuard";
 
 export default function RecruteurLayout({
   children,

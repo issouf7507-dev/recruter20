@@ -4,9 +4,4 @@ export interface CreateConversationData {
   jobOfferId: string;
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: string;
-  isNew?: boolean;
-}
+export type { ApiResponse } from "../types";

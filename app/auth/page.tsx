@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { Button } from "../components";
-// import Button from "@/components/Button";
+import { Button } from "@/components/shared";
 
 export default function AuthHomePage() {
   return (

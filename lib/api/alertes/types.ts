@@ -47,8 +47,11 @@ export interface UpdateAlerteData {
   motsCles?: string[];
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
+export interface AlerteMotCle {
+  id: string;
+  alerteId: string;
+  motCle: string;
+  createdAt: Date;
 }
+
+export type { ApiResponse } from "../types";

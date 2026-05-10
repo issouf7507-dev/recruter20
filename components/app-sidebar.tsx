@@ -23,6 +23,7 @@ import {
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
+import { SidebarUpgradeBanner } from "@/components/shared/SidebarUpgradeBanner";
 import { Button } from "@/components/ui/button";
 import {
   Sidebar,
@@ -34,6 +35,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useSession } from "@/lib/auth-client";
+import { useRecruteurByUserId, useCollaborateurByUserId } from "@/lib/hooks/use-recruteurs";
 import Image from "next/image";
 
 const data = {
@@ -96,16 +98,11 @@ const data = {
       icon: IconMail,
     },
 
-    // {
-    //   title: "Matching",
-    //   url: "/recruteur/matching",
-    //   icon: IconCheck,
-    // },
-    // {
-    //   title: "Matching IA",
-    //   url: "/recruteur/matching-ai",
-    //   icon: IconSparkles,
-    // },
+    {
+      title: "Matching IA",
+      url: "/recruteur/matching-ai",
+      icon: IconSparkles,
+    },
     {
       title: "Multi-diffusion",
       url: "/recruteur/multi-diffusion",
@@ -155,13 +152,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   };
 
   const { data: session } = useSession();
+  const { data: recruteur } = useRecruteurByUserId(session?.user?.id);
+  const { data: collaborateur } = useCollaborateurByUserId(session?.user?.id);
+  const recruteurId = recruteur?.id ?? collaborateur?.recruteurId;
 
   const user = {
     name: session?.user?.name || "",
     email: session?.user?.email || "",
     avatar: session?.user?.image || "",
   };
-  // console.log("sessionside", session);
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -190,6 +189,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={data.navMain} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
+
+        {/* Banner upgrade / statut abonnement */}
+        <SidebarUpgradeBanner recruteurId={recruteurId ?? undefined} />
 
         {/* Bouton de basculement du mode sombre */}
         <div className="p-2">

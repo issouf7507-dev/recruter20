@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ylsix — Plateforme de recrutement
 
-## Getting Started
+Plateforme SaaS de recrutement avec matching IA, Kanban de candidatures, messagerie temps réel et multi-diffusion sur 160+ jobboards.
 
-First, run the development server:
+---
+
+## Fonctionnalités principales
+
+- **Matching IA** — scoring candidats/offres via Hugging Face + Anthropic
+- **Kanban** — suivi des candidatures avec drag & drop
+- **Messagerie temps réel** — via Socket.io
+- **Multi-diffusion** — publication sur 160+ jobboards (LinkedIn, Indeed…)
+- **Paiements** — abonnements via GeniusPay (XOF)
+- **Portail candidat** — CV, expériences, formations, alertes emploi
+
+## Stack technique
+
+| Couche | Technologie |
+|--------|-------------|
+| Framework | Next.js 16 (App Router) + React 19 |
+| Langage | TypeScript strict |
+| Styles | Tailwind CSS v4 + Shadcn UI |
+| Base de données | MySQL + Prisma ORM |
+| Auth | Better Auth |
+| Temps réel | Socket.io |
+| Stockage | EdgeStore |
+| Paiements | GeniusPay |
+| Déploiement | PM2 (Next.js + Socket.io séparés) |
+
+## Démarrage local
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 1. Cloner et installer les dépendances
+git clone <repo>
+cd recruteur20-v1
+pnpm install
+
+# 2. Configurer l'environnement
+cp .env.example .env.local
+# Remplir les variables dans .env.local
+
+# 3. Appliquer les migrations et générer le client Prisma
+npx prisma migrate dev
+npx prisma generate
+
+# 4. Démarrer en développement
+pnpm dev          # Next.js sur :3000
+pnpm start:socket # Socket.io sur :3001
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Architecture
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+app/
+  (public)/       — pages publiques (offres, landing)
+  auth/           — authentification candidat/recruteur
+  recruteur/      — dashboard recruteur
+  api/            — routes API (délèguent à lib/)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+lib/
+  api/            — repositories et services par domaine
+  actions/        — Server Actions Next.js
+  matching/       — algorithmes de scoring IA
+  hooks/          — React hooks côté client
+  auth.ts         — config Better Auth
+  prisma.ts       — client Prisma singleton
+  email.ts        — service email (Resend)
+  geniuspay.ts    — client paiements
+  logger.ts       — logger structuré (JSON en prod)
+  env.ts          — validation des variables d'environnement
 
-## Learn More
+components/
+  ui/             — composants Shadcn
+  auth/           — AuthForm, AuthGuard
+  shared/         — PaymentButton, Button…
+  public/         — Header, Footer, sections landing
+  recruteur/      — composants dashboard
 
-To learn more about Next.js, take a look at the following resources:
+server/           — serveur Socket.io standalone
+prisma/           — schéma + migrations
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Déploiement (PM2)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+# Démarrer tous les services
+pm2 start ecosystem.config.js
 
-## Deploy on Vercel
+# Mettre à jour sans downtime
+git pull && npx prisma migrate deploy && pm2 reload all
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Voir les logs
+pm2 logs
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Statut
+pm2 status
+```
+
+## Variables d'environnement
+
+Voir `.env.example` pour la liste complète des variables requises.
+
+Les variables sont validées au démarrage via `lib/env.ts` — le serveur refuse de démarrer si une variable obligatoire est manquante.

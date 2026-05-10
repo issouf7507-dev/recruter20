@@ -1,5 +1,5 @@
-import Header from "@/app/components/publicc/Header";
-import Footer from "@/app/components/publicc/Footer";
+import Header from "@/components/public/Header";
+import Footer from "@/components/public/Footer";
 import { LenisProvider } from "../providers/LenisProvider";
 export default function PublicLayout({
   children,
@@ -10,7 +10,9 @@ export default function PublicLayout({
     <>
       <Header />
       <LenisProvider>
-        <div className="bg-[#ffffff] text-black">{children}</div>
+        <div style={{ background: "var(--y-bg)", color: "var(--y-ink)" }}>
+          {children}
+        </div>
       </LenisProvider>
       <Footer />
     </>

@@ -1,8 +1,8 @@
-// app/api/auth/forgot-password/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { randomBytes } from "crypto";
 import { emailService } from "@/lib/email";
+import { logger } from "@/lib/logger";
 export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json();
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       { status: 200 },
     );
   } catch (error) {
-    console.error("Erreur forgot-password:", error);
+    logger.error("Erreur forgot-password", { error: String(error) });
     return NextResponse.json(
       { message: "Une erreur est survenue" },
       { status: 500 },

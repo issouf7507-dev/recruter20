@@ -1,29 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { applicationService } from "@/lib/api/candidatures";
+import { withErrorHandler } from "@/lib/api-error";
 
-/**
- * GET /api/candidats/[id]/candidatures
- * Récupérer toutes les candidatures d'un candidat
- */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const candidatId = (await params)?.id;
-    const applications = await applicationService.getApplicationsByCandidatId(
-      candidatId
-    );
+type Ctx = { params: Promise<{ id: string }> };
 
-    return NextResponse.json({
-      success: true,
-      data: applications,
-    });
-  } catch (error) {
-    console.error("Error fetching applications:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to fetch applications" },
-      { status: 500 }
-    );
-  }
-}
+export const GET = withErrorHandler(async (_req, ctx) => {
+  const { id } = await (ctx as Ctx).params;
+  const applications = await applicationService.getApplicationsByCandidatId(id);
+  return NextResponse.json({ success: true, data: applications });
+});

@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { Prisma } from "@/app/generated/prisma";
 import type { JobOffer, CreateOfferData } from "./types";
 
 /**
@@ -41,6 +42,7 @@ export class JobOfferRepository {
       experienceMax,
     } = params;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {
       deletedAt: null,
     };
@@ -295,6 +297,7 @@ export class JobOfferRepository {
       experience,
     } = params;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {
       deletedAt: null,
     };
@@ -564,6 +567,31 @@ export class JobOfferRepository {
       data: {
         deletedAt: new Date(),
         etat: "deleted",
+      },
+    });
+  }
+
+  async incrementViews(id: string) {
+    return prisma.jobOffer.update({
+      where: { id },
+      data: { views: { increment: 1 } },
+    });
+  }
+
+  async findWithApplications(id: string) {
+    return prisma.jobOffer.findUnique({
+      where: { id },
+      include: {
+        recruteur: true,
+        applications: {
+          include: {
+            candidat: {
+              include: {
+                user: { select: { id: true, email: true, name: true } },
+              },
+            },
+          },
+        },
       },
     });
   }

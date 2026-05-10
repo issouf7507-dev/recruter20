@@ -3,9 +3,11 @@
 
 const BASE_URL = "https://pay.genius.ci/api/v1/merchant";
 
+import { env } from "@/lib/env";
+
 const headers = {
-  "X-API-Key": process.env.GENIUSPAY_API_KEY!,
-  "X-API-Secret": process.env.GENIUSPAY_API_SECRET!,
+  "X-API-Key": env.GENIUSPAY_API_KEY,
+  "X-API-Secret": env.GENIUSPAY_API_SECRET,
   "Content-Type": "application/json",
 
   Accept: "application/json", // ← ajoute cette ligne

@@ -19,11 +19,12 @@ export function useOffers(
     salaryMax?: number;
     salaryCurrency?: string;
     datePosted?: string;
+    logo?: string;
     experience?: string[];
   },
   options?: {
     enabled?: boolean;
-  }
+  },
 ) {
   return useQuery({
     queryKey: ["offers", params],
@@ -49,8 +50,9 @@ export function useOffer(
     salaryMax?: number;
     salaryCurrency?: string;
     datePosted?: string;
+    logo?: string;
     experience?: string[];
-  }
+  },
 ) {
   return useQuery({
     queryKey: ["offer", id, params],
@@ -132,11 +134,11 @@ export function useUpdateOfferStatus() {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
       if (variables.etat === "active") {
         toast.success(
-          "Offre publiée avec succès ! Elle est maintenant visible par les candidats."
+          "Offre publiée avec succès ! Elle est maintenant visible par les candidats.",
         );
       } else {
         toast.success(
-          "Offre mise en brouillon. Elle n'est plus visible par les candidats."
+          "Offre mise en brouillon. Elle n'est plus visible par les candidats.",
         );
       }
     },

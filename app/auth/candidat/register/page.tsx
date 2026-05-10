@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import AuthForm from "../../../components/AuthForm";
+import AuthForm from "@/components/auth/AuthForm";
 import Link from "next/link";
 import { ArrowLeftIcon } from "lucide-react";
 import { signUp } from "@/lib/auth-client";
-import { completeSignupCandidat } from "@/action/signup";
+import { completeSignupCandidat } from "@/lib/actions/signup";
 import { toast } from "sonner";
 
 interface AuthFormData {
@@ -35,7 +35,7 @@ export default function CandidateRegisterPage() {
       });
 
       if (res.error) {
-        console.error(res.error);
+        // console.error(res.error);
         // Gérer les erreurs spécifiques
         const errorMessage = res.error.message || String(res.error);
         if (errorMessage.includes("existing email") || errorMessage.includes("already exists") || errorMessage.includes("déjà")) {

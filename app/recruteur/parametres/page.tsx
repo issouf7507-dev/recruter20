@@ -37,6 +37,13 @@ import {
   IconBell,
   IconLoader,
   IconCheck,
+  IconRobot,
+  IconEye,
+  IconEyeOff,
+  IconTrash,
+  IconExternalLink,
+  IconAlertCircle,
+  IconCircleCheck,
 } from "@tabler/icons-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -54,6 +61,15 @@ export default function ParametresPage() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("profil");
+
+  // Claude API Key state
+  const [claudeKeyInput, setClaudeKeyInput] = useState("");
+  const [claudeKeyVisible, setClaudeKeyVisible] = useState(false);
+  const [claudeKeyStatus, setClaudeKeyStatus] = useState<{
+    hasKey: boolean;
+    maskedKey: string | null;
+  } | null>(null);
+  const [isSavingKey, setIsSavingKey] = useState(false);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -204,6 +220,54 @@ export default function ParametresPage() {
     }
   };
 
+  // Charger le statut de la clé Claude quand le recruteurId est disponible
+  useEffect(() => {
+    if (!recruteurId) return;
+    fetch(`/api/recruteurs/${recruteurId}/claude-key`)
+      .then((r) => r.json())
+      .then((d) => { if (d.success) setClaudeKeyStatus(d.data); })
+      .catch(() => {});
+  }, [recruteurId]);
+
+  const handleSaveClaudeKey = async () => {
+    if (!recruteurId) return;
+    if (!claudeKeyInput.startsWith("sk-ant-")) {
+      toast.error("La clé doit commencer par 'sk-ant-'");
+      return;
+    }
+    setIsSavingKey(true);
+    try {
+      const res = await fetch(`/api/recruteurs/${recruteurId}/claude-key`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: claudeKeyInput }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.message || "Erreur de sauvegarde"); return; }
+      toast.success("Clé API Claude sauvegardée !");
+      setClaudeKeyInput("");
+      // Rafraîchir le statut
+      const status = await fetch(`/api/recruteurs/${recruteurId}/claude-key`).then((r) => r.json());
+      if (status.success) setClaudeKeyStatus(status.data);
+    } catch { toast.error("Erreur réseau"); }
+    finally { setIsSavingKey(false); }
+  };
+
+  const handleDeleteClaudeKey = async () => {
+    if (!recruteurId) return;
+    setIsSavingKey(true);
+    try {
+      await fetch(`/api/recruteurs/${recruteurId}/claude-key`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: null }),
+      });
+      setClaudeKeyStatus({ hasKey: false, maskedKey: null });
+      toast.success("Clé API supprimée");
+    } catch { toast.error("Erreur réseau"); }
+    finally { setIsSavingKey(false); }
+  };
+
   if (isSessionLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -252,10 +316,17 @@ export default function ParametresPage() {
                 onValueChange={setActiveTab}
                 className="space-y-6"
               >
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="profil">Profil</TabsTrigger>
                   <TabsTrigger value="entreprise">Entreprise</TabsTrigger>
                   <TabsTrigger value="securite">Sécurité</TabsTrigger>
+                  <TabsTrigger value="ia" className="flex items-center gap-1.5">
+                    <IconRobot className="h-3.5 w-3.5" />
+                    IA
+                    {claudeKeyStatus?.hasKey && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                    )}
+                  </TabsTrigger>
                 </TabsList>
 
                 {/* Profil Tab */}
@@ -748,6 +819,160 @@ export default function ParametresPage() {
                     </CardContent>
                   </Card>
                 </TabsContent>
+                {/* Onglet IA */}
+                <TabsContent value="ia" className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <IconRobot className="h-5 w-5 text-primary" />
+                        Matching IA — Clé API Claude
+                      </CardTitle>
+                      <CardDescription>
+                        Configurez votre clé API Claude (Anthropic) pour activer l&apos;analyse IA des candidats.
+                        La clé est stockée de façon sécurisée et n&apos;est jamais exposée dans le navigateur.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+
+                      {/* Statut actuel */}
+                      <div className={`flex items-start gap-3 p-4 rounded-lg border ${
+                        claudeKeyStatus?.hasKey
+                          ? "bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800"
+                          : "bg-muted/50 border-muted"
+                      }`}>
+                        {claudeKeyStatus?.hasKey ? (
+                          <IconCircleCheck className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                        ) : (
+                          <IconAlertCircle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">
+                            {claudeKeyStatus?.hasKey
+                              ? "Clé API configurée"
+                              : "Aucune clé API configurée"}
+                          </p>
+                          {claudeKeyStatus?.maskedKey && (
+                            <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                              {claudeKeyStatus.maskedKey}
+                            </p>
+                          )}
+                          {!claudeKeyStatus?.hasKey && (
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Ajoutez votre clé pour activer le matching IA.
+                            </p>
+                          )}
+                        </div>
+                        {claudeKeyStatus?.hasKey && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive shrink-0"
+                            onClick={handleDeleteClaudeKey}
+                            disabled={isSavingKey}
+                          >
+                            <IconTrash className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+
+                      {/* Formulaire de saisie */}
+                      <div className="space-y-3">
+                        <Label htmlFor="claude-key">
+                          {claudeKeyStatus?.hasKey ? "Remplacer la clé" : "Ajouter votre clé API"}
+                        </Label>
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <Input
+                              id="claude-key"
+                              type={claudeKeyVisible ? "text" : "password"}
+                              placeholder="sk-ant-api03-..."
+                              value={claudeKeyInput}
+                              onChange={(e) => setClaudeKeyInput(e.target.value)}
+                              className="pr-10 font-mono text-sm"
+                            />
+                            <button
+                              type="button"
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                              onClick={() => setClaudeKeyVisible((v) => !v)}
+                            >
+                              {claudeKeyVisible
+                                ? <IconEyeOff className="h-4 w-4" />
+                                : <IconEye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                          <Button
+                            onClick={handleSaveClaudeKey}
+                            disabled={!claudeKeyInput || isSavingKey}
+                          >
+                            {isSavingKey ? (
+                              <IconLoader className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <IconCheck className="h-4 w-4 mr-1" />
+                            )}
+                            Sauvegarder
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          La clé doit commencer par{" "}
+                          <code className="bg-muted px-1 rounded">sk-ant-</code>.
+                          Elle est chiffrée côté serveur.
+                        </p>
+                      </div>
+
+                      {/* Instructions */}
+                      <div className="rounded-lg border p-4 space-y-3">
+                        <p className="text-sm font-medium">Comment obtenir votre clé API ?</p>
+                        <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+                          <li>Connectez-vous sur{" "}
+                            <a
+                              href="https://console.anthropic.com"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary underline inline-flex items-center gap-1"
+                            >
+                              console.anthropic.com <IconExternalLink className="h-3 w-3" />
+                            </a>
+                          </li>
+                          <li>Allez dans <strong>API Keys</strong> → <strong>Create Key</strong></li>
+                          <li>Copiez la clé générée et collez-la ci-dessus</li>
+                          <li>Vous aurez besoin de crédits sur votre compte Anthropic</li>
+                        </ol>
+                        <div className="bg-muted/50 rounded p-3 text-xs text-muted-foreground">
+                          💡 <strong>Coût estimé :</strong> ~0,01 $ par analyse de candidat (modèle Claude Haiku).
+                          Une analyse de 10 candidats coûte moins de 0,10 $.
+                        </div>
+                      </div>
+
+                      {/* Fonctionnement */}
+                      <div className="rounded-lg border p-4 space-y-2">
+                        <p className="text-sm font-medium flex items-center gap-2">
+                          <IconRobot className="h-4 w-4 text-primary" /> Comment fonctionne le matching IA ?
+                        </p>
+                        <ul className="text-sm text-muted-foreground space-y-1.5">
+                          <li className="flex items-start gap-2">
+                            <span className="text-primary font-bold shrink-0">1.</span>
+                            Dans <strong>Recherche de CV</strong>, sélectionnez jusqu&apos;à 10 candidats
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-primary font-bold shrink-0">2.</span>
+                            Choisissez une de vos offres d&apos;emploi
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-primary font-bold shrink-0">3.</span>
+                            L&apos;IA analyse les profils et retourne un score de compatibilité (0–100),
+                            les points forts, les manques et une synthèse
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-primary font-bold shrink-0">4.</span>
+                            Les candidats sont triés du plus compatible au moins compatible
+                          </li>
+                        </ul>
+                      </div>
+
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
               </Tabs>
             </div>
           </div>

@@ -1,9 +1,10 @@
 import { Resend } from "resend";
+import { env } from "@/lib/env";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(env.RESEND_API_KEY);
 
 const FROM = "Ylsix <contact@ylsix.com>";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const APP_URL = env.NEXT_PUBLIC_APP_URL;
 
 class EmailService {
   /**

@@ -1,7 +1,7 @@
-// app/api/payment/webhook/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { verifyWebhookSignature } from "@/lib/geniuspay";
 import prisma from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 // import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   // Vérifier la signature
   const isValid = await verifyWebhookSignature(rawBody, signature, timestamp);
   if (!isValid) {
-    console.warn("[Webhook] Signature invalide");
+    logger.warn("[Webhook] Signature invalide");
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   const { data } = payload;
   const reference = data?.reference;
 
-  console.log(`[Webhook] Événement: ${event} | Réf: ${reference}`);
+  logger.info("[Webhook] Événement reçu", { event, reference });
 
   switch (event) {
     case "payment.success": {
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       break;
     }
     default:
-      console.log(`[Webhook] Événement ignoré: ${event}`);
+      logger.info("[Webhook] Événement ignoré", { event });
   }
 
   return NextResponse.json({ received: true });
@@ -67,7 +67,7 @@ async function handlePaymentSuccess(data: any) {
   const planId = metadata?.plan_id; // "pro" | "entreprise"
 
   if (!recruteurId || !planId) {
-    console.error("[Webhook] Metadata manquante:", metadata);
+    logger.error("[Webhook] Metadata manquante", { metadata });
     return;
   }
 
@@ -105,9 +105,7 @@ async function handlePaymentSuccess(data: any) {
     },
   });
 
-  console.log(
-    `[Webhook] ✅ Abonnement ${planEnum} activé pour recruteur ${recruteurId} jusqu'au ${dateFin.toISOString()}`,
-  );
+  logger.info("[Webhook] Abonnement activé", { plan: planEnum, recruteurId, dateFin: dateFin.toISOString() });
 }
 
 async function updatePaiementStatut(
@@ -121,6 +119,6 @@ async function updatePaiementStatut(
       data: { statut, geniuspayData: data },
     });
   } catch (err) {
-    console.error(`[Webhook] Impossible de mettre à jour ${reference}:`, err);
+    logger.error("[Webhook] Impossible de mettre à jour le paiement", { reference, error: String(err) });
   }
 }

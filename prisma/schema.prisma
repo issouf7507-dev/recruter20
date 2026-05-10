@@ -87,6 +87,9 @@ model Candidat {
   formations          Formation[]
   documents           Document[]
   objectifs           ObjectifCarriere[]
+
+  @@index([ville])
+  @@index([domaine])
 }
 
 model NiveauEtude {
@@ -116,6 +119,7 @@ model Recruteur {
   phone               String?
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
+  claudeApiKey        String?               // Clé API Claude personnelle du recruteur
   collaborateurs      Collaborateur[]
   social              CompanySocial?
   conversations       Conversation[]
@@ -286,6 +290,8 @@ model Application {
 
   @@index([candidatId], map: "Application_candidatId_fkey")
   @@index([jobOfferId], map: "Application_jobOfferId_fkey")
+  @@index([status])
+  @@index([candidatId, jobOfferId])
 }
 
 enum ApplicationStatus {

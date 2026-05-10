@@ -247,11 +247,7 @@ export interface ReorderCardData {
   columnId?: string;
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: string;
-}
+export type { ApiResponse } from "../types";
 
 export interface CardLabel {
   id: string;
