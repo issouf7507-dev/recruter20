@@ -76,9 +76,9 @@ function useDebounce<T>(value: T, delay: number): T {
 
 const NIVEAU_CONFIG = {
   excellent: { color: "bg-green-500", text: "text-green-700", bg: "bg-green-50 border-green-200", label: "Excellent" },
-  bon:       { color: "bg-blue-500",  text: "text-blue-700",  bg: "bg-blue-50 border-blue-200",  label: "Bon" },
-  moyen:     { color: "bg-yellow-500",text: "text-yellow-700",bg: "bg-yellow-50 border-yellow-200",label: "Moyen" },
-  faible:    { color: "bg-red-500",   text: "text-red-700",   bg: "bg-red-50 border-red-200",    label: "Faible" },
+  bon: { color: "bg-blue-500", text: "text-blue-700", bg: "bg-blue-50 border-blue-200", label: "Bon" },
+  moyen: { color: "bg-yellow-500", text: "text-yellow-700", bg: "bg-yellow-50 border-yellow-200", label: "Moyen" },
+  faible: { color: "bg-red-500", text: "text-red-700", bg: "bg-red-50 border-red-200", label: "Faible" },
 };
 
 function getInitials(s: string) {
@@ -95,10 +95,10 @@ function transformCandidat(c: any) {
     competences: c.candidatCompetences?.map((x: any) => x.competence) || [],
     experience: c.experiences?.length
       ? `${Math.floor(c.experiences.reduce((acc: number, e: any) => {
-          const start = new Date(e.dateDebut);
-          const end = e.dateFin ? new Date(e.dateFin) : new Date();
-          return acc + (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
-        }, 0) / 12)} ans`
+        const start = new Date(e.dateDebut);
+        const end = e.dateFin ? new Date(e.dateFin) : new Date();
+        return acc + (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+      }, 0) / 12)} ans`
       : "Débutant",
   };
 }
@@ -136,7 +136,7 @@ export default function MatchingAIPage() {
     fetch(`/api/recruteurs/${recruteurId}/claude-key`)
       .then((r) => r.json())
       .then((d) => { if (d.success) setHasKey(d.data.hasKey); })
-      .catch(() => {});
+      .catch(() => { });
   }, [recruteurId]);
 
   // Offres du recruteur
@@ -207,7 +207,7 @@ export default function MatchingAIPage() {
     <>
       <SiteHeader title="Matching IA" />
       <div className="flex flex-1 flex-col">
-        <div className="flex flex-col gap-5 py-4 md:py-6 px-4 lg:px-6 max-w-5xl mx-auto w-full">
+        <div className="flex flex-col gap-5 py-4 md:py-6 px-4 lg:px-6 @container/main w-full">
 
           {/* Header */}
           <div className="flex items-start justify-between gap-4">
@@ -267,11 +267,10 @@ export default function MatchingAIPage() {
               <div key={s.id} className="flex items-center flex-1">
                 <div className="flex items-center gap-2">
                   <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
-                      step > s.id ? "bg-primary text-white"
-                        : step === s.id ? "bg-primary text-white ring-4 ring-primary/20"
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${step > s.id ? "bg-primary text-white"
+                      : step === s.id ? "bg-primary text-white ring-4 ring-primary/20"
                         : "bg-muted text-muted-foreground"
-                    }`}
+                      }`}
                   >
                     {step > s.id ? <IconCheck className="h-3.5 w-3.5" /> : s.id}
                   </div>
@@ -309,17 +308,16 @@ export default function MatchingAIPage() {
                       </Link>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {offres.map((offre) => (
                         <button
                           key={offre.id}
                           type="button"
                           onClick={() => setSelectedOffre({ id: offre.id, title: offre.title, company: offre.company || undefined })}
-                          className={`text-left p-4 rounded-xl border-2 transition-all ${
-                            selectedOffre?.id === offre.id
-                              ? "border-primary bg-primary/5"
-                              : "border-muted hover:border-primary/40"
-                          }`}
+                          className={`text-left p-4 rounded-xl border-2 transition-all ${selectedOffre?.id === offre.id
+                            ? "border-primary bg-primary/5"
+                            : "border-muted hover:border-primary/40"
+                            }`}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
@@ -409,14 +407,12 @@ export default function MatchingAIPage() {
                             key={c.id}
                             type="button"
                             onClick={() => toggleCandidat(c.id)}
-                            className={`w-full text-left flex items-center gap-3 p-3 rounded-lg border transition-all ${
-                              selected ? "border-primary bg-primary/5" : "border-muted hover:border-primary/30"
-                            }`}
+                            className={`w-full text-left flex items-center gap-3 p-3 rounded-lg border transition-all ${selected ? "border-primary bg-primary/5" : "border-muted hover:border-primary/30"
+                              }`}
                           >
                             {/* Checkbox */}
-                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${
-                              selected ? "bg-primary border-primary" : "border-muted-foreground/30"
-                            }`}>
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${selected ? "bg-primary border-primary" : "border-muted-foreground/30"
+                              }`}>
                               {selected && <IconCheck className="h-3 w-3 text-white" />}
                             </div>
 
