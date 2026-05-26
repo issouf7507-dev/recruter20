@@ -32,7 +32,7 @@ export async function fetchKanbanColumns(
   const result: ApiResponse<{ columns: KanbanColumn[] }> =
     await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to fetch kanban columns");
   }
 
@@ -56,7 +56,7 @@ export async function createKanbanColumn(
 
   const result: ApiResponse<KanbanColumn> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to create column");
   }
 
@@ -80,7 +80,7 @@ export async function updateKanbanColumn(
 
   const result: ApiResponse<KanbanColumn> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to update column");
   }
 
@@ -135,7 +135,7 @@ export async function moveApplication(data: MoveApplicationData): Promise<any> {
 
   const result: ApiResponse<any> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to move application");
   }
 
@@ -160,7 +160,7 @@ export async function createKanbanCard(
 
   const result: ApiResponse<KanbanCard> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to create card");
   }
 
@@ -186,7 +186,7 @@ export async function updateKanbanCard(
 
   const result: ApiResponse<KanbanCard> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to update card");
   }
 
@@ -230,7 +230,7 @@ export async function moveCard(
 
   const result: ApiResponse<KanbanCard> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to move card");
   }
 
@@ -273,7 +273,7 @@ export async function addCardMembers(
 
   const result: ApiResponse<KanbanCard> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to add card members");
   }
 
@@ -298,7 +298,7 @@ export async function removeCardMember(
 
   const result: ApiResponse<KanbanCard> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to remove card member");
   }
 
@@ -310,7 +310,7 @@ export async function fetchLabels(recruteurId: string): Promise<CardLabel[]> {
   const response = await fetch(`/api/kanban/labels?recruteurId=${recruteurId}`);
   const result: ApiResponse<CardLabel[]> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to fetch labels");
   }
 
@@ -330,7 +330,7 @@ export async function createLabel(
 
   const result: ApiResponse<CardLabel> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to create label");
   }
 
@@ -351,7 +351,7 @@ export async function updateLabel(
 
   const result: ApiResponse<CardLabel> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to update label");
   }
 
@@ -365,7 +365,7 @@ export async function deleteLabel(id: string): Promise<void> {
 
   const result: ApiResponse<null> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to delete label");
   }
 }
@@ -385,7 +385,7 @@ export async function addCardLabel(
 
   const result: ApiResponse<KanbanCard> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to add card label");
   }
 
@@ -407,7 +407,7 @@ export async function removeCardLabel(
 
   const result: ApiResponse<KanbanCard> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to remove card label");
   }
 
@@ -432,7 +432,7 @@ export async function createCardNote(
 
   const result: ApiResponse<KanbanCard> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to create card note");
   }
 
@@ -457,7 +457,7 @@ export async function createCheckItem(
 
   const result: ApiResponse<KanbanCard> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to create check item");
   }
 
@@ -482,7 +482,7 @@ export async function updateCheckItem(
 
   const result: ApiResponse<KanbanCard> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to update check item");
   }
 
@@ -506,7 +506,7 @@ export async function deleteCheckItem(
 
   const result: ApiResponse<KanbanCard> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to delete check item");
   }
 
@@ -535,7 +535,7 @@ export async function createCardDueDate(
 
   const result: ApiResponse<KanbanCard> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to create due date");
   }
 
@@ -563,7 +563,7 @@ export async function updateCardDueDate(
 
   const result: ApiResponse<KanbanCard> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to update due date");
   }
 
@@ -587,7 +587,7 @@ export async function deleteCardDueDate(
 
   const result: ApiResponse<KanbanCard> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to delete due date");
   }
 
@@ -610,7 +610,7 @@ export async function createCardAttachment(
 
   const result: ApiResponse<KanbanCard> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to create attachment");
   }
 
@@ -634,7 +634,7 @@ export async function deleteCardAttachment(
 
   const result: ApiResponse<KanbanCard> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to delete attachment");
   }
 

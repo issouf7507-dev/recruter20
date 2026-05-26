@@ -12,7 +12,7 @@ export async function createInvitation(
   });
   const result: ApiResponse<Invitation> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to fetch offer");
   }
 
@@ -36,7 +36,7 @@ export async function acceptInvitation(
   });
   const result: ApiResponse<Invitation> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to accept invitation");
   }
 
@@ -46,7 +46,7 @@ export async function fetchInvitations(): Promise<Invitation[]> {
   const response = await fetch("/api/invitations");
   const result: ApiResponse<Invitation[]> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to fetch invitations");
   }
 

@@ -22,7 +22,7 @@ import type { CreateConversationData, ApiResponse } from "./types";
 //   const result: ApiResponse<PaginatedResponse<JobOffer>> =
 //     await response.json();
 
-//   if (!result.success) {
+//   if (!result.success || !result.data) {
 //     throw new Error(result.error || "Failed to fetch offers");
 //   }
 
@@ -36,7 +36,7 @@ import type { CreateConversationData, ApiResponse } from "./types";
 //   const response = await fetch(`/api/offres/${id}`);
 //   const result: ApiResponse<JobOffer> = await response.json();
 
-//   if (!result.success) {
+//   if (!result.success || !result.data) {
 //     throw new Error(result.error || "Failed to fetch offer");
 //   }
 
@@ -63,7 +63,7 @@ export async function createConversation(
 
   const result: ApiResponse<Conversation> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to create offer");
   }
 
@@ -99,7 +99,7 @@ export async function createConversation(
 
 //   const result: ApiResponse<JobOffer> = await response.json();
 
-//   if (!result.success) {
+//   if (!result.success || !result.data) {
 //     throw new Error(result.error || "Failed to update offer");
 //   }
 
@@ -116,7 +116,7 @@ export async function createConversation(
 
 //   const result: ApiResponse<void> = await response.json();
 
-//   if (!result.success) {
+//   if (!result.success || !result.data) {
 //     throw new Error(result.error || "Failed to delete offer");
 //   }
 // }
