@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 
-import AuthForm from "../../../components/AuthForm";
+import AuthForm from "@/components/auth/AuthForm";
 import Link from "next/link";
 import { ArrowLeftIcon } from "lucide-react";
 import { signIn } from "@/lib/auth-client";
 import { toast } from "sonner";
-import { getRecruteur } from "@/action/getRecruteur";
+import { getRecruteur } from "@/lib/actions/getRecruteur";
 
 interface AuthFormData {
   email: string;
@@ -32,7 +32,7 @@ export default function RecruiterLoginPage() {
       });
 
       if (res.error) {
-        console.error(res.error);
+        // console.error(res.error);
         // Gérer les erreurs spécifiques
         const errorMessage = res.error.message || String(res.error);
         if (errorMessage.includes("Invalid credentials") || errorMessage.includes("invalid") || errorMessage.includes("incorrect")) {

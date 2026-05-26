@@ -337,8 +337,8 @@ export default function RecruteurDashboardPage() {
                               <TableCell className="font-medium">
                                 {c.candidat
                                   ? `${c.candidat.prenom ?? ""} ${c.candidat.nom ?? ""}`.trim() ||
-                                    c.candidat.email ||
-                                    "—"
+                                  c.candidat.email ||
+                                  "—"
                                   : "—"}
                               </TableCell>
                               <TableCell>

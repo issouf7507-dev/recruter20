@@ -68,6 +68,8 @@ export function useSocket(options: UseSocketOptions = {}) {
     return () => {
       socketRef.current?.off("connect", handleConnect);
       socketRef.current?.off("disconnect", handleDisconnect);
+      disconnectSocket();
+      socketRef.current = null;
     };
   }, []);
 

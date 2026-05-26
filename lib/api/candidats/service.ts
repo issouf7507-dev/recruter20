@@ -1,5 +1,5 @@
 import type { ApiResponse, Candidat } from "./types";
-import type { PaginatedResponse } from "../offres/types";
+import type { PaginatedResponse } from "../types";
 
 /**
  * Search candidates with filters

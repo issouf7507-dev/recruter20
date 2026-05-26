@@ -1,4 +1,4 @@
-import { getCandidat } from "@/action/getCandidat";
+import { getCandidat } from "@/lib/actions/getCandidat";
 import { signOut, useSession } from "@/lib/auth-client";
 import { useEffect, useState } from "react";
 

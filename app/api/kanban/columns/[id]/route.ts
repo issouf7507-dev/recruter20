@@ -1,102 +1,61 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireSession } from "@/lib/api-auth";
+import { withErrorHandler, notFound } from "@/lib/api-error";
 import { kanbanRepository } from "@/lib/api/kanban/repository";
-import { auth } from "@/lib/auth";
 import type {
   UpdateKanbanColumnData,
   ApiResponse,
 } from "@/lib/api/kanban/types";
 
+type Ctx = { params: Promise<{ id: string }> };
+
 /**
  * PATCH /api/kanban/columns/[id]
  * Update a column
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+export const PATCH = withErrorHandler(async (req, ctx) => {
+  const request = req as NextRequest;
+  await requireSession(request);
 
-    const body: UpdateKanbanColumnData = await request.json();
-    const columnId = (await params).id;
+  const body: UpdateKanbanColumnData = await request.json();
+  const columnId = (await (ctx as Ctx).params).id;
 
-    const column = await kanbanRepository.findColumnById(columnId);
-    if (!column) {
-      return NextResponse.json(
-        { success: false, error: "Column not found" },
-        { status: 404 }
-      );
-    }
-
-    const updatedColumn = await kanbanRepository.updateColumn(columnId, body);
-
-    const result: ApiResponse<typeof updatedColumn> = {
-      success: true,
-      data: updatedColumn,
-    };
-
-    return NextResponse.json(result);
-  } catch (error: any) {
-    console.error("Error updating kanban column:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message || "Failed to update kanban column",
-      },
-      { status: 500 }
-    );
+  const column = await kanbanRepository.findColumnById(columnId);
+  if (!column) {
+    return notFound("Column");
   }
-}
+
+  const updatedColumn = await kanbanRepository.updateColumn(columnId, body);
+
+  const result: ApiResponse<typeof updatedColumn> = {
+    success: true,
+    data: updatedColumn,
+  };
+
+  return NextResponse.json(result);
+});
 
 /**
  * DELETE /api/kanban/columns/[id]
  * Delete a column
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+export const DELETE = withErrorHandler(async (req, ctx) => {
+  const request = req as NextRequest;
+  await requireSession(request);
 
-    const columnId = (await params).id;
+  const columnId = (await (ctx as Ctx).params).id;
 
-    const column = await kanbanRepository.findColumnById(columnId);
-    if (!column) {
-      return NextResponse.json(
-        { success: false, error: "Column not found" },
-        { status: 404 }
-      );
-    }
-
-    await kanbanRepository.deleteColumn(columnId);
-
-    const result: ApiResponse<null> = {
-      success: true,
-      data: null,
-    };
-
-    return NextResponse.json(result);
-  } catch (error: any) {
-    console.error("Error deleting kanban column:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message || "Failed to delete kanban column",
-      },
-      { status: 500 }
-    );
+  const column = await kanbanRepository.findColumnById(columnId);
+  if (!column) {
+    return notFound("Column");
   }
-}
+
+  await kanbanRepository.deleteColumn(columnId);
+
+  const result: ApiResponse<null> = {
+    success: true,
+    data: null,
+  };
+
+  return NextResponse.json(result);
+});

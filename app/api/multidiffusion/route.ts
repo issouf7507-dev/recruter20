@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@/app/generated/prisma";
-import { auth } from "@/lib/auth";
+import { requireSession } from "@/lib/api-auth";
+import { withErrorHandler, notFound, badRequest } from "@/lib/api-error";
 import { recruteurRepository } from "@/lib/api/recruteurs/repository";
 import { collaborateurRepository } from "@/lib/api/collaborateur";
 import { jobOfferRepository } from "@/lib/api/offres/repository";
-
-const prisma = new PrismaClient();
+import prisma from "@/lib/prisma";
 
 interface PublishRequest {
   offerId: string;
@@ -17,168 +16,115 @@ interface PublishRequest {
  * POST /api/multidiffusion
  * Publie une offre sur les plateformes sélectionnées
  */
-export async function POST(request: NextRequest) {
-  try {
-    // Vérifier l'authentification
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
+export const POST = withErrorHandler(async (req) => {
+  const request = req as NextRequest;
+  const session = await requireSession(request);
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: "Non authentifié" },
-        { status: 401 }
-      );
-    }
+  const body: PublishRequest = await request.json();
+  const { offerId, platforms, message } = body;
 
-    const body: PublishRequest = await request.json();
-    const { offerId, platforms, message } = body;
-
-    if (!offerId || !platforms || platforms.length === 0) {
-      return NextResponse.json(
-        { success: false, error: "Paramètres manquants" },
-        { status: 400 }
-      );
-    }
-
-    // Récupérer le recruteurId
-    const recruteur = await recruteurRepository.findByUserId(session.user.id);
-    const collaborateur = await collaborateurRepository.findByUserId(
-      session.user.id
-    );
-    const recruteurId = recruteur?.id || collaborateur?.recruteurId;
-
-    if (!recruteurId) {
-      return NextResponse.json(
-        { success: false, error: "Profil recruteur non trouvé" },
-        { status: 404 }
-      );
-    }
-
-    // Récupérer l'offre
-    const offer = await jobOfferRepository.findById(offerId, {});
-    if (!offer) {
-      return NextResponse.json(
-        { success: false, error: "Offre non trouvée" },
-        { status: 404 }
-      );
-    }
-
-    const results: Array<{
-      platform: string;
-      success: boolean;
-      postId?: string;
-      postUrl?: string;
-      error?: string;
-    }> = [];
-
-    // Traiter chaque plateforme
-    for (const platform of platforms) {
-      if (platform === "linkedin") {
-        const linkedInResult = await publishToLinkedIn(
-          recruteurId,
-          offer,
-          message
-        );
-        results.push(linkedInResult);
-
-        // Sauvegarder dans l'historique
-        await saveToHistory(
-          recruteurId,
-          offerId,
-          platform,
-          linkedInResult,
-          message || generateDefaultMessage(offer)
-        );
-      }
-      // Ajouter d'autres plateformes ici
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: results,
-    });
-  } catch (error) {
-    console.error("Multi-diffusion error:", error);
-    return NextResponse.json(
-      { success: false, error: "Erreur lors de la publication" },
-      { status: 500 }
-    );
-  } finally {
-    await prisma.$disconnect();
+  if (!offerId || !platforms || platforms.length === 0) {
+    return badRequest("Paramètres manquants");
   }
-}
+
+  // Récupérer le recruteurId
+  const recruteur = await recruteurRepository.findByUserId(session.user.id);
+  const collaborateur = await collaborateurRepository.findByUserId(
+    session.user.id,
+  );
+  const recruteurId = recruteur?.id || collaborateur?.recruteurId;
+
+  if (!recruteurId) {
+    return notFound("Profil recruteur");
+  }
+
+  // Récupérer l'offre
+  const offer = await jobOfferRepository.findById(offerId, {});
+  if (!offer) {
+    return notFound("Offre");
+  }
+
+  const results: Array<{
+    platform: string;
+    success: boolean;
+    postId?: string;
+    postUrl?: string;
+    error?: string;
+  }> = [];
+
+  // Traiter chaque plateforme
+  for (const platform of platforms) {
+    if (platform === "linkedin") {
+      const linkedInResult = await publishToLinkedIn(
+        recruteurId,
+        offer,
+        message,
+      );
+      results.push(linkedInResult);
+
+      // Sauvegarder dans l'historique
+      await saveToHistory(
+        recruteurId,
+        offerId,
+        platform,
+        linkedInResult,
+        message || generateDefaultMessage(offer),
+      );
+    }
+    // Ajouter d'autres plateformes ici
+  }
+
+  return NextResponse.json({
+    success: true,
+    data: results,
+  });
+});
 
 /**
  * GET /api/multidiffusion
  * Récupère l'historique des diffusions
  */
-export async function GET(request: NextRequest) {
-  try {
-    // Vérifier l'authentification
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
+export const GET = withErrorHandler(async (req) => {
+  const request = req as NextRequest;
+  const session = await requireSession(request);
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: "Non authentifié" },
-        { status: 401 }
-      );
-    }
+  // Récupérer le recruteurId
+  const recruteur = await recruteurRepository.findByUserId(session.user.id);
+  const collaborateur = await collaborateurRepository.findByUserId(
+    session.user.id,
+  );
+  const recruteurId = recruteur?.id || collaborateur?.recruteurId;
 
-    // Récupérer le recruteurId
-    const recruteur = await recruteurRepository.findByUserId(session.user.id);
-    const collaborateur = await collaborateurRepository.findByUserId(
-      session.user.id
-    );
-    const recruteurId = recruteur?.id || collaborateur?.recruteurId;
-
-    if (!recruteurId) {
-      return NextResponse.json(
-        { success: false, error: "Profil recruteur non trouvé" },
-        { status: 404 }
-      );
-    }
-
-    // Récupérer l'historique
-    const history = await prisma.$queryRaw<
-      Array<{
-        id: string;
-        jobOfferId: string;
-        platform: string;
-        status: string;
-        postId: string | null;
-        postUrl: string | null;
-        message: string;
-        publishedAt: Date | null;
-        createdAt: Date;
-      }>
-    >`
-      SELECT id, jobOfferId, platform, status, postId, postUrl, message, publishedAt, createdAt
-      FROM diffusion_history
-      WHERE recruteurId = ${recruteurId}
-      ORDER BY createdAt DESC
-      LIMIT 50
-    `;
-
-    return NextResponse.json({
-      success: true,
-      data: history,
-    });
-  } catch (error) {
-    console.error("Get diffusion history error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Erreur lors de la récupération de l'historique",
-      },
-      { status: 500 }
-    );
-  } finally {
-    await prisma.$disconnect();
+  if (!recruteurId) {
+    return notFound("Profil recruteur");
   }
-}
+
+  // Récupérer l'historique
+  const history = await prisma.$queryRaw<
+    Array<{
+      id: string;
+      jobOfferId: string;
+      platform: string;
+      status: string;
+      postId: string | null;
+      postUrl: string | null;
+      message: string;
+      publishedAt: Date | null;
+      createdAt: Date;
+    }>
+  >`
+    SELECT id, jobOfferId, platform, status, postId, postUrl, message, publishedAt, createdAt
+    FROM diffusion_history
+    WHERE recruteurId = ${recruteurId}
+    ORDER BY createdAt DESC
+    LIMIT 50
+  `;
+
+  return NextResponse.json({
+    success: true,
+    data: history,
+  });
+});
 
 /**
  * Publie sur LinkedIn via l'API
@@ -186,7 +132,7 @@ export async function GET(request: NextRequest) {
 async function publishToLinkedIn(
   recruteurId: string,
   offer: any,
-  customMessage?: string
+  customMessage?: string,
 ): Promise<{
   platform: string;
   success: boolean;
@@ -349,7 +295,7 @@ async function saveToHistory(
     postUrl?: string;
     error?: string;
   },
-  message: string
+  message: string,
 ) {
   try {
     const id = `dh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -359,10 +305,10 @@ async function saveToHistory(
     await prisma.$executeRaw`
       INSERT INTO diffusion_history (id, recruteurId, jobOfferId, platform, status, postId, postUrl, message, error, publishedAt, createdAt)
       VALUES (${id}, ${recruteurId}, ${jobOfferId}, ${platform}, ${status}, ${
-      result.postId || null
-    }, ${result.postUrl || null}, ${message}, ${
-      result.error || null
-    }, ${publishedAt}, NOW())
+        result.postId || null
+      }, ${result.postUrl || null}, ${message}, ${
+        result.error || null
+      }, ${publishedAt}, NOW())
     `;
   } catch (error) {
     console.error("Save to history error:", error);

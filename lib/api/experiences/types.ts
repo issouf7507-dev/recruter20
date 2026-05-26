@@ -43,9 +43,5 @@ export interface UpdateExperienceData {
   competences?: string[];
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
+export type { ApiResponse } from "../types";
 

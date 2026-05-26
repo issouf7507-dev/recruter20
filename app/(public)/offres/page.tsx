@@ -3,14 +3,15 @@ import {
   Search,
   MapPin,
   Filter,
-  DollarSignIcon,
-  Briefcase,
+
 } from "lucide-react";
-import Link from "next/link";
+
 import { motion } from "framer-motion";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useOffers } from "@/lib/hooks/use-offers";
 import { Card, CardContent } from "@/components/ui/card";
+import { OffreCard } from "@/components/public/OffreCard";
+
 import {
   Select,
   SelectItem,
@@ -127,7 +128,7 @@ export default function OffresPage() {
   const { data: offersData, isLoading: isLoadingOffers } =
     useOffers(filterParams);
 
-  console.log("offersData", offersData);
+  // console.log("offersData", offersData);
 
   const pagination = offersData?.pagination;
 
@@ -201,8 +202,8 @@ export default function OffresPage() {
             offer.salaryMin && offer.salaryMax
               ? `${offer.salaryMin.toLocaleString()}-${offer.salaryMax.toLocaleString()}`
               : offer.salaryMin
-              ? `${offer.salaryMin.toLocaleString()}+`
-              : "",
+                ? `${offer.salaryMin.toLocaleString()}+`
+                : "",
           experience: "Non spécifié",
           remote: offer.location ? "Sur site" : "Télétravail",
           logo: offer.logo || null,
@@ -293,6 +294,7 @@ export default function OffresPage() {
     setCurrentPage(pagination?.totalPages || 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentPage, pagination?.totalPages]);
+
   // État de chargement initial
   if (isLoadingOffers) {
     return (
@@ -371,9 +373,8 @@ export default function OffresPage() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className={`${
-              showFilters ? "block" : "hidden"
-            } lg:block w-full lg:w-72 xl:w-80 bg-white rounded-xl p-4 sm:p-6 h-fit lg:sticky lg:top-24 shadow-sm`}
+            className={`${showFilters ? "block" : "hidden"
+              } lg:block w-full lg:w-72 xl:w-80 bg-white rounded-xl p-4 sm:p-6 h-fit lg:sticky lg:top-24 shadow-sm`}
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold">Filtres</h2>
@@ -565,111 +566,9 @@ export default function OffresPage() {
                       key={job.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: index * 0.05 }}
+                      transition={{ duration: 0.4, delay: index * 0.04 }}
                     >
-                      <Link href={`/offres/${job.id}`}>
-                        <div className="bg-white rounded-xl p-4 sm:p-6 cursor-pointer border border-transparent hover:border-[#a590ff] transition-all hover:shadow-lg">
-                          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                            {job.logo ? (
-                              <img
-                                src={job.logo}
-                                alt={job.company}
-                                className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover shrink-0"
-                              />
-                            ) : (
-                              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-                                <Briefcase className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              {/* Header with title and location */}
-                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4 mb-2">
-                                <div className="min-w-0">
-                                  <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 hover:text-[#a590ff] transition-colors truncate">
-                                    {job.title}
-                                  </h3>
-                                  <p className="text-sm sm:text-base text-gray-600 font-medium">
-                                    {job.company}
-                                  </p>
-                                </div>
-
-                                <div className="flex items-center gap-2 shrink-0">
-                                  <div className="flex flex-col gap-0.5">
-                                    <div className="flex items-center gap-1.5">
-                                      <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
-                                      <span className="text-sm sm:text-base font-semibold text-gray-700">
-                                        {job.location}
-                                      </span>
-                                    </div>
-                                    <span className="text-xs sm:text-sm text-gray-500 ml-5 sm:ml-6">
-                                      {job.postedAt}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Tags */}
-                              <div className="flex flex-wrap gap-2 mb-2 sm:mb-3">
-                                <span
-                                  className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium ${
-                                    job.type === "CDI"
-                                      ? "bg-green-100 text-green-700"
-                                      : job.type === "FREELANCE"
-                                      ? "bg-orange-100 text-orange-700"
-                                      : job.type === "CDD"
-                                      ? "bg-blue-100 text-blue-700"
-                                      : "bg-purple-100 text-purple-700"
-                                  }`}
-                                >
-                                  {job.type}
-                                </span>
-                                {job.salary && (
-                                  <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-700">
-                                    {job.salary} {job.salaryCurrency}
-                                  </span>
-                                )}
-                                {job.dueDateFormatted && (
-                                  <span
-                                    className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium ${
-                                      job.isDueDateExpired
-                                        ? "bg-red-100 text-red-700"
-                                        : job.isDueDateSoon
-                                        ? "bg-orange-100 text-orange-700"
-                                        : "bg-blue-100 text-blue-700"
-                                    }`}
-                                  >
-                                    {job.isDueDateExpired
-                                      ? "" + job.dueDateFormatted
-                                      : " Clôture: " + job.dueDateFormatted}
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Description - hidden on very small screens */}
-                              <div className="hidden sm:block space-y-1 sm:space-y-2">
-                                {job.description
-                                  .split(". ")
-                                  .slice(0, 2)
-                                  .map((sentence, idx) => (
-                                    // <p
-                                    //   key={idx}
-                                    //   className="text-gray-600 text-xs sm:text-sm line-clamp-1"
-                                    // >
-                                    //   • {sentence.trim()}
-                                    // </p>
-
-                                    <div
-                                      dangerouslySetInnerHTML={{
-                                        __html: sentence.trim(),
-                                      }}
-                                      className="text-gray-600 text-xs sm:text-sm line-clamp-1"
-                                    />
-                                  ))}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
+                      <OffreCard offre={job} index={index} />
                     </motion.div>
                   ))}
 

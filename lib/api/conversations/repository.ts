@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { Prisma, SenderType } from "@/app/generated/prisma";
 import type { CreateConversationData } from "./types";
 
 /**
@@ -17,7 +18,7 @@ export class ConversationRepository {
   }) {
     const { page = 1, limit = 10, recruteurId, search, etat } = params;
 
-    const where: any = {
+    const where: Prisma.JobOfferWhereInput = {
       deletedAt: null,
     };
 
@@ -27,9 +28,9 @@ export class ConversationRepository {
 
     if (search) {
       where.OR = [
-        { title: { contains: search, mode: "insensitive" } },
-        { company: { contains: search, mode: "insensitive" } },
-        { location: { contains: search, mode: "insensitive" } },
+        { title: { contains: search } },
+        { company: { contains: search } },
+        { location: { contains: search } },
       ];
     }
 
@@ -206,20 +207,63 @@ export class ConversationRepository {
     return conversation;
   }
 
-  /**
-   * Update an offer
-   */
-
-  /**
-   * Soft delete an offer
-   */
-  async delete(id: string) {
-    return prisma.jobOffer.update({
-      where: { id },
-      data: {
-        deletedAt: new Date(),
-        etat: "deleted",
+  async findByRecruteurId(recruteurId: string) {
+    return prisma.conversation.findMany({
+      where: { recruteurId },
+      include: {
+        candidat: { include: { user: { select: { email: true, name: true } } } },
+        jobOffer: { select: { id: true, title: true, company: true } },
+        messages: { orderBy: { createdAt: "desc" }, take: 1 },
       },
+      orderBy: { updatedAt: "desc" },
+    });
+  }
+
+  async findByCandidatId(candidatId: string) {
+    return prisma.conversation.findMany({
+      where: { candidatId },
+      include: {
+        recruteur: {
+          select: { id: true, firstName: true, lastName: true, companyName: true, logo: true, type: true },
+        },
+        jobOffer: { select: { id: true, title: true, company: true, location: true } },
+        messages: { orderBy: { createdAt: "desc" }, take: 1 },
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+  }
+
+  async findWithDetails(id: string) {
+    return prisma.conversation.findUnique({
+      where: { id },
+      include: {
+        candidat: { include: { user: { select: { email: true, name: true } } } },
+        recruteur: { include: { user: { select: { name: true } } } },
+        jobOffer: { select: { title: true, company: true } },
+      },
+    });
+  }
+
+  async createMessage(data: {
+    conversationId: string;
+    senderId: string;
+    senderType: SenderType;
+    content: string;
+  }) {
+    return prisma.message.create({ data });
+  }
+
+  async findMessages(conversationId: string) {
+    return prisma.message.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
+  async updateActivity(id: string) {
+    return prisma.conversation.update({
+      where: { id },
+      data: { updatedAt: new Date() },
     });
   }
 }

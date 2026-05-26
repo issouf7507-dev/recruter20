@@ -30,9 +30,5 @@ export interface UpdateFormationData {
   description?: string;
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
+export type { ApiResponse } from "../types";
 

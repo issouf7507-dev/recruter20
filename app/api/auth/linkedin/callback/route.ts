@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@/app/generated/prisma";
+// import { PrismaClient } from "@/app/generated/prisma";
 import { recruteurRepository } from "@/lib/api/recruteurs/repository";
 import { collaborateurRepository } from "@/lib/api/collaborateur";
+import prisma from "@/lib/prisma";
 
-const prisma = new PrismaClient();
+// const prisma = new PrismaClient();
 
 /**
  * GET /api/auth/linkedin/callback
@@ -23,10 +24,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(
         new URL(
           `/recruteur/multi-diffusion?error=${encodeURIComponent(
-            errorDescription || error
+            errorDescription || error,
           )}`,
-          request.url
-        )
+          request.url,
+        ),
       );
     }
 
@@ -34,8 +35,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(
         new URL(
           "/recruteur/multi-diffusion?error=Paramètres manquants",
-          request.url
-        )
+          request.url,
+        ),
       );
     }
 
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
       stateData = JSON.parse(Buffer.from(state, "base64").toString());
     } catch {
       return NextResponse.redirect(
-        new URL("/recruteur/multi-diffusion?error=State invalide", request.url)
+        new URL("/recruteur/multi-diffusion?error=State invalide", request.url),
       );
     }
 
@@ -54,8 +55,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(
         new URL(
           "/recruteur/multi-diffusion?error=Session expirée, veuillez réessayer",
-          request.url
-        )
+          request.url,
+        ),
       );
     }
 
@@ -67,8 +68,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(
         new URL(
           "/recruteur/multi-diffusion?error=Configuration serveur manquante",
-          request.url
-        )
+          request.url,
+        ),
       );
     }
 
@@ -87,7 +88,7 @@ export async function GET(request: NextRequest) {
           client_id: clientId,
           client_secret: clientSecret,
         }),
-      }
+      },
     );
 
     if (!tokenResponse.ok) {
@@ -96,8 +97,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(
         new URL(
           "/recruteur/multi-diffusion?error=Erreur lors de l'échange du token",
-          request.url
-        )
+          request.url,
+        ),
       );
     }
 
@@ -111,7 +112,7 @@ export async function GET(request: NextRequest) {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
-      }
+      },
     );
 
     if (!profileResponse.ok) {
@@ -120,8 +121,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(
         new URL(
           "/recruteur/multi-diffusion?error=Erreur lors de la récupération du profil",
-          request.url
-        )
+          request.url,
+        ),
       );
     }
 
@@ -137,7 +138,7 @@ export async function GET(request: NextRequest) {
     // 3. Récupérer le recruteurId
     const recruteur = await recruteurRepository.findByUserId(stateData.userId);
     const collaborateur = await collaborateurRepository.findByUserId(
-      stateData.userId
+      stateData.userId,
     );
     const recruteurId = recruteur?.id || collaborateur?.recruteurId;
 
@@ -145,8 +146,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(
         new URL(
           "/recruteur/multi-diffusion?error=Profil recruteur non trouvé",
-          request.url
-        )
+          request.url,
+        ),
       );
     }
 
@@ -169,13 +170,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(
       new URL(
         "/recruteur/multi-diffusion?connected=linkedin&success=true",
-        request.url
-      )
+        request.url,
+      ),
     );
   } catch (error) {
     console.error("LinkedIn callback error:", error);
     return NextResponse.redirect(
-      new URL("/recruteur/multi-diffusion?error=Erreur inattendue", request.url)
+      new URL(
+        "/recruteur/multi-diffusion?error=Erreur inattendue",
+        request.url,
+      ),
     );
   } finally {
     await prisma.$disconnect();

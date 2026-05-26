@@ -121,8 +121,4 @@ export interface Candidat {
   niveauxEtude?: string[] | null;
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: string;
-}
+export type { ApiResponse } from "../types";

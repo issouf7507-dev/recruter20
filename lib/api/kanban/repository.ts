@@ -436,7 +436,7 @@ export class KanbanRepository {
       });
     }
 
-    return card as any;
+    return card;
   }
 
   /**
@@ -660,7 +660,7 @@ export class KanbanRepository {
       });
     }
 
-    return card as any;
+    return card;
   }
 
   /**
@@ -841,7 +841,7 @@ export class KanbanRepository {
       throw new Error("Card not found");
     }
 
-    return card as any;
+    return card;
   }
 
   /**
@@ -926,9 +926,9 @@ export class KanbanRepository {
           labelId,
         },
       })
-      .catch((error: any) => {
+      .catch((error: unknown) => {
         // Ignore unique constraint errors (label already exists on card)
-        if (error.code !== "P2002") {
+        if ((error as { code?: string }).code !== "P2002") {
           throw error;
         }
       });

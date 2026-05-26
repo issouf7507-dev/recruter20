@@ -1,4 +1,5 @@
 import { alerteRepository } from "./repository";
+import prisma from "@/lib/prisma";
 import type { CreateAlerteData, UpdateAlerteData } from "./types";
 
 /**
@@ -80,6 +81,13 @@ export class AlerteService {
     }
 
     return alerteRepository.update(id, { active: !alerte.active });
+  }
+
+  async updateMatchCount(id: string, count: number) {
+    return prisma.alerteEmploi.update({
+      where: { id },
+      data: { nombreResultats: count, derniereMiseAJour: new Date() },
+    });
   }
 }
 

@@ -16,12 +16,15 @@ const HF_ROUTER_URL = "https://router.huggingface.co/hf-inference/models";
 /**
  * Helper: Query générique pour Hugging Face (selon doc officielle)
  */
+type HFClassificationItem = { label: string; score: number };
+type HFResponse = HFClassificationItem[] | { labels: string[]; scores: number[] };
+
 async function queryHuggingFace(
   modelName: string,
-  data: any,
+  data: unknown,
   maxRetries = 2
-): Promise<any> {
-  let lastError: any = null;
+): Promise<HFResponse> {
+  let lastError: unknown = null;
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
@@ -127,8 +130,8 @@ Candidat: ${candidatText.substring(0, 300)}
 
     // Format 1: Array d'objets [{label, score}, ...]
     if (Array.isArray(result)) {
-      labels = result.map((item: any) => item.label);
-      scores = result.map((item: any) => item.score);
+      labels = (result as HFClassificationItem[]).map((item) => item.label);
+      scores = (result as HFClassificationItem[]).map((item) => item.score);
     }
     // Format 2: Objet {labels: [...], scores: [...]}
     else if (result.labels && result.scores) {
@@ -209,8 +212,8 @@ Candidate Profile: ${candidatProfile.substring(0, 300)}
 
     // Format 1: Array d'objets [{label, score}, ...]
     if (Array.isArray(result)) {
-      labels = result.map((item: any) => item.label);
-      scores = result.map((item: any) => item.score);
+      labels = (result as HFClassificationItem[]).map((item) => item.label);
+      scores = (result as HFClassificationItem[]).map((item) => item.score);
     }
     // Format 2: Objet {labels: [...], scores: [...]}
     else if (result.labels && result.scores) {
@@ -431,12 +434,20 @@ Experience: ${candidat.experiences.join(". ")}
 /**
  * Batch processing avec rate limiting
  */
+interface MatchInput {
+  candidat: {
+    id?: string;
+    bio?: string | null;
+    candidatCompetences?: { competence: string }[];
+    experiences?: { poste: string }[];
+  };
+  offre: { title: string; description?: string | null };
+  score?: number;
+}
+
 export async function analyzeBatchHuggingFacePure(
-  matches: Array<{
-    candidat: any;
-    offre: any;
-  }>
-): Promise<Array<any>> {
+  matches: MatchInput[]
+): Promise<MatchInput[]> {
   console.log(`🚀 Analyse batch IA: ${matches.length} candidats`);
 
   const results = [];
@@ -457,11 +468,9 @@ export async function analyzeBatchHuggingFacePure(
             {
               bio: match.candidat.bio || "",
               competences:
-                match.candidat.candidatCompetences?.map(
-                  (c: any) => c.competence
-                ) || [],
+                match.candidat.candidatCompetences?.map((c) => c.competence) || [],
               experiences:
-                match.candidat.experiences?.map((e: any) => e.poste) || [],
+                match.candidat.experiences?.map((e) => e.poste) || [],
             },
             {
               title: match.offre.title,
@@ -504,12 +513,8 @@ export async function analyzeBatchHuggingFacePure(
  * Batch hybride
  */
 export async function analyzeBatchHuggingFace(
-  matches: Array<{
-    candidat: any;
-    offre: any;
-    score: number;
-  }>
-): Promise<Array<any>> {
+  matches: MatchInput[]
+): Promise<MatchInput[]> {
   console.log(`🚀 Analyse batch hybride: ${matches.length} candidats`);
 
   const results = [];
@@ -526,11 +531,9 @@ export async function analyzeBatchHuggingFace(
             {
               bio: match.candidat.bio || "",
               competences:
-                match.candidat.candidatCompetences?.map(
-                  (c: any) => c.competence
-                ) || [],
+                match.candidat.candidatCompetences?.map((c) => c.competence) || [],
               experiences:
-                match.candidat.experiences?.map((e: any) => e.poste) || [],
+                match.candidat.experiences?.map((e) => e.poste) || [],
             },
             {
               title: match.offre.title,

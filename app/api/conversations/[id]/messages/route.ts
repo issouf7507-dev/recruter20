@@ -1,174 +1,60 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { conversationRepository } from "@/lib/api/conversations/repository";
 import { emailService } from "@/lib/email";
 import { emitNewMessage } from "@/lib/socket-server";
+import { badRequest, notFound, withErrorHandler } from "@/lib/api-error";
 
-/**
- * POST /api/conversations/[id]/messages
- * Envoyer un message dans une conversation
- */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id: conversationId } = await params;
-    const body = await request.json();
-    const { senderId, senderType, content } = body;
+type Ctx = { params: Promise<{ id: string }> };
 
-    if (!senderId || !senderType || !content) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "senderId, senderType et content sont requis",
-        },
-        { status: 400 }
-      );
-    }
+export const POST = withErrorHandler(async (req, ctx) => {
+  const { id: conversationId } = await (ctx as Ctx).params;
+  const { senderId, senderType, content } = await (req as NextRequest).json();
 
-    // Vérifier que la conversation existe avec les infos nécessaires
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: conversationId },
-      include: {
-        candidat: {
-          include: {
-            user: {
-              select: {
-                email: true,
-                name: true,
-              },
-            },
-          },
-        },
-        recruteur: {
-          include: {
-            user: {
-              select: {
-                name: true,
-              },
-            },
-          },
-        },
-        jobOffer: {
-          select: {
-            title: true,
-            company: true,
-          },
-        },
-      },
-    });
+  if (!senderId || !senderType || !content) {
+    return badRequest("senderId, senderType et content sont requis");
+  }
 
-    if (!conversation) {
-      return NextResponse.json(
-        { success: false, error: "Conversation not found" },
-        { status: 404 }
-      );
-    }
+  const conversation = await conversationRepository.findWithDetails(conversationId);
+  if (!conversation) return notFound("Conversation");
 
-    // Créer le message
-    const message = await prisma.message.create({
-      data: {
+  const message = await conversationRepository.createMessage({
+    conversationId, senderId, senderType, content,
+  });
+  await conversationRepository.updateActivity(conversationId);
+
+  emitNewMessage({
+    id: message.id,
+    conversationId: message.conversationId,
+    senderId: message.senderId,
+    senderType: message.senderType,
+    content: message.content,
+    isRead: message.isRead,
+    createdAt: message.createdAt.toISOString(),
+    updatedAt: message.updatedAt.toISOString(),
+  });
+
+  if (senderType === "RECRUTEUR" && conversation.candidat?.user?.email) {
+    const candidat = conversation.candidat;
+    emailService
+      .sendNewMessageNotification({
+        to: candidat.user.email,
+        candidatName: candidat.prenom && candidat.nom
+          ? `${candidat.prenom} ${candidat.nom}`
+          : candidat.user.name || "Candidat",
+        recruteurName: conversation.recruteur?.user?.name || conversation.recruteur?.companyName || "Un recruteur",
+        companyName: conversation.jobOffer?.company || null,
+        jobTitle: conversation.jobOffer?.title || "Offre d'emploi",
+        messagePreview: content,
         conversationId,
-        senderId,
-        senderType,
-        content,
-      },
-    });
-
-    // Mettre à jour la date de dernière activité de la conversation
-    await prisma.conversation.update({
-      where: { id: conversationId },
-      data: { updatedAt: new Date() },
-    });
-
-    // Émettre le message via Socket.IO pour la mise à jour en temps réel
-    emitNewMessage({
-      id: message.id,
-      conversationId: message.conversationId,
-      senderId: message.senderId,
-      senderType: message.senderType,
-      content: message.content,
-      isRead: message.isRead,
-      createdAt: message.createdAt.toISOString(),
-      updatedAt: message.updatedAt.toISOString(),
-    });
-
-    // Envoyer une notification email au candidat si le message vient du recruteur
-    if (senderType === "RECRUTEUR" && conversation.candidat?.user?.email) {
-      const candidatEmail = conversation.candidat.user.email;
-      const candidatName =
-        conversation.candidat.prenom && conversation.candidat.nom
-          ? `${conversation.candidat.prenom} ${conversation.candidat.nom}`
-          : conversation.candidat.user.name || "Candidat";
-      const recruteurName =
-        conversation.recruteur?.user?.name ||
-        conversation.recruteur?.companyName ||
-        "Un recruteur";
-      const companyName = conversation.jobOffer?.company || null;
-      const jobTitle = conversation.jobOffer?.title || "Offre d'emploi";
-
-      // Envoyer l'email de notification (sans bloquer la réponse)
-      emailService
-        .sendNewMessageNotification({
-          to: candidatEmail,
-          candidatName,
-          recruteurName,
-          companyName,
-          jobTitle,
-          messagePreview: content,
-          conversationId,
-        })
-        .then((result) => {
-          if (result.success) {
-            console.log(
-              `Email de notification envoyé à ${candidatEmail} pour la conversation ${conversationId}`
-            );
-          } else {
-            console.warn(
-              `Échec de l'envoi de l'email de notification: ${result.error}`
-            );
-          }
-        })
-        .catch((error) => {
-          console.error(
-            "Erreur lors de l'envoi de l'email de notification:",
-            error
-          );
-        });
-    }
-
-    return NextResponse.json({ success: true, data: message });
-  } catch (error) {
-    console.error("Error creating message:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to create message" },
-      { status: 500 }
-    );
+      })
+      .catch((err) => console.error("Email notification error:", err));
   }
-}
 
-/**
- * GET /api/conversations/[id]/messages
- * Récupérer tous les messages d'une conversation
- */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id: conversationId } = await params;
+  return NextResponse.json({ success: true, data: message });
+});
 
-    const messages = await prisma.message.findMany({
-      where: { conversationId },
-      orderBy: { createdAt: "asc" },
-    });
-
-    return NextResponse.json({ success: true, data: messages });
-  } catch (error) {
-    console.error("Error fetching messages:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to fetch messages" },
-      { status: 500 }
-    );
-  }
-}
+export const GET = withErrorHandler(async (_req, ctx) => {
+  const { id: conversationId } = await (ctx as Ctx).params;
+  const messages = await conversationRepository.findMessages(conversationId);
+  return NextResponse.json({ success: true, data: messages });
+});

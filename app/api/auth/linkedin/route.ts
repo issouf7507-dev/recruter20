@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { env } from "@/lib/env";
 
 /**
  * GET /api/auth/linkedin
@@ -19,23 +20,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const clientId = process.env.LINKEDIN_CLIENT_ID;
-    const redirectUri = process.env.LINKEDIN_REDIRECT_URI;
+    const clientId = env.LINKEDIN_CLIENT_ID;
+    const redirectUri = env.LINKEDIN_REDIRECT_URI;
 
-    if (!clientId || !redirectUri) {
-      return NextResponse.json(
-        { success: false, error: "Configuration LinkedIn manquante" },
-        { status: 500 }
-      );
-    }
-
-    // Permissions de base (OpenID Connect)
-    // Note: w_member_social nécessite l'approbation du produit "Share on LinkedIn"
-    // Pour l'instant, on utilise uniquement les scopes de base
     const baseScopes = "openid profile email";
-
-    // Vérifier si le scope de publication est activé via variable d'env
-    const hasSharePermission = process.env.LINKEDIN_SHARE_ENABLED === "true";
+    const hasSharePermission = env.LINKEDIN_SHARE_ENABLED === "true";
     const scope = hasSharePermission
       ? `${baseScopes} w_member_social`
       : baseScopes;

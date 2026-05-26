@@ -21,7 +21,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SiteHeader } from "@/components/site-header";
-import { RichTextEditorWrapper } from "@/components/rich-text-editor-wrapper";
+import dynamic from "next/dynamic";
+const RichTextEditorWrapper = dynamic(
+  () => import("@/components/rich-text-editor-wrapper").then((m) => m.RichTextEditorWrapper),
+  { ssr: false, loading: () => <div className="h-40 bg-gray-100 rounded animate-pulse" /> }
+);
 import { useSession } from "@/lib/auth-client";
 import {
   useOffers,

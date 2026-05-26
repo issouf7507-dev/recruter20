@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { requireSession } from "@/lib/api-auth";
+import { withErrorHandler } from "@/lib/api-error";
 import { kanbanRepository } from "@/lib/api/kanban/repository";
 import type { ApiResponse, CardLabel, UpdateCardLabelData } from "@/lib/api/kanban/types";
 import { z } from "zod";
+
+type Ctx = { params: Promise<{ id: string }> };
 
 const updateLabelSchema = z.object({
   name: z.string().min(1).optional(),
@@ -13,85 +16,36 @@ const updateLabelSchema = z.object({
  * PATCH /api/kanban/labels/[id]
  * Mettre à jour un label
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const id = (await params).id;
-  try {
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+export const PATCH = withErrorHandler(async (req, ctx) => {
+  const request = req as NextRequest;
+  await requireSession(request);
 
-    const body = await request.json();
-    const validatedData = updateLabelSchema.parse(body);
+  const id = (await (ctx as Ctx).params).id;
 
-    const label = await kanbanRepository.updateLabel(id, validatedData);
+  const body = await request.json();
+  const validatedData = updateLabelSchema.parse(body);
 
-    const result: ApiResponse<CardLabel> = {
-      success: true,
-      data: label as CardLabel,
-    };
+  const label = await kanbanRepository.updateLabel(id, validatedData);
 
-    return NextResponse.json(result);
-  } catch (error: any) {
-    console.error("Error updating label:", error);
+  const result: ApiResponse<CardLabel> = {
+    success: true,
+    data: label as CardLabel,
+  };
 
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Données invalides",
-          errors: error.issues,
-        },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message || "Failed to update label",
-      },
-      { status: 500 }
-    );
-  }
-}
+  return NextResponse.json(result);
+});
 
 /**
  * DELETE /api/kanban/labels/[id]
  * Supprimer un label
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const id = (await params).id;
-  try {
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+export const DELETE = withErrorHandler(async (req, ctx) => {
+  const request = req as NextRequest;
+  await requireSession(request);
 
-    await kanbanRepository.deleteLabel(id);
+  const id = (await (ctx as Ctx).params).id;
 
-    return NextResponse.json({ success: true });
-  } catch (error: any) {
-    console.error("Error deleting label:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message || "Failed to delete label",
-      },
-      { status: 500 }
-    );
-  }
-}
+  await kanbanRepository.deleteLabel(id);
 
+  return NextResponse.json({ success: true });
+});

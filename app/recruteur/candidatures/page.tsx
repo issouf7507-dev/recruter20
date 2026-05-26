@@ -47,7 +47,7 @@ import { useCandidatures } from "@/lib/hooks/use-candidatures";
 import { toast } from "sonner";
 import { LoaderCircle, Star } from "lucide-react";
 import { ApplicationStatus } from "@/lib/api/candidatures";
-import { CandidatProfilDialog } from "@/app/components/recruteur/CandidatProfilDialog";
+import { CandidatProfilDialog } from "@/components/recruteur/CandidatProfilDialog";
 
 interface CandidatureRecruteur {
   id: string;
@@ -147,6 +147,8 @@ export default function CandidaturesRecuesPage() {
     updateFavoriteCandidature,
     createConversation,
   } = useCandidatures(recruteurId);
+
+  console.log("candidaturesRecruteur", JSON.stringify(candidaturesRecruteur, null, 2));
 
   const handleContactCandidat = (candidatId: string, jobOfferId: string) => {
     if (!recruteurId) {
@@ -396,8 +398,8 @@ export default function CandidaturesRecuesPage() {
                       </h3>
                       <p className="text-muted-foreground mb-4">
                         {searchTerm ||
-                        filterStatut !== "all" ||
-                        filterOffre !== "all"
+                          filterStatut !== "all" ||
+                          filterOffre !== "all"
                           ? "Aucune candidature ne correspond à vos critères de recherche."
                           : "Vous n'avez pas encore reçu de candidatures."}
                       </p>

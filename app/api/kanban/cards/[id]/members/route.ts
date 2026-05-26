@@ -1,128 +1,83 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { requireSession } from "@/lib/api-auth";
+import { withErrorHandler, badRequest } from "@/lib/api-error";
 import { kanbanRepository } from "@/lib/api/kanban/repository";
 import type { ApiResponse } from "@/lib/api/kanban/types";
+
+type Ctx = { params: Promise<{ id: string }> };
 
 /**
  * POST /api/kanban/cards/[id]/members - Add members to a card
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const cardId = (await params).id;
-  try {
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+export const POST = withErrorHandler(async (req, ctx) => {
+  const request = req as NextRequest;
+  const session = await requireSession(request);
 
-    const body = await request.json();
-    const { userIds, recruteurId } = body as {
-      userIds: string[];
-      recruteurId: string;
-    };
+  const cardId = (await (ctx as Ctx).params).id;
 
-    if (!recruteurId) {
-      return NextResponse.json(
-        { success: false, error: "recruteurId is required" },
-        { status: 400 }
-      );
-    }
+  const body = await request.json();
+  const { userIds, recruteurId } = body as {
+    userIds: string[];
+    recruteurId: string;
+  };
 
-    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
-      return NextResponse.json(
-        { success: false, error: "userIds array is required" },
-        { status: 400 }
-      );
-    }
-
-    const card = await kanbanRepository.addCardMembers(
-      cardId,
-      userIds,
-      recruteurId,
-      session.user.id
-    );
-
-    const result: ApiResponse<typeof card> = {
-      success: true,
-      data: card,
-    };
-
-    return NextResponse.json(result);
-  } catch (error: any) {
-    console.error("Error adding card members:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message || "Failed to add card members",
-      },
-      { status: 500 }
-    );
+  if (!recruteurId) {
+    return badRequest("recruteurId is required");
   }
-}
+
+  if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+    return badRequest("userIds array is required");
+  }
+
+  const card = await kanbanRepository.addCardMembers(
+    cardId,
+    userIds,
+    recruteurId,
+    session.user.id
+  );
+
+  const result: ApiResponse<typeof card> = {
+    success: true,
+    data: card,
+  };
+
+  return NextResponse.json(result);
+});
 
 /**
  * DELETE /api/kanban/cards/[id]/members - Remove a member from a card
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const cardId = (await params).id;
-  try {
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+export const DELETE = withErrorHandler(async (req, ctx) => {
+  const request = req as NextRequest;
+  const session = await requireSession(request);
 
-    const body = await request.json();
-    const { userId, recruteurId } = body as {
-      userId: string;
-      recruteurId: string;
-    };
+  const cardId = (await (ctx as Ctx).params).id;
 
-    if (!recruteurId) {
-      return NextResponse.json(
-        { success: false, error: "recruteurId is required" },
-        { status: 400 }
-      );
-    }
+  const body = await request.json();
+  const { userId, recruteurId } = body as {
+    userId: string;
+    recruteurId: string;
+  };
 
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: "userId is required" },
-        { status: 400 }
-      );
-    }
-
-    const card = await kanbanRepository.removeCardMember(
-      cardId,
-      userId,
-      recruteurId,
-      session.user.id
-    );
-
-    const result: ApiResponse<typeof card> = {
-      success: true,
-      data: card,
-    };
-
-    return NextResponse.json(result);
-  } catch (error: any) {
-    console.error("Error removing card member:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message || "Failed to remove card member",
-      },
-      { status: 500 }
-    );
+  if (!recruteurId) {
+    return badRequest("recruteurId is required");
   }
-}
+
+  if (!userId) {
+    return badRequest("userId is required");
+  }
+
+  const card = await kanbanRepository.removeCardMember(
+    cardId,
+    userId,
+    recruteurId,
+    session.user.id
+  );
+
+  const result: ApiResponse<typeof card> = {
+    success: true,
+    data: card,
+  };
+
+  return NextResponse.json(result);
+});
