@@ -1,9 +1,15 @@
 // app/api/payment/activate/route.ts
+// Route de fallback interne — protégée par session.
+// La source de vérité reste le webhook (/api/payment/webhook).
 import { NextRequest, NextResponse } from "next/server";
+import { requireSession } from "@/lib/api-auth";
 import prisma from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   try {
+    // Seul un utilisateur authentifié peut déclencher l'activation
+    await requireSession(req);
+
     const { reference, forceStatus } = await req.json();
 
     if (!reference) {

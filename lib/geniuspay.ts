@@ -130,32 +130,23 @@ export async function getPayment(reference: string): Promise<{
  * Vérifier la signature d'un webhook GeniusPay
  * Format : HMAC-SHA256(timestamp + "." + json_payload, secret)
  */
-export async function verifyWebhookSignature(
+export function verifyWebhookSignature(
   payload: string,
   signature: string,
   timestamp: string,
-): Promise<boolean> {
+): boolean {
   const secret = process.env.GENIUSPAY_WEBHOOK_SECRET!;
   const data = `${timestamp}.${payload}`;
 
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
+  const { createHmac, timingSafeEqual } = require("crypto") as typeof import("crypto");
+  const expectedSignature = createHmac("sha256", secret).update(data).digest("hex");
 
-  const signatureBuffer = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    encoder.encode(data),
-  );
-
-  const expectedSignature = Array.from(new Uint8Array(signatureBuffer))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-
-  return expectedSignature === signature;
+  try {
+    return timingSafeEqual(
+      Buffer.from(signature, "utf8"),
+      Buffer.from(expectedSignature, "utf8"),
+    );
+  } catch {
+    return false;
+  }
 }

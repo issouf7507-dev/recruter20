@@ -7,7 +7,7 @@ import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
 
 const PLANS = {
-  pro: { id: "pro", name: "Pro", amount: 25000 },
+  pro: { id: "pro", name: "Pro", amount: 250 },
   entreprise: { id: "entreprise", name: "Entreprise", amount: 75000 },
 } as const;
 
@@ -76,6 +76,9 @@ export const POST = withErrorHandler(async (req) => {
       { status: 500 },
     );
   }
+
+  // DEBUG temporaire — retirer après diagnostic
+  console.log("[Initiate] GeniusPay result.data =", JSON.stringify(result.data, null, 2));
 
   // 6. Créer l'entrée PaiementHistory en "EN_ATTENTE"
   let abonnement = recruteur.abonnement;
