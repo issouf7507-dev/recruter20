@@ -539,7 +539,7 @@ export async function analyzeBatchHuggingFace(
               title: match.offre.title,
               description: match.offre.description || "",
             },
-            match.score
+            match.score ?? 0
           );
 
           return {
@@ -568,5 +568,5 @@ export async function analyzeBatchHuggingFace(
     }
   }
 
-  return results.sort((a, b) => b.score - a.score);
+  return results.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
 }

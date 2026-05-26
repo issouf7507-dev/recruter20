@@ -51,7 +51,7 @@ export async function fetchOffers(params?: {
   const result: ApiResponse<PaginatedResponse<JobOffer>> =
     await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to fetch offers");
   }
 
@@ -103,7 +103,7 @@ export async function fetchOffer(
   const response = await fetch(`/api/offres/${id}?${queryString.toString()}`);
   const result: ApiResponse<JobOffer> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to fetch offer");
   }
 
@@ -140,7 +140,7 @@ export async function createOffer(data: CreateOfferData): Promise<JobOffer> {
 
   const result: ApiResponse<JobOffer> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to create offer");
   }
 
@@ -178,7 +178,7 @@ export async function updateOffer(
 
   const result: ApiResponse<JobOffer> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to update offer");
   }
 
@@ -202,7 +202,7 @@ export async function updateOfferStatus(
 
   const result: ApiResponse<JobOffer> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to update offer status");
   }
 
@@ -219,7 +219,7 @@ export async function deleteOffer(id: string): Promise<void> {
 
   const result: ApiResponse<void> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to delete offer");
   }
 }

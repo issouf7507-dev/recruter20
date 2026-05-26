@@ -43,7 +43,7 @@ export async function searchCandidates(params?: {
   const response = await fetch(`/api/candidats?${queryParams.toString()}`);
   const result: ApiResponse<PaginatedResponse<any>> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to search candidates");
   }
 
@@ -65,7 +65,7 @@ export async function getCandidatsFacets(): Promise<{
     certifications: string[];
   }> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to fetch facets");
   }
 
@@ -111,7 +111,7 @@ export async function updateCandidat(
 
   const result: ApiResponse<Candidat> = await response.json();
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to update candidat");
   }
 
