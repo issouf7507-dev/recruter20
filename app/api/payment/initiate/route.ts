@@ -77,9 +77,6 @@ export const POST = withErrorHandler(async (req) => {
     );
   }
 
-  // DEBUG temporaire — retirer après diagnostic
-  console.log("[Initiate] GeniusPay result.data =", JSON.stringify(result.data, null, 2));
-
   // 6. Créer l'entrée PaiementHistory en "EN_ATTENTE"
   let abonnement = recruteur.abonnement;
   if (!abonnement) {

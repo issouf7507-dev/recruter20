@@ -102,14 +102,19 @@ async function handlePaymentSuccess(data: any) {
     create: { recruteurId, plan: planEnum, statut: "ACTIF", dateDebut, dateFin },
   });
 
-  // Marquer le paiement comme complété
+  // Marquer le paiement EN_ATTENTE du recruteur comme COMPLETE.
+  // On passe par recruteurId (metadata) car le format de référence du webhook
+  // (TXN-xxx) peut différer de celui stocké en DB (MTX-xxx).
   try {
-    await prisma.paiementHistory.update({
-      where: { reference },
+    await prisma.paiementHistory.updateMany({
+      where: {
+        abonnement: { recruteurId },
+        statut: "EN_ATTENTE",
+      },
       data: { statut: "COMPLETE", geniuspayData: data },
     });
   } catch (err) {
-    logger.error("[Webhook] PaiementHistory introuvable", { reference, error: String(err) });
+    logger.error("[Webhook] Mise à jour PaiementHistory échouée", { recruteurId, reference, error: String(err) });
   }
 
   logger.info("[Webhook] Abonnement activé", {
@@ -124,16 +129,26 @@ async function updatePaiementStatut(
   statut: "ECHOUE" | "EXPIRE" | "REMBOURSE",
   data: any,
 ) {
-  if (!reference) {
-    logger.warn("[Webhook] Référence manquante pour mise à jour statut", { statut });
-    return;
-  }
+  const recruteurId = data?.metadata?.recruteur_id as string | undefined;
+
   try {
-    await prisma.paiementHistory.update({
-      where: { reference },
-      data: { statut, geniuspayData: data },
-    });
-    logger.info("[Webhook] Statut paiement mis à jour", { reference, statut });
+    if (recruteurId) {
+      // Priorité : mise à jour par recruteurId (indépendant du format de référence)
+      await prisma.paiementHistory.updateMany({
+        where: { abonnement: { recruteurId }, statut: "EN_ATTENTE" },
+        data: { statut, geniuspayData: data },
+      });
+    } else if (reference) {
+      // Fallback : mise à jour par référence
+      await prisma.paiementHistory.updateMany({
+        where: { reference },
+        data: { statut, geniuspayData: data },
+      });
+    } else {
+      logger.warn("[Webhook] Ni référence ni recruteurId disponibles", { statut });
+      return;
+    }
+    logger.info("[Webhook] Statut paiement mis à jour", { reference, recruteurId, statut });
   } catch (err) {
     logger.error("[Webhook] Impossible de mettre à jour le paiement", {
       reference,

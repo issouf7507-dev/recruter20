@@ -46,7 +46,9 @@ const envSchema = z.object({
     .url("NEXT_PUBLIC_APP_URL doit être une URL valide"),
   NEXT_PUBLIC_SOCKET_URL: z
     .string()
-    .url("NEXT_PUBLIC_SOCKET_URL doit être une URL valide"),
+    .url()
+    .optional()
+    .default("http://localhost:3001"),
 
   // Serveur Socket.IO
   SOCKET_SERVER_URL: z.string().url().optional(),
