@@ -20,11 +20,19 @@ export default function PaiementSucces() {
   const cancelledRef = useRef(false);
 
   useEffect(() => {
-    const ref = searchParams.get("reference") || searchParams.get("ref");
+    // GeniusPay ne rajoute pas de paramètre à l'URL de retour.
+    // On utilise la référence stockée en sessionStorage avant la redirection.
+    const refFromUrl = searchParams.get("reference") || searchParams.get("ref");
+    const refFromStorage = sessionStorage.getItem("geniuspay_ref");
+    const ref = refFromUrl || refFromStorage;
+
     if (!ref) {
       router.replace("/");
       return;
     }
+
+    // Nettoyer sessionStorage après lecture
+    sessionStorage.removeItem("geniuspay_ref");
     setReference(ref);
 
     let attempts = 0;
