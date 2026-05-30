@@ -20,11 +20,12 @@ export default function PaiementSucces() {
   const cancelledRef = useRef(false);
 
   useEffect(() => {
-    // GeniusPay ne rajoute pas de paramètre à l'URL de retour.
-    // On utilise la référence stockée en sessionStorage avant la redirection.
-    const refFromUrl = searchParams.get("reference") || searchParams.get("ref");
+    // GeniusPay peut ajouter ?reference=TXN-xxx dans l'URL, mais ce format
+    // diffère de MTX-xxx retourné par l'API d'initiation et stocké en DB.
+    // On priorise sessionStorage (référence MTX-xxx correcte) sur l'URL.
     const refFromStorage = sessionStorage.getItem("geniuspay_ref");
-    const ref = refFromUrl || refFromStorage;
+    const refFromUrl = searchParams.get("reference") || searchParams.get("ref");
+    const ref = refFromStorage || refFromUrl;
 
     if (!ref) {
       router.replace("/");
