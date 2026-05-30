@@ -1,159 +1,160 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyWebhookSignature } from "@/lib/geniuspay";
 import prisma from "@/lib/prisma";
-import { logger } from "@/lib/logger";
+import { verifyWebhookSignature } from "@/lib/geniuspay";
 
-export const dynamic = "force-dynamic";
-
+// Next.js App Router lit le body une seule fois — on doit le garder en raw string
+// pour vérifier la signature AVANT de le parser en JSON.
 export async function POST(req: NextRequest) {
-  const signature = req.headers.get("x-webhook-signature") || "";
-  const timestamp = req.headers.get("x-webhook-timestamp") || "";
-  const event = req.headers.get("x-webhook-event") || "";
+  const rawBody = await req.text();
 
-  // Vérifier la présence des headers obligatoires
+  const signature = req.headers.get("x-webhook-signature");
+  const timestamp = req.headers.get("x-webhook-timestamp");
+  const event = req.headers.get("x-webhook-event");
+
+  // 1. Headers obligatoires
   if (!signature || !timestamp || !event) {
-    logger.warn("[Webhook] Headers manquants");
     return NextResponse.json(
-      { error: "Required header is not present." },
+      { type: "about:blank", title: "Bad Request", status: 400, detail: "Required header is not present." },
       { status: 400 },
     );
   }
 
-  const rawBody = await req.text();
-
-  // Vérifier la signature HMAC
-  const isValid = verifyWebhookSignature(rawBody, signature, timestamp);
-  if (!isValid) {
-    logger.warn("[Webhook] Signature invalide", { event });
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  // 2. Vérification HMAC (timing-safe)
+  if (!verifyWebhookSignature(rawBody, signature, timestamp)) {
+    console.warn("[Webhook] Signature invalide — event:", event);
+    return NextResponse.json(
+      { type: "about:blank", title: "Unauthorized", status: 401, detail: "Invalid signature" },
+      { status: 401 },
+    );
   }
 
-  // Protection anti-replay (5 minutes)
-  const now = Math.floor(Date.now() / 1000);
-  if (Math.abs(now - parseInt(timestamp)) > 300) {
-    logger.warn("[Webhook] Timestamp trop ancien", { timestamp });
-    return NextResponse.json({ error: "Timestamp too old" }, { status: 400 });
+  // 3. Anti-replay : rejet si timestamp > 5 minutes
+  const timeDiff = Math.abs(Math.floor(Date.now() / 1000) - parseInt(timestamp, 10));
+  if (timeDiff > 300) {
+    console.warn("[Webhook] Timestamp trop ancien —", timeDiff, "s");
+    return NextResponse.json(
+      { type: "about:blank", title: "Bad Request", status: 400, detail: "Timestamp too old" },
+      { status: 400 },
+    );
   }
 
+  // 4. Parsing JSON
   let payload: any;
   try {
     payload = JSON.parse(rawBody);
   } catch {
-    return NextResponse.json({ error: "Payload invalide" }, { status: 400 });
+    return NextResponse.json(
+      { type: "about:blank", title: "Bad Request", status: 400, detail: "Invalid JSON body" },
+      { status: 400 },
+    );
   }
 
-  const { data } = payload;
-  const reference = data?.reference;
-
-  logger.info("[Webhook] Événement reçu", { event, reference });
-
-  switch (event) {
-    case "payment.success": {
-      await handlePaymentSuccess(data);
-      break;
-    }
-    case "payment.failed": {
-      await updatePaiementStatut(reference, "ECHOUE", data);
-      break;
-    }
-    case "payment.expired": {
-      await updatePaiementStatut(reference, "EXPIRE", data);
-      break;
-    }
-    case "payment.cancelled": {
-      await updatePaiementStatut(reference, "ECHOUE", data);
-      break;
-    }
-    case "payment.refunded": {
-      await updatePaiementStatut(reference, "REMBOURSE", data);
-      break;
-    }
-    case "webhook.test": {
-      logger.info("[Webhook] Test reçu — OK");
-      break;
-    }
-    default:
-      logger.info("[Webhook] Événement ignoré", { event });
+  // 5. Dispatch par type d'événement
+  try {
+    await handleEvent(event, payload);
+  } catch (err) {
+    console.error("[Webhook] Erreur lors du traitement de l'événement:", event, err);
+    // On renvoie 500 → GeniusPay réessaiera automatiquement
+    return NextResponse.json(
+      { type: "about:blank", title: "Internal Server Error", status: 500, detail: "Failed to process webhook" },
+      { status: 500 },
+    );
   }
 
-  return NextResponse.json({ received: true });
+  return NextResponse.json({ received: true }, { status: 200 });
 }
 
-async function handlePaymentSuccess(data: any) {
-  const { reference, metadata } = data;
-  const recruteurId = metadata?.recruteur_id;
-  const planId = metadata?.plan_id as "pro" | "entreprise" | undefined;
+async function handleEvent(event: string, payload: any) {
+  const data = payload?.data ?? {};
+  const reference: string | undefined = data.reference;
 
-  if (!recruteurId || !planId) {
-    logger.error("[Webhook] Metadata manquante", { metadata });
+  switch (event) {
+    case "payment.success":
+      await handlePaymentSuccess(reference, data);
+      break;
+
+    case "payment.failed":
+    case "payment.cancelled":
+      await updatePaiementStatut(reference, "ECHOUE");
+      break;
+
+    case "payment.expired":
+      await updatePaiementStatut(reference, "EXPIRE");
+      break;
+
+    case "payment.refunded":
+      await updatePaiementStatut(reference, "REMBOURSE");
+      break;
+
+    case "webhook.test":
+      console.log("[Webhook] Test reçu depuis le dashboard GeniusPay");
+      break;
+
+    default:
+      console.log("[Webhook] Événement non géré:", event);
+  }
+}
+
+async function handlePaymentSuccess(reference: string | undefined, data: any) {
+  if (!reference) {
+    console.warn("[Webhook] payment.success sans référence — ignoré");
     return;
   }
 
-  const planEnum = planId === "pro" ? "PRO" : "ENTREPRISE";
+  const paiement = await prisma.paiementHistory.findUnique({
+    where: { reference },
+    include: { abonnement: true },
+  });
+
+  if (!paiement) {
+    console.warn("[Webhook] Paiement introuvable en BDD:", reference);
+    return;
+  }
+
+  // Idempotence : déjà traité
+  if (paiement.statut === "COMPLETE") {
+    console.log("[Webhook] Paiement déjà traité:", reference);
+    return;
+  }
+
+  const recruteurId = paiement.abonnement.recruteurId;
+  const planEnum = paiement.plan; // PRO | ENTREPRISE
 
   const dateDebut = new Date();
   const dateFin = new Date();
   dateFin.setDate(dateFin.getDate() + 30);
 
-  // Activer l'abonnement
-  await prisma.abonnement.upsert({
-    where: { recruteurId },
-    update: { plan: planEnum, statut: "ACTIF", dateDebut, dateFin },
-    create: { recruteurId, plan: planEnum, statut: "ACTIF", dateDebut, dateFin },
-  });
-
-  // Marquer le paiement EN_ATTENTE du recruteur comme COMPLETE.
-  // On passe par recruteurId (metadata) car le format de référence du webhook
-  // (TXN-xxx) peut différer de celui stocké en DB (MTX-xxx).
-  try {
-    await prisma.paiementHistory.updateMany({
-      where: {
-        abonnement: { recruteurId },
-        statut: "EN_ATTENTE",
-      },
+  await prisma.$transaction([
+    prisma.abonnement.update({
+      where: { recruteurId },
+      data: { plan: planEnum, statut: "ACTIF", dateDebut, dateFin },
+    }),
+    prisma.paiementHistory.update({
+      where: { reference },
       data: { statut: "COMPLETE", geniuspayData: data },
-    });
-  } catch (err) {
-    logger.error("[Webhook] Mise à jour PaiementHistory échouée", { recruteurId, reference, error: String(err) });
-  }
+    }),
+  ]);
 
-  logger.info("[Webhook] Abonnement activé", {
-    plan: planEnum,
-    recruteurId,
-    dateFin: dateFin.toISOString(),
-  });
+  console.log(
+    `[Webhook] ✅ Abonnement ${planEnum} activé — recruteur ${recruteurId} jusqu'au ${dateFin.toISOString()}`,
+  );
 }
 
 async function updatePaiementStatut(
-  reference: string,
+  reference: string | undefined,
   statut: "ECHOUE" | "EXPIRE" | "REMBOURSE",
-  data: any,
 ) {
-  const recruteurId = data?.metadata?.recruteur_id as string | undefined;
+  if (!reference) {
+    console.warn(`[Webhook] ${statut} sans référence — ignoré`);
+    return;
+  }
 
-  try {
-    if (recruteurId) {
-      // Priorité : mise à jour par recruteurId (indépendant du format de référence)
-      await prisma.paiementHistory.updateMany({
-        where: { abonnement: { recruteurId }, statut: "EN_ATTENTE" },
-        data: { statut, geniuspayData: data },
-      });
-    } else if (reference) {
-      // Fallback : mise à jour par référence
-      await prisma.paiementHistory.updateMany({
-        where: { reference },
-        data: { statut, geniuspayData: data },
-      });
-    } else {
-      logger.warn("[Webhook] Ni référence ni recruteurId disponibles", { statut });
-      return;
-    }
-    logger.info("[Webhook] Statut paiement mis à jour", { reference, recruteurId, statut });
-  } catch (err) {
-    logger.error("[Webhook] Impossible de mettre à jour le paiement", {
-      reference,
-      statut,
-      error: String(err),
-    });
+  const updated = await prisma.paiementHistory.updateMany({
+    where: { reference, statut: { not: statut } },
+    data: { statut },
+  });
+
+  if (updated.count > 0) {
+    console.log(`[Webhook] Paiement ${reference} → ${statut}`);
   }
 }
