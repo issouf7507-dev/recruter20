@@ -32,8 +32,11 @@ import {
   IconPhone,
   IconFilter,
   IconX,
-  IconUser,
+  IconLayoutGrid,
+  IconList,
   IconFileText,
+  IconChevronDown,
+  IconChevronUp,
 } from "@tabler/icons-react";
 
 // Données mockées pour les candidats disponibles
@@ -171,6 +174,8 @@ export default function RechercheCandidatsPage() {
     competences: [] as string[],
   });
   const [candidatsFavoris, setCandidatsFavoris] = useState<number[]>([]);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [showFiltres, setShowFiltres] = useState(false);
 
   const getInitials = (nom: string) => {
     return nom
@@ -266,9 +271,9 @@ export default function RechercheCandidatsPage() {
               </div>
 
               {/* Barre de recherche principale */}
-              <Card className="mb-6">
+              <Card className="mb-4">
                 <CardContent className="p-4">
-                  <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex flex-col md:flex-row gap-3">
                     <div className="flex-1">
                       <div className="relative">
                         <IconSearch className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -281,145 +286,105 @@ export default function RechercheCandidatsPage() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="icon">
+                      <Button
+                        variant={showFiltres ? "secondary" : "outline"}
+                        onClick={() => setShowFiltres(!showFiltres)}
+                        className="gap-2"
+                      >
                         <IconFilter className="h-4 w-4" />
+                        Filtres
+                        {showFiltres ? <IconChevronUp className="h-3 w-3" /> : <IconChevronDown className="h-3 w-3" />}
                       </Button>
-                      <Button variant="outline" onClick={clearFiltres}>
-                        <IconX className="h-4 w-4" />
-                        Effacer
-                      </Button>
+                      {(searchTerm || filtres.lieu !== "all" || filtres.experience !== "all" || filtres.disponibilite !== "all") && (
+                        <Button variant="ghost" size="icon" onClick={clearFiltres} title="Effacer les filtres">
+                          <IconX className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Filtres avancés */}
-              <Card className="mb-6">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <IconFilter className="h-5 w-5" />
-                    Filtres avancés
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Lieu</label>
-                      <Select
-                        value={filtres.lieu}
-                        onValueChange={(value) =>
-                          handleFiltreChange("lieu", value)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Tous les lieux" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Tous les lieux</SelectItem>
-                          {lieuxUniques.map((lieu) => (
-                            <SelectItem key={lieu} value={lieu}>
-                              {lieu}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+              {/* Filtres avancés — collapsibles */}
+              {showFiltres && (
+                <Card className="mb-4">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Lieu</label>
+                        <Select value={filtres.lieu} onValueChange={(value) => handleFiltreChange("lieu", value)}>
+                          <SelectTrigger><SelectValue placeholder="Tous les lieux" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Tous les lieux</SelectItem>
+                            {lieuxUniques.map((lieu) => (
+                              <SelectItem key={lieu} value={lieu}>{lieu}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Expérience</label>
-                      <Select
-                        value={filtres.experience}
-                        onValueChange={(value) =>
-                          handleFiltreChange("experience", value)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Tous les niveaux" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Tous les niveaux</SelectItem>
-                          <SelectItem value="junior">
-                            Junior (1-3 ans)
-                          </SelectItem>
-                          <SelectItem value="senior">
-                            Senior (4-6 ans)
-                          </SelectItem>
-                          <SelectItem value="expert">
-                            Expert (7+ ans)
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Expérience</label>
+                        <Select value={filtres.experience} onValueChange={(value) => handleFiltreChange("experience", value)}>
+                          <SelectTrigger><SelectValue placeholder="Tous les niveaux" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Tous les niveaux</SelectItem>
+                            <SelectItem value="junior">Junior (1-3 ans)</SelectItem>
+                            <SelectItem value="senior">Senior (4-6 ans)</SelectItem>
+                            <SelectItem value="expert">Expert (7+ ans)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        Disponibilité
-                      </label>
-                      <Select
-                        value={filtres.disponibilite}
-                        onValueChange={(value) =>
-                          handleFiltreChange("disponibilite", value)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Toutes les disponibilités" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Toutes</SelectItem>
-                          <SelectItem value="immediate">Immédiate</SelectItem>
-                          <SelectItem value="rapide">
-                            Rapide (1-2 semaines)
-                          </SelectItem>
-                          <SelectItem value="long">
-                            Long terme (1+ mois)
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Disponibilité</label>
+                        <Select value={filtres.disponibilite} onValueChange={(value) => handleFiltreChange("disponibilite", value)}>
+                          <SelectTrigger><SelectValue placeholder="Toutes" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Toutes</SelectItem>
+                            <SelectItem value="immediate">Immédiate</SelectItem>
+                            <SelectItem value="rapide">Rapide (1-2 semaines)</SelectItem>
+                            <SelectItem value="long">Long terme (1+ mois)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        Salaire souhaité
-                      </label>
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Min"
-                          type="number"
-                          value={filtres.salaireMin}
-                          onChange={(e) =>
-                            handleFiltreChange("salaireMin", e.target.value)
-                          }
-                        />
-                        <Input
-                          placeholder="Max"
-                          type="number"
-                          value={filtres.salaireMax}
-                          onChange={(e) =>
-                            handleFiltreChange("salaireMax", e.target.value)
-                          }
-                        />
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Salaire souhaité</label>
+                        <div className="flex gap-2">
+                          <Input placeholder="Min" type="number" value={filtres.salaireMin} onChange={(e) => handleFiltreChange("salaireMin", e.target.value)} />
+                          <Input placeholder="Max" type="number" value={filtres.salaireMax} onChange={(e) => handleFiltreChange("salaireMax", e.target.value)} />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Résultats */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold">
-                    {filteredCandidats.length} candidat
-                    {filteredCandidats.length > 1 ? "s" : ""} trouvé
-                    {filteredCandidats.length > 1 ? "s" : ""}
+                    {filteredCandidats.length} candidat{filteredCandidats.length > 1 ? "s" : ""} trouvé{filteredCandidats.length > 1 ? "s" : ""}
                   </h2>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <IconEye className="h-4 w-4" />
-                      Vue grille
+                  <div className="flex gap-1 border rounded-md p-1">
+                    <Button
+                      variant={viewMode === "grid" ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode("grid")}
+                      className="h-7 px-2"
+                      title="Vue grille"
+                    >
+                      <IconLayoutGrid className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm">
-                      <IconUser className="h-4 w-4" />
-                      Vue liste
+                    <Button
+                      variant={viewMode === "list" ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode("list")}
+                      className="h-7 px-2"
+                      title="Vue liste"
+                    >
+                      <IconList className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -428,38 +393,26 @@ export default function RechercheCandidatsPage() {
                   <Card>
                     <CardContent className="p-8 text-center">
                       <IconSearch className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">
-                        Aucun candidat trouvé
-                      </h3>
+                      <h3 className="text-lg font-semibold mb-2">Aucun candidat trouvé</h3>
                       <p className="text-muted-foreground mb-4">
-                        Essayez de modifier vos critères de recherche ou vos
-                        filtres.
+                        Essayez de modifier vos critères de recherche ou vos filtres.
                       </p>
-                      <Button variant="outline" onClick={clearFiltres}>
-                        Effacer les filtres
-                      </Button>
+                      <Button variant="outline" onClick={clearFiltres}>Effacer les filtres</Button>
                     </CardContent>
                   </Card>
-                ) : (
+                ) : viewMode === "grid" ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredCandidats.map((candidat) => (
-                      <Card
-                        key={candidat.id}
-                        className="hover:shadow-md transition-shadow"
-                      >
+                      <Card key={candidat.id} className="hover:shadow-md transition-shadow">
                         <CardHeader>
                           <div className="flex items-start justify-between">
                             <div className="flex items-start gap-3">
                               <Avatar className="h-12 w-12">
                                 <AvatarImage src={candidat.avatar} />
-                                <AvatarFallback>
-                                  {getInitials(candidat.nom)}
-                                </AvatarFallback>
+                                <AvatarFallback>{getInitials(candidat.nom)}</AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
-                                <CardTitle className="text-lg">
-                                  {candidat.nom}
-                                </CardTitle>
+                                <CardTitle className="text-lg">{candidat.nom}</CardTitle>
                                 <CardDescription className="space-y-1">
                                   <div className="flex items-center gap-1">
                                     <IconBriefcase className="h-4 w-4" />
@@ -476,119 +429,108 @@ export default function RechercheCandidatsPage() {
                                 </CardDescription>
                               </div>
                             </div>
-                            <div className="flex gap-1">
+                            <div className="flex flex-col items-end gap-1">
                               <div className="flex items-center gap-1">
-                                <IconStar className="h-4 w-4 text-yellow-500" />
-                                <span className="text-sm font-medium">
-                                  {candidat.note}
-                                </span>
+                                <IconStar className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                                <span className="text-sm font-medium">{candidat.note}</span>
                               </div>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() =>
-                                  handleToggleFavorite(candidat.id)
-                                }
-                                className={`${
-                                  candidatsFavoris.includes(candidat.id)
-                                    ? "text-red-500"
-                                    : "text-gray-400"
-                                }`}
+                                onClick={() => handleToggleFavorite(candidat.id)}
+                                className={candidatsFavoris.includes(candidat.id) ? "text-red-500" : "text-muted-foreground"}
                               >
-                                <IconHeart
-                                  className={`h-4 w-4 ${
-                                    candidatsFavoris.includes(candidat.id)
-                                      ? "fill-current"
-                                      : ""
-                                  }`}
-                                />
+                                <IconHeart className={`h-4 w-4 ${candidatsFavoris.includes(candidat.id) ? "fill-current" : ""}`} />
                               </Button>
                             </div>
                           </div>
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-4">
-                            {/* Compétences */}
                             <div>
-                              <h4 className="font-medium mb-2 text-sm">
-                                Compétences
-                              </h4>
                               <div className="flex flex-wrap gap-1">
-                                {candidat.competences
-                                  .slice(0, 3)
-                                  .map((competence, index) => (
-                                    <Badge
-                                      key={index}
-                                      variant="secondary"
-                                      className="text-xs"
-                                    >
-                                      {competence}
-                                    </Badge>
-                                  ))}
+                                {candidat.competences.slice(0, 3).map((competence, index) => (
+                                  <Badge key={index} variant="secondary" className="text-xs">{competence}</Badge>
+                                ))}
                                 {candidat.competences.length > 3 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    +{candidat.competences.length - 3}
-                                  </Badge>
+                                  <Badge variant="outline" className="text-xs">+{candidat.competences.length - 3}</Badge>
                                 )}
                               </div>
                             </div>
-
-                            {/* Informations supplémentaires */}
-                            <div className="space-y-2 text-sm">
+                            <div className="space-y-1.5 text-sm">
                               <div className="flex justify-between">
-                                <span className="text-muted-foreground">
-                                  Salaire souhaité:
-                                </span>
-                                <span className="font-medium">
-                                  {candidat.salaireSouhaite}€
-                                </span>
+                                <span className="text-muted-foreground">Salaire souhaité</span>
+                                <span className="font-medium">{candidat.salaireSouhaite}€</span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-muted-foreground">
-                                  Disponibilité:
-                                </span>
-                                <span className="font-medium">
-                                  {candidat.disponibilite}
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">
-                                  Dernière activité:
-                                </span>
-                                <span className="font-medium">
-                                  {candidat.derniereActivite}
-                                </span>
+                                <span className="text-muted-foreground">Disponibilité</span>
+                                <span className="font-medium">{candidat.disponibilite}</span>
                               </div>
                             </div>
-
-                            {/* Actions */}
-                            <div className="flex gap-2 pt-4 border-t">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1"
-                                asChild
-                              >
-                                <a
-                                  href={candidat.cvUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <IconFileText className="h-4 w-4" />
-                                  CV
+                            <div className="flex gap-2 pt-2 border-t">
+                              <Button variant="outline" size="sm" className="flex-1" asChild>
+                                <a href={candidat.cvUrl} target="_blank" rel="noopener noreferrer">
+                                  <IconFileText className="h-4 w-4 mr-1" />CV
                                 </a>
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1"
-                              >
-                                <IconEye className="h-4 w-4" />
-                                Profil
-                              </Button>
                               <Button size="sm" className="flex-1">
-                                <IconMail className="h-4 w-4" />
-                                Contacter
+                                <IconMail className="h-4 w-4 mr-1" />Contacter
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredCandidats.map((candidat) => (
+                      <Card key={candidat.id} className="hover:shadow-sm transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-10 w-10 shrink-0">
+                              <AvatarImage src={candidat.avatar} />
+                              <AvatarFallback>{getInitials(candidat.nom)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
+                              <div>
+                                <p className="font-semibold truncate">{candidat.nom}</p>
+                                <p className="text-sm text-muted-foreground truncate">{candidat.titre}</p>
+                              </div>
+                              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                <span className="flex items-center gap-1"><IconMapPin className="h-3 w-3" />{candidat.lieu.split(",")[0]}</span>
+                                <span className="flex items-center gap-1"><IconCalendar className="h-3 w-3" />{candidat.experience}</span>
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {candidat.competences.slice(0, 2).map((comp, i) => (
+                                  <Badge key={i} variant="secondary" className="text-xs">{comp}</Badge>
+                                ))}
+                                {candidat.competences.length > 2 && (
+                                  <Badge variant="outline" className="text-xs">+{candidat.competences.length - 2}</Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 text-sm">
+                                <IconStar className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500" />
+                                <span className="font-medium">{candidat.note}</span>
+                                <span className="text-muted-foreground ml-2">{candidat.disponibilite}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleToggleFavorite(candidat.id)}
+                                className={candidatsFavoris.includes(candidat.id) ? "text-red-500" : "text-muted-foreground"}
+                              >
+                                <IconHeart className={`h-4 w-4 ${candidatsFavoris.includes(candidat.id) ? "fill-current" : ""}`} />
+                              </Button>
+                              <Button variant="outline" size="sm" asChild>
+                                <a href={candidat.cvUrl} target="_blank" rel="noopener noreferrer">
+                                  <IconFileText className="h-4 w-4 mr-1" />CV
+                                </a>
+                              </Button>
+                              <Button size="sm">
+                                <IconMail className="h-4 w-4 mr-1" />Contacter
                               </Button>
                             </div>
                           </div>

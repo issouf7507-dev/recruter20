@@ -68,7 +68,6 @@ export async function initiatePayment(params: GeniusPayInitParams): Promise<{
     });
 
     const rawText = await res.text();
-    // console.log("[GeniusPay] Raw response:", rawText.slice(0, 500));
 
     let json: any;
     try {
@@ -84,7 +83,9 @@ export async function initiatePayment(params: GeniusPayInitParams): Promise<{
       return {
         success: false,
         error:
-          json.error?.message || "Erreur lors de l'initialisation du paiement",
+          json.error?.message ||
+          json.message ||
+          "Erreur lors de l'initialisation du paiement",
       };
     }
 
@@ -138,8 +139,11 @@ export function verifyWebhookSignature(
   const secret = process.env.GENIUSPAY_WEBHOOK_SECRET!;
   const data = `${timestamp}.${payload}`;
 
-  const { createHmac, timingSafeEqual } = require("crypto") as typeof import("crypto");
-  const expectedSignature = createHmac("sha256", secret).update(data).digest("hex");
+  const { createHmac, timingSafeEqual } =
+    require("crypto") as typeof import("crypto");
+  const expectedSignature = createHmac("sha256", secret)
+    .update(data)
+    .digest("hex");
 
   try {
     return timingSafeEqual(

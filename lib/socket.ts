@@ -30,6 +30,8 @@ const SOCKET_URL =
 
 // Instance singleton du socket
 let socket: Socket | null = null;
+let connectErrorCount = 0;
+const MAX_SILENT_ERRORS = 1; // log une seule fois, ensuite silence
 
 export const getSocket = (): Socket => {
   if (!socket) {
@@ -37,25 +39,25 @@ export const getSocket = (): Socket => {
       transports: ["websocket", "polling"],
       autoConnect: false,
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 3,
+      reconnectionDelay: 3000,
+      reconnectionDelayMax: 10000,
+      timeout: 5000,
     });
 
     socket.on("connect", () => {
-      console.log("🔌 Connecté au serveur Socket.IO");
+      connectErrorCount = 0;
     });
 
-    socket.on("disconnect", (reason) => {
-      console.log("🔌 Déconnecté du serveur Socket.IO:", reason);
-    });
-
-    socket.on("connect_error", (error) => {
-      console.error("❌ Erreur de connexion Socket.IO:", error.message);
-    });
-
-    socket.on("reconnect", (attemptNumber) => {
-      console.log(`🔄 Reconnecté après ${attemptNumber} tentative(s)`);
+    socket.on("connect_error", () => {
+      if (connectErrorCount < MAX_SILENT_ERRORS) {
+        connectErrorCount++;
+      }
+      // Après MAX_SILENT_ERRORS tentatives échouées, on arrête de reconnecter
+      // pour ne pas polluer la console ni saturer le réseau
+      if (connectErrorCount >= MAX_SILENT_ERRORS && socket) {
+        socket.io.opts.reconnection = false;
+      }
     });
   }
   return socket;

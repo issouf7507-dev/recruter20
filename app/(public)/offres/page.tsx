@@ -49,8 +49,13 @@ export default function OffresPage() {
   // Récupérer les vraies offres depuis l'API
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [locationQuery, setLocationQuery] = useState("");
+  const [submittedSearch, setSubmittedSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+
+  const handleSearch = () => {
+    setSubmittedSearch(searchQuery);
+    setCurrentPage(1);
+  };
   const [selectedContractTypes, setSelectedContractTypes] = useState<string[]>(
     []
   );
@@ -71,13 +76,8 @@ export default function OffresPage() {
     };
 
     // Recherche textuelle
-    if (searchQuery) {
-      params.search = searchQuery;
-    }
-
-    // Localisation
-    if (locationQuery) {
-      params.location = locationQuery;
+    if (submittedSearch) {
+      params.search = submittedSearch;
     }
 
     // Types de contrat (utilise les valeurs du schéma: cdi, cdd, stage, freelance, temps-partiel)
@@ -115,8 +115,7 @@ export default function OffresPage() {
   }, [
     currentPage,
     itemsPerPage,
-    searchQuery,
-    locationQuery,
+    submittedSearch,
     selectedContractTypes,
     salaryMin,
     salaryMax,
@@ -241,7 +240,7 @@ export default function OffresPage() {
     setSelectedCurrency("Toutes");
     setDatePosted("N'importe quand");
     setSearchQuery("");
-    setLocationQuery("");
+    setSubmittedSearch("");
   };
 
   const hasActiveFilters =
@@ -251,8 +250,7 @@ export default function OffresPage() {
     salaryMax !== "" ||
     selectedCurrency !== "Toutes" ||
     datePosted !== "N'importe quand" ||
-    searchQuery !== "" ||
-    locationQuery !== "";
+    submittedSearch !== "";
 
   const toggleSavedJob = (jobId: number) => {
     if (savedJobs.includes(jobId)) {
@@ -266,8 +264,7 @@ export default function OffresPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [
-    searchQuery,
-    locationQuery,
+    submittedSearch,
     selectedContractTypes,
     salaryMin,
     salaryMax,
@@ -334,29 +331,23 @@ export default function OffresPage() {
             </p>
 
             {/* Search Bar */}
-            <div className="max-w-4xl mx-auto bg-white rounded-2xl md:rounded-full shadow-lg border border-gray-200 p-3 sm:p-4">
-              <div className="flex flex-col md:flex-row gap-3 md:gap-4">
-                <div className="flex-1 flex items-center gap-3 md:border-r border-gray-200 md:pr-4">
+            <div className="max-w-3xl mx-auto bg-white rounded-2xl md:rounded-full shadow-lg border border-gray-200 p-3 sm:p-4">
+              <div className="flex flex-col md:flex-row gap-3 md:gap-2">
+                <div className="flex-1 flex items-center gap-3">
                   <Search className="w-5 h-5 text-gray-400 shrink-0" />
                   <input
                     type="text"
                     placeholder="Rechercher un poste ou mot-clé"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                     className="flex-1 outline-none text-gray-800 placeholder-gray-400 text-sm sm:text-base min-w-0"
                   />
                 </div>
-                <div className="flex-1 flex items-center gap-3 border-t md:border-t-0 pt-3 md:pt-0">
-                  <MapPin className="w-5 h-5 text-gray-400 shrink-0" />
-                  <input
-                    type="text"
-                    placeholder="Pays ou fuseau horaire"
-                    value={locationQuery}
-                    onChange={(e) => setLocationQuery(e.target.value)}
-                    className="flex-1 outline-none text-gray-800 placeholder-gray-400 text-sm sm:text-base min-w-0"
-                  />
-                </div>
-                <button className="bg-[#a590ff] text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold transition-colors cursor-pointer text-sm sm:text-base hover:bg-[#9580ef]">
+                <button
+                  onClick={handleSearch}
+                  className="bg-[#a590ff] text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold transition-colors cursor-pointer text-sm sm:text-base hover:bg-[#9580ef]"
+                >
                   Rechercher
                 </button>
               </div>

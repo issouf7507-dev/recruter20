@@ -44,6 +44,7 @@ import {
   IconExternalLink,
   IconAlertCircle,
   IconCircleCheck,
+  IconInfoCircle,
 } from "@tabler/icons-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -937,9 +938,10 @@ export default function ParametresPage() {
                           <li>Copiez la clé générée et collez-la ci-dessus</li>
                           <li>Vous aurez besoin de crédits sur votre compte Anthropic</li>
                         </ol>
-                        <div className="bg-muted/50 rounded p-3 text-xs text-muted-foreground">
-                          💡 <strong>Coût estimé :</strong> ~0,01 $ par analyse de candidat (modèle Claude Haiku).
-                          Une analyse de 10 candidats coûte moins de 0,10 $.
+                        <div className="bg-muted/50 rounded p-3 text-xs text-muted-foreground flex items-start gap-2">
+                          <IconInfoCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                          <span><strong>Coût estimé :</strong> ~0,01 $ par analyse de candidat (modèle Claude Haiku).
+                          Une analyse de 10 candidats coûte moins de 0,10 $.</span>
                         </div>
                       </div>
 

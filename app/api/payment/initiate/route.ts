@@ -72,8 +72,8 @@ export const POST = withErrorHandler(async (req) => {
 
   if (!result.success || !result.data) {
     return NextResponse.json(
-      { success: false, error: result.error },
-      { status: 500 },
+      { success: false, error: result.error ?? "Le service de paiement est temporairement indisponible. Veuillez réessayer dans quelques minutes." },
+      { status: 503 },
     );
   }
 
