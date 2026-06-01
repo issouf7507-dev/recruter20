@@ -52,11 +52,7 @@ export class JobOfferRepository {
     }
 
     if (search) {
-      where.OR = [
-        { title: { contains: search } },
-        { company: { contains: search } },
-        { description: { contains: search } },
-      ];
+      where.title = { contains: search };
     }
 
     if (etat && etat !== "all") {
@@ -307,11 +303,7 @@ export class JobOfferRepository {
     }
 
     if (search) {
-      where.OR = [
-        { title: { contains: search } },
-        { company: { contains: search } },
-        { description: { contains: search } },
-      ];
+      where.title = { contains: search };
     }
 
     if (etat && etat !== "all") {

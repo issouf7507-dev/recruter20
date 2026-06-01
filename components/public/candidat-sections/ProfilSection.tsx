@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,16 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Upload, X, Save } from "lucide-react";
+import {
+  IconCircleCheck,
+  IconSearch,
+  IconEar,
+  IconCalendar,
+  IconCircleX,
+  IconSchool,
+  IconTarget,
+  type Icon,
+} from "@tabler/icons-react";
 import { updateCandidat } from "@/lib/api/candidats/service";
 import { toast } from "sonner";
 import { useEdgeStore } from "@/lib/edgestore";
@@ -66,15 +76,15 @@ const SITUATIONS_FAMILIALES = [
 ];
 
 // Statuts de disponibilité pour le matching
-const STATUTS_DISPONIBILITE = [
-  { value: "disponible", label: "Disponible immédiatement", emoji: "🟢" },
-  { value: "recherche-active", label: "En recherche active", emoji: "🔍" },
-  { value: "a-lecoute", label: "À l'écoute d'opportunités", emoji: "👂" },
-  { value: "preavis-1-mois", label: "En poste - Préavis 1 mois", emoji: "📅" },
-  { value: "preavis-2-mois", label: "En poste - Préavis 2 mois", emoji: "📅" },
-  { value: "preavis-3-mois", label: "En poste - Préavis 3 mois", emoji: "📅" },
-  { value: "en-poste", label: "En poste - Non disponible", emoji: "🔴" },
-  { value: "etudiant", label: "Étudiant / En formation", emoji: "📚" },
+const STATUTS_DISPONIBILITE: { value: string; label: string; icon: Icon; color: string }[] = [
+  { value: "disponible", label: "Disponible immédiatement", icon: IconCircleCheck, color: "text-green-500" },
+  { value: "recherche-active", label: "En recherche active", icon: IconSearch, color: "text-blue-500" },
+  { value: "a-lecoute", label: "À l'écoute d'opportunités", icon: IconEar, color: "text-purple-500" },
+  { value: "preavis-1-mois", label: "En poste - Préavis 1 mois", icon: IconCalendar, color: "text-orange-400" },
+  { value: "preavis-2-mois", label: "En poste - Préavis 2 mois", icon: IconCalendar, color: "text-orange-500" },
+  { value: "preavis-3-mois", label: "En poste - Préavis 3 mois", icon: IconCalendar, color: "text-orange-600" },
+  { value: "en-poste", label: "En poste - Non disponible", icon: IconCircleX, color: "text-red-500" },
+  { value: "etudiant", label: "Étudiant / En formation", icon: IconSchool, color: "text-teal-500" },
 ];
 
 const DONNEES_PREDEFINIES = [
@@ -873,6 +883,56 @@ export function ProfilSection({ candidat }: ProfilSectionProps) {
   const [showCompetenceInput, setShowCompetenceInput] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Quand le candidat charge (async), on re-synchronise tous les champs du formulaire
+  useEffect(() => {
+    if (!candidat?.id) return;
+    setFormData({
+      nom: candidat.nom || "",
+      prenom: candidat.prenom || "",
+      telephone: candidat.telephone || "",
+      adresse: candidat.adresse || "",
+      ville: candidat.ville || "",
+      pays: candidat.pays || "",
+      dateNaissance: candidat.dateNaissance
+        ? new Date(candidat.dateNaissance).toISOString().split("T")[0]
+        : "",
+      nationalite: candidat.nationalite || "",
+      situationFamiliale: candidat.situationFamiliale || "",
+      permisConduire: candidat.permisConduire || "",
+      bio: candidat.bio || "",
+      image: candidat.image || "",
+      competences: candidat.candidatCompetences?.map((c: any) => c.competence) || [],
+      domaine: candidat.domaine || "",
+      portfolioUrl: candidat.portfolioUrl || "",
+      linkedinUrl: candidat.linkedinUrl || "",
+      certifications: candidat.certifications?.map((c: any) => c.nom) || [],
+      niveauEtude: candidat.niveauEtude || "",
+      statut: candidat.statut || "",
+    });
+    setCompetences(candidat.candidatCompetences?.map((c: any) => c.competence) || []);
+    setCertifications(
+      (candidat.certifications ?? [])
+        .map((cert: any) => {
+          const certName = typeof cert === "object" && cert !== null ? cert.nom || cert.label || cert.value : cert;
+          if (!certName) return null;
+          const found = CERTIFICATIONS_PREDEFINIES.find((c) => c.value === certName || c.label === certName);
+          return found || { value: certName, label: certName };
+        })
+        .filter((opt: any): opt is Option => opt !== null)
+    );
+    setNiveauxEtude(
+      (candidat.niveauEtude && Array.isArray(candidat.niveauEtude) ? candidat.niveauEtude : [])
+        .map((niveau: any) => {
+          const niveauName = typeof niveau === "object" && niveau !== null ? niveau.nom || niveau.label || niveau.value : niveau;
+          if (!niveauName) return null;
+          const found = NIVEAUX_ETUDE_PREDEFINIS.find((c) => c.value === niveauName || c.label === niveauName);
+          return found || { value: niveauName, label: niveauName };
+        })
+        .filter((opt: any): opt is Option => opt !== null)
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidat?.id]);
+
   // Initialiser les certifications depuis les formations ou un champ dédié
   const getInitialCertifications = (): Option[] => {
     // Si le candidat a des certifications stockées, les convertir en Option[]
@@ -975,9 +1035,7 @@ export function ProfilSection({ candidat }: ProfilSectionProps) {
 
       const uploadedFile = await edgestore.publicFiles.upload({
         file,
-        onProgressChange: (progress) => {
-          console.log(progress);
-        },
+        onProgressChange: () => {},
       });
 
       if (uploadedFile) {
@@ -1010,13 +1068,6 @@ export function ProfilSection({ candidat }: ProfilSectionProps) {
     // console.log("handleSave", { ...formData, competences: competences });
     setSaving(true);
 
-    console.log("handleSave", {
-      ...formData,
-      competences: competences,
-      certifications: certifications.map((c) => c.value),
-      niveauxEtude: niveauxEtude.map((c) => c.value),
-      statut: formData.statut,
-    });
     try {
       const response = await updateCandidat(candidat?.id, {
         ...formData,
@@ -1176,7 +1227,8 @@ export function ProfilSection({ candidat }: ProfilSectionProps) {
       <Card className="border-2 border-primary/20 bg-primary/5">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            🎯 Statut de disponibilité
+            <IconTarget className="h-5 w-5 text-primary" />
+            Statut de disponibilité
           </CardTitle>
           <CardDescription>
             Ce statut est crucial pour le matching avec les offres d'emploi
@@ -1196,8 +1248,8 @@ export function ProfilSection({ candidat }: ProfilSectionProps) {
                   }`}
               >
                 <div className="text-center">
-                  <span className="text-2xl">{statut.emoji}</span>
-                  <p className="text-xs mt-1 font-medium">{statut.label}</p>
+                  <statut.icon className={`h-7 w-7 mx-auto ${statut.color}`} />
+                  <p className="text-xs mt-1.5 font-medium">{statut.label}</p>
                 </div>
               </div>
             ))}
@@ -1492,12 +1544,12 @@ export function ProfilSection({ candidat }: ProfilSectionProps) {
         </CardContent>
       </Card>
 
-      {/* Bouton de sauvegarde */}
-      <div className="flex justify-end gap-2 pt-4 border-t">
+      {/* Bouton de sauvegarde — sticky */}
+      <div className="sticky bottom-0 z-10 flex justify-end gap-2 py-3 px-1 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="min-w-[120px] bg-[#a590ff] text-white hover:bg-[#a590ff]/90"
+          className="min-w-[140px] bg-[#a590ff] text-white hover:bg-[#a590ff]/90"
         >
           {saving ? (
             "Enregistrement..."

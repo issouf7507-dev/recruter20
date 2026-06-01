@@ -366,9 +366,14 @@ export default function OffreDetailPage({
                         }`}
                     >
                       <Calendar className="w-4 h-4 md:w-5 md:h-5" />
-                      {dueDateInfo.isExpired
-                        ? "⚠️ " + dueDateInfo.formatted
-                        : "Clôture: " + dueDateInfo.formatted}
+                      {dueDateInfo.isExpired ? (
+                        <>
+                          <AlertCircle className="w-4 h-4 shrink-0" />
+                          {dueDateInfo.formatted}
+                        </>
+                      ) : (
+                        "Clôture: " + dueDateInfo.formatted
+                      )}
                     </span>
                   )}
                 </div>

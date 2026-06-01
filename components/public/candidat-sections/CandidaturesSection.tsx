@@ -180,8 +180,8 @@ export function CandidaturesSection({ candidatId }: CandidaturesSectionProps) {
                 <p className="text-muted-foreground">
                   Vous n&apos;avez pas encore postulé à des offres
                 </p>
-                <Button className="mt-4" variant="outline">
-                  Parcourir les offres
+                <Button className="mt-4" variant="outline" asChild>
+                  <a href="/offres">Parcourir les offres</a>
                 </Button>
               </CardContent>
             </Card>

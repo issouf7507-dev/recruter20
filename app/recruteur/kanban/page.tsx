@@ -1569,9 +1569,9 @@ export default function KanbanPage() {
                       </Select>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      <p>
-                        💡 Le statut sera automatiquement détecté depuis le nom
-                        de la colonne :
+                      <p className="flex items-center gap-1.5">
+                        <IconInfoCircle className="h-4 w-4 shrink-0" />
+                        Le statut sera automatiquement détecté depuis le nom de la colonne :
                       </p>
                       <ul className="list-disc list-inside mt-2 space-y-1">
                         <li>Colonnes avec "accepté" → Statut ACCEPTE</li>

@@ -1,10 +1,9 @@
 "use client";
 import Link from "next/link";
 import React, { useState } from "react";
-import { Menu, X, User, Briefcase, Upload, ExternalLink, Plus, FileText, ArrowRight } from "lucide-react";
+import { Menu, X, Upload, ExternalLink, Plus, FileText, ArrowRight } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCandidat } from "@/lib/hooks/use-candidat";
-import { CandidatSheet } from "./CandidatSheet";
 import Image from "next/image";
 import {
   Dialog,
@@ -28,10 +27,7 @@ const NAV_LINKS = [
 
 const Header = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [isCandidatSheetOpen, setIsCandidatSheetOpen] = useState(false);
   const [cvSheet, setCvSheet] = useState(false);
-  const [isUserTypeModalOpen, setIsUserTypeModalOpen] = useState(false);
-  const [modalAction, setModalAction] = useState<"login" | "register">("login");
   const [uploading, setUploading] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -39,14 +35,8 @@ const Header = () => {
   const { edgestore } = useEdgeStore();
   const queryClient = useQueryClient();
 
-  const openModal = (action: "login" | "register") => {
-    setModalAction(action);
-    setIsUserTypeModalOpen(true);
-  };
-
-  const handleUserTypeSelect = (userType: "candidat" | "recruteur") => {
-    setIsUserTypeModalOpen(false);
-    router.push(`/auth/${userType}/${modalAction}`);
+  const goToAuth = (action: "login" | "register") => {
+    router.push(`/auth?action=${action}`);
   };
 
   const handleUpload = async (file: File) => {
@@ -133,14 +123,14 @@ const Header = () => {
         {!candidat ? (
           <div className="hidden lg:flex items-center gap-2 ml-auto">
             <button
-              onClick={() => openModal("login")}
+              onClick={() => goToAuth("login")}
               className="h-9 px-4 rounded-full text-sm font-medium transition-colors"
               style={{ background: "transparent", color: "var(--y-ink)", boxShadow: "inset 0 0 0 1px var(--y-line-2)" }}
             >
               Se connecter
             </button>
             <button
-              onClick={() => openModal("register")}
+              onClick={() => goToAuth("register")}
               className="h-9 px-4 rounded-full text-sm font-medium flex items-center gap-1.5"
               style={{ background: "linear-gradient(135deg, var(--y-primary) 0%, var(--y-primary-700) 100%)", color: "#fff", boxShadow: "var(--y-shadow-violet)" }}
             >
@@ -156,8 +146,8 @@ const Header = () => {
             >
               <Upload size={13} /> Charger mon CV
             </button>
-            <button
-              onClick={() => setIsCandidatSheetOpen(true)}
+            <a
+              href="/candidat/profil"
               className="h-9 px-4 rounded-full text-sm font-medium flex items-center gap-2"
               style={{ background: "var(--y-bg)", color: "var(--y-ink)" }}
             >
@@ -168,7 +158,7 @@ const Header = () => {
                 {(candidat.prenom?.[0] ?? "") + (candidat.nom?.[0] ?? "")}
               </span>
               Mon espace
-            </button>
+            </a>
           </div>
         )}
 
@@ -227,14 +217,14 @@ const Header = () => {
               {!candidat ? (
                 <>
                   <button
-                    onClick={() => { setDrawerOpen(false); openModal("register"); }}
+                    onClick={() => { setDrawerOpen(false); goToAuth("register"); }}
                     className="w-full h-12 rounded-full font-medium text-sm flex items-center justify-center gap-2"
                     style={{ background: "linear-gradient(135deg, var(--y-primary), var(--y-primary-700))", color: "#fff", boxShadow: "var(--y-shadow-violet)" }}
                   >
                     Commencer gratuitement <ArrowRight size={14} />
                   </button>
                   <button
-                    onClick={() => { setDrawerOpen(false); openModal("login"); }}
+                    onClick={() => { setDrawerOpen(false); goToAuth("login"); }}
                     className="w-full h-12 rounded-full font-medium text-sm"
                     style={{ background: "transparent", color: "var(--y-ink)", boxShadow: "inset 0 0 0 1px var(--y-line-2)" }}
                   >
@@ -243,13 +233,14 @@ const Header = () => {
                 </>
               ) : (
                 <>
-                  <button
-                    onClick={() => { setDrawerOpen(false); setIsCandidatSheetOpen(true); }}
-                    className="w-full h-12 rounded-full font-medium text-sm"
+                  <a
+                    href="/candidat/profil"
+                    onClick={() => setDrawerOpen(false)}
+                    className="w-full h-12 rounded-full font-medium text-sm flex items-center justify-center"
                     style={{ background: "linear-gradient(135deg, var(--y-primary), var(--y-primary-700))", color: "#fff" }}
                   >
                     Mon espace candidat
-                  </button>
+                  </a>
                   <button
                     onClick={() => { setDrawerOpen(false); setCvSheet(true); }}
                     className="w-full h-12 rounded-full font-medium text-sm"
@@ -270,40 +261,6 @@ const Header = () => {
           </aside>
         </div>
       )}
-
-      <CandidatSheet open={isCandidatSheetOpen} onOpenChange={setIsCandidatSheetOpen} />
-
-      {/* Modal user type */}
-      <Dialog open={isUserTypeModalOpen} onOpenChange={setIsUserTypeModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center text-xl">
-              {modalAction === "login" ? "Connexion" : "Créer un compte"}
-            </DialogTitle>
-            <DialogDescription className="text-center">
-              {modalAction === "login" ? "Êtes-vous un candidat ou un recruteur ?" : "Quel type de compte souhaitez-vous créer ?"}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            {[
-              { type: "candidat" as const, label: "Candidat", sub: "Je cherche un emploi", Icon: User },
-              { type: "recruteur" as const, label: "Recruteur", sub: "Je recrute des talents", Icon: Briefcase },
-            ].map(({ type, label, sub, Icon }) => (
-              <button
-                key={type}
-                onClick={() => handleUserTypeSelect(type)}
-                className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-gray-200 hover:border-[#a590ff] hover:bg-[#a590ff]/5 transition-all duration-200 group"
-              >
-                <div className="w-16 h-16 rounded-full bg-[#a590ff]/10 flex items-center justify-center group-hover:bg-[#a590ff]/20 transition-colors">
-                  <Icon className="w-8 h-8 text-[#a590ff]" />
-                </div>
-                <span className="font-semibold text-gray-900">{label}</span>
-                <span className="text-xs text-gray-500 text-center">{sub}</span>
-              </button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Modal CV */}
       <Dialog open={cvSheet} onOpenChange={setCvSheet}>

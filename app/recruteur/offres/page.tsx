@@ -20,6 +20,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { SiteHeader } from "@/components/site-header";
 import dynamic from "next/dynamic";
 const RichTextEditorWrapper = dynamic(
@@ -46,9 +64,7 @@ import {
   IconEye,
   IconEdit,
   IconTrash,
-  IconCopy,
   IconMapPin,
-  IconCurrencyEuro,
   IconUsers,
   IconSearch,
   IconFilter,
@@ -62,7 +78,6 @@ import {
   IconFileText,
   IconClock,
   IconCheck,
-  IconSend,
   IconArchive,
   IconPlayerPlay,
 } from "@tabler/icons-react";
@@ -126,6 +141,16 @@ export default function MesOffresPage() {
   const [open, setOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [publishConfirmId, setPublishConfirmId] = useState<string | null>(null);
+  const [draftConfirmId, setDraftConfirmId] = useState<string | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Debounce : attend 350ms après la dernière frappe avant de lancer la requête
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 350);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Fetch recruteur from session
   const { data: recruteur } = useRecruteurByUserId(session?.user?.id);
@@ -138,7 +163,7 @@ export default function MesOffresPage() {
       page: currentPage,
       limit: itemsPerPage,
       recruteurId: recruteurId || undefined,
-      search: searchTerm || undefined,
+      search: debouncedSearch || undefined,
       etat: filterStatut !== "all" ? filterStatut : undefined,
     },
     {
@@ -146,7 +171,6 @@ export default function MesOffresPage() {
     }
   );
 
-  console.log("data", data);
   const deleteOffer = useDeleteOffer();
   const updateOffer = useUpdateOffer();
   const updateOfferStatus = useUpdateOfferStatus();
@@ -162,10 +186,10 @@ export default function MesOffresPage() {
   // console.log("pagination", data);
   // const totalApplications =
 
-  // Reset to page 1 when filter or search changes
+  // Reset to page 1 when filter or debounced search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterStatut, searchTerm]);
+  }, [filterStatut, debouncedSearch]);
 
   // Vérifie si une offre est expirée en fonction de la date limite
   const isOfferExpired = (duedate?: Date | string | null) => {
@@ -199,54 +223,58 @@ export default function MesOffresPage() {
   // Pour l'instant, on affiche simplement les offres paginées.
   const displayedOffres = offres;
 
-  const handleDeleteOffre = async (id: string) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer cette offre ?")) {
-      try {
-        await deleteOffer.mutateAsync(id);
-      } catch (error) {
-        console.error("Error deleting offer:", error);
-      }
+  const handleDeleteOffre = (id: string) => {
+    setDeleteConfirmId(id);
+  };
+
+  const confirmDeleteOffre = async () => {
+    if (!deleteConfirmId) return;
+    try {
+      await deleteOffer.mutateAsync(deleteConfirmId);
+    } catch (error) {
+      console.error("Error deleting offer:", error);
+    } finally {
+      setDeleteConfirmId(null);
     }
   };
 
   // Publier une offre (brouillon → active)
-  const handlePublishOffre = async (id: string) => {
+  const handlePublishOffre = (id: string) => {
     const offre = offres.find((o) => o.id === id);
     if (!offre) return;
-
-    // Vérification des champs obligatoires avant publication
     if (!offre.title || !offre.company || !offre.location) {
       toast.error(
         "Impossible de publier : le titre, l'entreprise et le lieu sont obligatoires"
       );
       return;
     }
+    setPublishConfirmId(id);
+  };
 
-    if (
-      confirm(
-        "Voulez-vous publier cette offre ? Elle sera visible par tous les candidats."
-      )
-    ) {
-      try {
-        await updateOfferStatus.mutateAsync({ id, etat: "active" });
-      } catch (error) {
-        console.error("Error publishing offer:", error);
-      }
+  const confirmPublishOffre = async () => {
+    if (!publishConfirmId) return;
+    try {
+      await updateOfferStatus.mutateAsync({ id: publishConfirmId, etat: "active" });
+    } catch (error) {
+      console.error("Error publishing offer:", error);
+    } finally {
+      setPublishConfirmId(null);
     }
   };
 
   // Mettre en brouillon (active → brouillon)
-  const handleDraftOffre = async (id: string) => {
-    if (
-      confirm(
-        "Voulez-vous mettre cette offre en brouillon ? Elle ne sera plus visible par les candidats."
-      )
-    ) {
-      try {
-        await updateOfferStatus.mutateAsync({ id, etat: "brouillon" });
-      } catch (error) {
-        console.error("Error drafting offer:", error);
-      }
+  const handleDraftOffre = (id: string) => {
+    setDraftConfirmId(id);
+  };
+
+  const confirmDraftOffre = async () => {
+    if (!draftConfirmId) return;
+    try {
+      await updateOfferStatus.mutateAsync({ id: draftConfirmId, etat: "brouillon" });
+    } catch (error) {
+      console.error("Error drafting offer:", error);
+    } finally {
+      setDraftConfirmId(null);
     }
   };
 
@@ -906,12 +934,12 @@ export default function MesOffresPage() {
         </div>
       </div>
 
-      {/* View Detail Modal */}
-      {viewingOfferId && viewingOffer && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-            <CardHeader className="shrink-0 border-b">
-              <div className="flex items-start justify-between">
+      {/* View Detail Dialog */}
+      <Dialog open={!!viewingOfferId} onOpenChange={(open) => !open && handleCloseViewModal()}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden flex flex-col">
+          {viewingOffer && (
+            <>
+              <DialogHeader className="shrink-0 border-b px-6 py-4">
                 <div className="flex items-start gap-4">
                   {viewingOffer.logo ? (
                     <div className="w-16 h-16 rounded-lg overflow-hidden border bg-muted shrink-0">
@@ -926,17 +954,14 @@ export default function MesOffresPage() {
                       <IconBriefcase className="h-8 w-8 text-muted-foreground" />
                     </div>
                   )}
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <CardTitle className="text-xl">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <DialogTitle className="text-xl">
                         {viewingOffer.title}
-                      </CardTitle>
-                      {getStatutBadge(
-                        viewingOffer.etat || "active",
-                        viewingOffer.duedate
-                      )}
+                      </DialogTitle>
+                      {getStatutBadge(viewingOffer.etat || "active", viewingOffer.duedate)}
                     </div>
-                    <CardDescription className="flex items-center gap-4 mt-2 flex-wrap">
+                    <DialogDescription className="flex items-center gap-4 mt-1 flex-wrap">
                       {viewingOffer.company && (
                         <span className="flex items-center gap-1">
                           <IconBriefcase className="h-4 w-4" />
@@ -954,96 +979,44 @@ export default function MesOffresPage() {
                           {viewingOffer.type}
                         </Badge>
                       )}
-                    </CardDescription>
+                    </DialogDescription>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleCloseViewModal}
-                  className="shrink-0"
-                >
-                  <IconX className="h-5 w-5" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-hidden p-0">
-              <Tabs defaultValue="details" className="h-full flex flex-col">
-                <TabsList className="w-full justify-start rounded-none border-b bg-transparent px-4 pt-2">
-                  <TabsTrigger
-                    value="details"
-                    className="data-[state=active]:bg-background"
-                  >
-                    Détails de l'offre
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="candidatures"
-                    className="data-[state=active]:bg-background"
-                  >
-                    Candidatures ({viewingOffer.applications?.length || 0})
-                  </TabsTrigger>
-                </TabsList>
+              </DialogHeader>
 
-                <TabsContent
-                  value="details"
-                  className="flex-1 overflow-auto m-0"
-                >
-                  <div className="h-[calc(90vh-220px)] overflow-y-auto">
+              <div className="flex-1 overflow-hidden">
+                <Tabs defaultValue="details" className="h-full flex flex-col">
+                  <TabsList className="w-full justify-start rounded-none border-b bg-transparent px-4 pt-2 shrink-0">
+                    <TabsTrigger value="details" className="data-[state=active]:bg-background">
+                      Détails de l'offre
+                    </TabsTrigger>
+                    <TabsTrigger value="candidatures" className="data-[state=active]:bg-background">
+                      Candidatures ({viewingOffer.applications?.length || 0})
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="details" className="flex-1 overflow-auto m-0">
                     <div className="p-6 space-y-6">
-                      {/* Informations principales */}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">
-                            Type de contrat
-                          </p>
-                          <p className="font-medium uppercase">
-                            {viewingOffer.type || "N/A"}
-                          </p>
+                          <p className="text-sm text-muted-foreground">Type de contrat</p>
+                          <p className="font-medium uppercase">{viewingOffer.type || "N/A"}</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">
-                            Salaire
-                          </p>
+                          <p className="text-sm text-muted-foreground">Salaire</p>
                           <p className="font-medium">
                             {viewingOffer.salaryMin || viewingOffer.salaryMax
-                              ? `${viewingOffer.salaryMin || ""} ${
-                                  viewingOffer.salaryMin &&
-                                  viewingOffer.salaryMax
-                                    ? "-"
-                                    : ""
-                                } ${viewingOffer.salaryMax || ""} ${
-                                  viewingOffer.salaryCurrency || ""
-                                }`
+                              ? `${viewingOffer.salaryMin || ""}${viewingOffer.salaryMin && viewingOffer.salaryMax ? " - " : ""}${viewingOffer.salaryMax || ""} ${viewingOffer.salaryCurrency || ""}`
                               : "Non spécifié"}
                           </p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">
-                            Date limite
-                          </p>
-                          <p
-                            className={`font-medium flex items-center gap-1 ${
-                              isOfferExpired(viewingOffer.duedate)
-                                ? "text-red-600"
-                                : ""
-                            }`}
-                          >
-                            <IconCalendar
-                              className={`h-4 w-4 ${
-                                isOfferExpired(viewingOffer.duedate)
-                                  ? "text-red-500"
-                                  : ""
-                              }`}
-                            />
-                            {viewingOffer.duedate
-                              ? new Date(
-                                  viewingOffer.duedate
-                                ).toLocaleDateString("fr-FR")
-                              : "Non définie"}
+                          <p className="text-sm text-muted-foreground">Date limite</p>
+                          <p className={`font-medium flex items-center gap-1 ${isOfferExpired(viewingOffer.duedate) ? "text-red-600" : ""}`}>
+                            <IconCalendar className={`h-4 w-4 ${isOfferExpired(viewingOffer.duedate) ? "text-red-500" : ""}`} />
+                            {viewingOffer.duedate ? new Date(viewingOffer.duedate).toLocaleDateString("fr-FR") : "Non définie"}
                             {isOfferExpired(viewingOffer.duedate) && (
-                              <Badge className="bg-red-100 text-red-800 ml-2 text-xs">
-                                Expirée
-                              </Badge>
+                              <Badge className="bg-red-100 text-red-800 ml-2 text-xs">Expirée</Badge>
                             )}
                           </p>
                         </div>
@@ -1058,125 +1031,72 @@ export default function MesOffresPage() {
 
                       <Separator />
 
-                      {/* Description */}
                       {viewingOffer.description && (
                         <div className="space-y-2">
-                          <h3 className="font-semibold text-lg">
-                            Description du poste
-                          </h3>
-                          <div
-                            className="prose prose-sm max-w-none text-muted-foreground"
-                            dangerouslySetInnerHTML={{
-                              __html: viewingOffer.description,
-                            }}
-                          />
+                          <h3 className="font-semibold text-lg">Description du poste</h3>
+                          <div className="prose prose-sm max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: viewingOffer.description }} />
                         </div>
                       )}
 
-                      {/* Exigences */}
                       {viewingOffer.requirements && (
                         <>
                           <Separator />
                           <div className="space-y-2">
-                            <h3 className="font-semibold text-lg">
-                              Profil recherché
-                            </h3>
-                            <div
-                              className="prose prose-sm max-w-none text-muted-foreground"
-                              dangerouslySetInnerHTML={{
-                                __html: viewingOffer.requirements,
-                              }}
-                            />
+                            <h3 className="font-semibold text-lg">Profil recherché</h3>
+                            <div className="prose prose-sm max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: viewingOffer.requirements }} />
                           </div>
                         </>
                       )}
 
-                      {/* Avantages */}
                       {viewingOffer.benefits && (
                         <>
                           <Separator />
                           <div className="space-y-2">
                             <h3 className="font-semibold text-lg">Avantages</h3>
-                            <div
-                              className="prose prose-sm max-w-none text-muted-foreground"
-                              dangerouslySetInnerHTML={{
-                                __html: viewingOffer.benefits,
-                              }}
-                            />
+                            <div className="prose prose-sm max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: viewingOffer.benefits }} />
                           </div>
                         </>
                       )}
 
-                      {/* Compétences */}
                       {viewingOffer.skills && (
                         <>
                           <Separator />
                           <div className="space-y-2">
-                            <h3 className="font-semibold text-lg">
-                              Compétences requises
-                            </h3>
+                            <h3 className="font-semibold text-lg">Compétences requises</h3>
                             <div className="flex flex-wrap gap-2">
-                              {viewingOffer.skills
-                                .split(",")
-                                .map((skill, index) => (
-                                  <Badge key={index} variant="secondary">
-                                    {skill.trim()}
-                                  </Badge>
-                                ))}
+                              {viewingOffer.skills.split(",").map((skill, index) => (
+                                <Badge key={index} variant="secondary">{skill.trim()}</Badge>
+                              ))}
                             </div>
                           </div>
                         </>
                       )}
                     </div>
-                  </div>
-                </TabsContent>
+                  </TabsContent>
 
-                <TabsContent
-                  value="candidatures"
-                  className="flex-1 overflow-auto m-0"
-                >
-                  <div className="h-[calc(90vh-220px)] overflow-y-auto">
+                  <TabsContent value="candidatures" className="flex-1 overflow-auto m-0">
                     <div className="p-6 space-y-4">
-                      {!viewingOffer.applications ||
-                      viewingOffer.applications.length === 0 ? (
+                      {!viewingOffer.applications || viewingOffer.applications.length === 0 ? (
                         <div className="text-center py-12">
                           <IconUsers className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                          <h3 className="text-lg font-semibold mb-2">
-                            Aucune candidature
-                          </h3>
-                          <p className="text-muted-foreground">
-                            Cette offre n'a pas encore reçu de candidatures.
-                          </p>
+                          <h3 className="text-lg font-semibold mb-2">Aucune candidature</h3>
+                          <p className="text-muted-foreground">Cette offre n'a pas encore reçu de candidatures.</p>
                         </div>
                       ) : (
                         viewingOffer.applications.map((application) => (
-                          <Card
-                            key={application.id}
-                            className="hover:shadow-sm transition-shadow"
-                          >
+                          <Card key={application.id} className="hover:shadow-sm transition-shadow">
                             <CardContent className="p-4">
                               <div className="flex items-start gap-4">
                                 <Avatar className="h-12 w-12 shrink-0">
-                                  <AvatarImage
-                                    src={application.candidat?.image || ""}
-                                  />
-                                  <AvatarFallback>
-                                    {getInitials(
-                                      application.candidat?.nom,
-                                      application.candidat?.prenom
-                                    )}
-                                  </AvatarFallback>
+                                  <AvatarImage src={application.candidat?.image || ""} />
+                                  <AvatarFallback>{getInitials(application.candidat?.nom, application.candidat?.prenom)}</AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between gap-2 mb-1">
                                     <h4 className="font-semibold">
-                                      {application.candidat?.nom ||
-                                        "Nom inconnu"}{" "}
-                                      {application.candidat?.prenom || ""}
+                                      {application.candidat?.nom || "Nom inconnu"}{" "}{application.candidat?.prenom || ""}
                                     </h4>
-                                    {getApplicationStatusBadge(
-                                      application.status
-                                    )}
+                                    {getApplicationStatusBadge(application.status)}
                                   </div>
                                   <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
                                     {application.candidat?.user?.email && (
@@ -1201,32 +1121,15 @@ export default function MesOffresPage() {
                                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <IconClock className="h-4 w-4" />
                                     Candidature reçue le{" "}
-                                    {new Date(
-                                      application.createdAt
-                                    ).toLocaleDateString("fr-FR", {
-                                      day: "numeric",
-                                      month: "long",
-                                      year: "numeric",
-                                    })}
+                                    {new Date(application.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
                                   </div>
                                   {application.message && (
-                                    <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                                      "{application.message}"
-                                    </p>
+                                    <p className="mt-2 text-sm text-muted-foreground line-clamp-2">"{application.message}"</p>
                                   )}
                                 </div>
                                 <div className="flex gap-2 shrink-0">
                                   {application.candidat?.cv && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() =>
-                                        window.open(
-                                          application.candidat?.cv || "",
-                                          "_blank"
-                                        )
-                                      }
-                                    >
+                                    <Button variant="outline" size="sm" onClick={() => window.open(application.candidat?.cv || "", "_blank")}>
                                       <IconFileText className="h-4 w-4 mr-1" />
                                       CV
                                     </Button>
@@ -1238,118 +1141,77 @@ export default function MesOffresPage() {
                         ))
                       )}
                     </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-            <div className="shrink-0 border-t p-4 flex justify-between items-center bg-muted/30">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <IconUsers className="h-4 w-4" />
-                {viewingOffer.applications?.length || 0} candidature(s)
-                <span className="mx-2">•</span>
-                <IconEye className="h-4 w-4" />
-                {(viewingOffer as any).views || 0} vue(s)
+                  </TabsContent>
+                </Tabs>
               </div>
-              <div className="flex gap-2">
-                {/* Bouton Publier (pour les brouillons) */}
-                {viewingOffer.etat === "brouillon" && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      handlePublishOffre(viewingOfferId);
-                    }}
-                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                    disabled={updateOfferStatus.isPending}
-                  >
-                    {updateOfferStatus.isPending ? (
-                      <IconLoader className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <IconPlayerPlay className="h-4 w-4 mr-2" />
-                    )}
-                    Publier
-                  </Button>
-                )}
 
-                {/* Bouton Mettre en brouillon (pour les offres actives) */}
-                {viewingOffer.etat === "active" &&
-                  !isOfferExpired(viewingOffer.duedate) && (
+              <DialogFooter className="shrink-0 border-t px-6 py-4 bg-muted/30 flex flex-row items-center justify-between sm:justify-between">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <IconUsers className="h-4 w-4" />
+                  {viewingOffer.applications?.length || 0} candidature(s)
+                  <span className="mx-2">•</span>
+                  <IconEye className="h-4 w-4" />
+                  {(viewingOffer as any).views || 0} vue(s)
+                </div>
+                <div className="flex gap-2">
+                  {viewingOffer.etat === "brouillon" && (
                     <Button
                       variant="outline"
-                      onClick={() => {
-                        handleDraftOffre(viewingOfferId);
-                      }}
+                      onClick={() => handlePublishOffre(viewingOfferId!)}
+                      className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                      disabled={updateOfferStatus.isPending}
+                    >
+                      {updateOfferStatus.isPending ? <IconLoader className="h-4 w-4 mr-2 animate-spin" /> : <IconPlayerPlay className="h-4 w-4 mr-2" />}
+                      Publier
+                    </Button>
+                  )}
+                  {viewingOffer.etat === "active" && !isOfferExpired(viewingOffer.duedate) && (
+                    <Button
+                      variant="outline"
+                      onClick={() => handleDraftOffre(viewingOfferId!)}
                       className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
                       disabled={updateOfferStatus.isPending}
                     >
-                      {updateOfferStatus.isPending ? (
-                        <IconLoader className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <IconArchive className="h-4 w-4 mr-2" />
-                      )}
+                      {updateOfferStatus.isPending ? <IconLoader className="h-4 w-4 mr-2 animate-spin" /> : <IconArchive className="h-4 w-4 mr-2" />}
                       Brouillon
                     </Button>
                   )}
+                  <Button variant="outline" onClick={() => { handleCloseViewModal(); handleEditOffre(viewingOfferId!); }}>
+                    <IconEdit className="h-4 w-4 mr-2" />
+                    Modifier
+                  </Button>
+                  <Button onClick={handleCloseViewModal}>Fermer</Button>
+                </div>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    handleCloseViewModal();
-                    handleEditOffre(viewingOfferId);
-                  }}
-                >
-                  <IconEdit className="h-4 w-4 mr-2" />
-                  Modifier
-                </Button>
-                <Button onClick={handleCloseViewModal}>Fermer</Button>
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Edit Modal */}
-      {editingOfferId && editingOffer && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
+      {/* Edit Dialog */}
+      <Dialog open={!!editingOfferId} onOpenChange={(open) => !open && handleCloseEditModal()}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {editingOffer && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
                   <IconEdit className="h-5 w-5" />
                   Modifier l'offre
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCloseEditModal}
-                >
-                  ×
-                </Button>
-              </div>
-              <CardDescription>
-                Modifiez les informations de votre offre d'emploi
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form
-                onSubmit={(e) =>
-                  handleSubmitEdit(e, editingOfferId, editingOffer)
-                }
-                className="space-y-4"
-              >
-                {/* Logo et informations principales */}
+                </DialogTitle>
+                <DialogDescription>
+                  Modifiez les informations de votre offre d'emploi
+                </DialogDescription>
+              </DialogHeader>
+
+              <form onSubmit={(e) => handleSubmitEdit(e, editingOfferId!, editingOffer)} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Logo Upload */}
                   <div className="space-y-2">
                     <Label>Logo de l'entreprise</Label>
                     <div className="flex flex-col items-center gap-3">
                       {editLogo ? (
                         <div className="relative group">
                           <div className="w-20 h-20 rounded-lg overflow-hidden border-2 border-border bg-muted">
-                            <img
-                              src={editLogo}
-                              alt="Logo entreprise"
-                              className="w-full h-full object-cover"
-                            />
+                            <img src={editLogo} alt="Logo entreprise" className="w-full h-full object-cover" />
                           </div>
                           <Button
                             type="button"
@@ -1363,66 +1225,35 @@ export default function MesOffresPage() {
                         </div>
                       ) : (
                         <label className="cursor-pointer">
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleEditLogoUpload}
-                            disabled={uploadingLogo}
-                          />
-                          <div
-                            className={`w-20 h-20 rounded-lg border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/50 transition-colors flex flex-col items-center justify-center gap-1 ${
-                              uploadingLogo
-                                ? "opacity-50 cursor-not-allowed"
-                                : ""
-                            }`}
-                          >
+                          <Input type="file" accept="image/*" className="hidden" onChange={handleEditLogoUpload} disabled={uploadingLogo} />
+                          <div className={`w-20 h-20 rounded-lg border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/50 transition-colors flex flex-col items-center justify-center gap-1 ${uploadingLogo ? "opacity-50 cursor-not-allowed" : ""}`}>
                             {uploadingLogo ? (
                               <>
                                 <IconLoader className="h-5 w-5 animate-spin text-primary" />
-                                <span className="text-xs text-muted-foreground">
-                                  {uploadProgress}%
-                                </span>
+                                <span className="text-xs text-muted-foreground">{uploadProgress}%</span>
                               </>
                             ) : (
                               <>
                                 <IconPhoto className="h-5 w-5 text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground text-center px-1">
-                                  Ajouter
-                                </span>
+                                <span className="text-xs text-muted-foreground text-center px-1">Ajouter</span>
                               </>
                             )}
                           </div>
                         </label>
                       )}
-                      <p className="text-xs text-muted-foreground text-center">
-                        Max 5MB
-                      </p>
+                      <p className="text-xs text-muted-foreground text-center">Max 5MB</p>
                     </div>
                   </div>
 
-                  {/* Titre et Entreprise */}
                   <div className="md:col-span-2 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="edit-titre">Titre du poste *</Label>
-                        <Input
-                          id="edit-titre"
-                          name="titre"
-                          placeholder="Ex: Développeur React Senior"
-                          defaultValue={editingOffer.title}
-                          required
-                        />
+                        <Input id="edit-titre" name="titre" placeholder="Ex: Développeur React Senior" defaultValue={editingOffer.title} required />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="edit-entreprise">Entreprise *</Label>
-                        <Input
-                          id="edit-entreprise"
-                          name="entreprise"
-                          placeholder="Ex: TechCorp"
-                          defaultValue={editingOffer.company || ""}
-                          required
-                        />
+                        <Input id="edit-entreprise" name="entreprise" placeholder="Ex: TechCorp" defaultValue={editingOffer.company || ""} required />
                       </div>
                     </div>
                   </div>
@@ -1431,38 +1262,21 @@ export default function MesOffresPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="edit-typeContrat">Type de contrat *</Label>
-                    <Select
-                      value={editTypeContrat}
-                      onValueChange={setEditTypeContrat}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
+                    <Select value={editTypeContrat} onValueChange={setEditTypeContrat}>
+                      <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="cdi">CDI</SelectItem>
                         <SelectItem value="cdd">CDD</SelectItem>
                         <SelectItem value="stage">Stage</SelectItem>
                         <SelectItem value="freelance">Freelance</SelectItem>
-                        <SelectItem value="temps-partiel">
-                          Temps partiel
-                        </SelectItem>
+                        <SelectItem value="temps-partiel">Temps partiel</SelectItem>
                       </SelectContent>
                     </Select>
-                    <input
-                      type="hidden"
-                      name="typeContrat"
-                      value={editTypeContrat}
-                    />
+                    <input type="hidden" name="typeContrat" value={editTypeContrat} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-lieu">Lieu de travail *</Label>
-                    <Input
-                      id="edit-lieu"
-                      name="lieu"
-                      placeholder="Ex: Paris, France"
-                      defaultValue={editingOffer.location || ""}
-                      required
-                    />
+                    <Input id="edit-lieu" name="lieu" placeholder="Ex: Paris, France" defaultValue={editingOffer.location || ""} required />
                   </div>
                 </div>
 
@@ -1471,84 +1285,41 @@ export default function MesOffresPage() {
                     <Label htmlFor="nombrePostes">Nombre de postes</Label>
                     <div className="relative">
                       <IconUsers className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="nombrePostes"
-                        placeholder="1"
-                        className="pl-10"
-                        type="number"
-                        min="1"
-                        value={editingOffer.numberOfPosts || ""}
-                      />
+                      <Input id="nombrePostes" placeholder="1" className="pl-10" type="number" min="1" value={editingOffer.numberOfPosts || ""} />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <div>
-                      <div className="flex flex-col gap-3">
-                        <Label htmlFor="date" className="px-1">
-                          Date Limite
-                        </Label>
-                        <Popover open={open} onOpenChange={setOpen}>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              id="date"
-                              className="w-full justify-between font-normal"
-                            >
-                              {editingOffer.duedate
-                                ? new Date(
-                                    editingOffer.duedate
-                                  ).toLocaleDateString()
-                                : "Sélectionner une date"}
-                              <ChevronDownIcon />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent
-                            className="w-full overflow-hidden p-0"
-                            align="start"
-                          >
-                            <Calendar
-                              className="w-full"
-                              mode="single"
-                              selected={
-                                editingOffer?.duedate
-                                  ? new Date(editingOffer.duedate)
-                                  : undefined
-                              }
-                              captionLayout="dropdown"
-                              onSelect={(date: Date | undefined) => {
-                                if (date) {
-                                  setEditDuedate(date);
-                                  setOpen(false);
-                                }
-                              }}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
+                    <div className="flex flex-col gap-3">
+                      <Label htmlFor="date" className="px-1">Date Limite</Label>
+                      <Popover open={open} onOpenChange={setOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" id="date" className="w-full justify-between font-normal">
+                            {editDuedate ? editDuedate.toLocaleDateString() : editingOffer.duedate ? new Date(editingOffer.duedate).toLocaleDateString() : "Sélectionner une date"}
+                            <ChevronDownIcon />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full overflow-hidden p-0" align="start">
+                          <Calendar
+                            className="w-full"
+                            mode="single"
+                            selected={editDuedate ?? (editingOffer?.duedate ? new Date(editingOffer.duedate) : undefined)}
+                            captionLayout="dropdown"
+                            onSelect={(date: Date | undefined) => { if (date) { setEditDuedate(date); setOpen(false); } }}
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="edit-salaireMin">Salaire minimum </Label>
-                    <Input
-                      id="edit-salaireMin"
-                      name="salaireMin"
-                      type="number"
-                      placeholder="Ex: 45000"
-                      defaultValue={editingOffer.salaryMin || ""}
-                    />
+                    <Label htmlFor="edit-salaireMin">Salaire minimum</Label>
+                    <Input id="edit-salaireMin" name="salaireMin" type="number" placeholder="Ex: 45000" defaultValue={editingOffer.salaryMin || ""} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="edit-salaireMax">Salaire maximum </Label>
-                    <Input
-                      id="edit-salaireMax"
-                      name="salaireMax"
-                      type="number"
-                      placeholder="Ex: 65000"
-                      defaultValue={editingOffer.salaryMax || ""}
-                    />
+                    <Label htmlFor="edit-salaireMax">Salaire maximum</Label>
+                    <Input id="edit-salaireMax" name="salaireMax" type="number" placeholder="Ex: 65000" defaultValue={editingOffer.salaryMax || ""} />
                   </div>
                 </div>
 
@@ -1558,40 +1329,20 @@ export default function MesOffresPage() {
                     value={editDescription}
                     onChange={setEditDescription}
                     placeholder="Décrivez les missions principales, les responsabilités et les objectifs du poste..."
-                    className="min-h-[200px]"
+                    className="min-h-50"
                   />
                 </div>
 
-                <div className="flex justify-between gap-4 pt-4">
+                <DialogFooter className="flex-row justify-between sm:justify-between pt-2">
                   <div>
-                    {/* Boutons de changement d'état */}
                     {editingOffer.etat === "brouillon" ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          handlePublishOffre(editingOfferId);
-                          handleCloseEditModal();
-                        }}
-                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                        disabled={updateOfferStatus.isPending}
-                      >
+                      <Button type="button" variant="outline" onClick={() => { handlePublishOffre(editingOfferId!); handleCloseEditModal(); }} className="text-green-600 hover:text-green-700 hover:bg-green-50" disabled={updateOfferStatus.isPending}>
                         <IconPlayerPlay className="h-4 w-4 mr-2" />
                         Publier l'offre
                       </Button>
                     ) : (
-                      editingOffer.etat === "active" &&
-                      !isOfferExpired(editingOffer.duedate) && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            handleDraftOffre(editingOfferId);
-                            handleCloseEditModal();
-                          }}
-                          className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
-                          disabled={updateOfferStatus.isPending}
-                        >
+                      editingOffer.etat === "active" && !isOfferExpired(editingOffer.duedate) && (
+                        <Button type="button" variant="outline" onClick={() => { handleDraftOffre(editingOfferId!); handleCloseEditModal(); }} className="text-gray-600 hover:text-gray-700 hover:bg-gray-50" disabled={updateOfferStatus.isPending}>
                           <IconArchive className="h-4 w-4 mr-2" />
                           Mettre en brouillon
                         </Button>
@@ -1599,26 +1350,74 @@ export default function MesOffresPage() {
                     )}
                   </div>
                   <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleCloseEditModal}
-                      disabled={updateOffer.isPending}
-                    >
-                      Annuler
-                    </Button>
+                    <Button type="button" variant="outline" onClick={handleCloseEditModal} disabled={updateOffer.isPending}>Annuler</Button>
                     <Button type="submit" disabled={updateOffer.isPending}>
-                      {updateOffer.isPending
-                        ? "Enregistrement..."
-                        : "Enregistrer"}
+                      {updateOffer.isPending ? "Enregistrement..." : "Enregistrer"}
                     </Button>
                   </div>
-                </div>
+                </DialogFooter>
               </form>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* AlertDialog — Supprimer */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette offre ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. L'offre et toutes ses candidatures associées seront définitivement supprimées.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteOffre} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleteOffer.isPending ? <IconLoader className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* AlertDialog — Publier */}
+      <AlertDialog open={!!publishConfirmId} onOpenChange={(open) => !open && setPublishConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Publier cette offre ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              L'offre sera visible par tous les candidats sur la plateforme.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmPublishOffre} className="bg-green-600 text-white hover:bg-green-700">
+              {updateOfferStatus.isPending ? <IconLoader className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Publier
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* AlertDialog — Brouillon */}
+      <AlertDialog open={!!draftConfirmId} onOpenChange={(open) => !open && setDraftConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mettre en brouillon ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              L'offre ne sera plus visible par les candidats sur la plateforme.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDraftOffre}>
+              {updateOfferStatus.isPending ? <IconLoader className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Confirmer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
