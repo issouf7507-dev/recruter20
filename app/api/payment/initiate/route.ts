@@ -5,13 +5,10 @@ import { withErrorHandler, forbidden, notFound, badRequest } from "@/lib/api-err
 import { initiatePayment } from "@/lib/geniuspay";
 import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
+import { getPlan, type PlanId } from "@/lib/plans";
 
-const PLANS = {
-  pro: { id: "pro", name: "Pro", amount: 250 },
-  entreprise: { id: "entreprise", name: "Entreprise", amount: 75000 },
-} as const;
-
-type PlanId = keyof typeof PLANS;
+// Plans payants uniquement — Découverte (gratuit) ne passe pas par le paiement
+const PAYABLE_PLAN_IDS: PlanId[] = ["pme", "business", "corporate"];
 
 export const POST = withErrorHandler(async (req) => {
   const request = req as NextRequest;
@@ -43,16 +40,17 @@ export const POST = withErrorHandler(async (req) => {
   const body = await request.json();
   const { planId } = body as { planId: PlanId };
 
-  if (!planId || !PLANS[planId]) {
+  const plan = getPlan(planId);
+
+  if (!planId || !plan || !PAYABLE_PLAN_IDS.includes(planId)) {
     return badRequest("Plan invalide");
   }
 
-  const plan = PLANS[planId];
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   // 5. Initier le paiement GeniusPay
   const result = await initiatePayment({
-    amount: plan.amount,
+    amount: plan.price,
     description: `Abonnement Ylsix — Plan ${plan.name}`,
     customer: {
       name:
@@ -83,7 +81,7 @@ export const POST = withErrorHandler(async (req) => {
     abonnement = await prisma.abonnement.create({
       data: {
         recruteurId: recruteur.id,
-        plan: "STARTER",
+        plan: "DECOUVERTE",
         statut: "INACTIF",
       },
     });
@@ -93,8 +91,8 @@ export const POST = withErrorHandler(async (req) => {
     data: {
       abonnementId: abonnement.id,
       reference: result.data.reference,
-      montant: plan.amount,
-      plan: planId === "pro" ? "PRO" : "ENTREPRISE",
+      montant: plan.price,
+      plan: plan.planType,
       statut: "EN_ATTENTE",
       geniuspayData: result.data as any,
     },

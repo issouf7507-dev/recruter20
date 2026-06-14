@@ -1,4 +1,5 @@
 "use client";
+import { RequirePlan } from "@/components/shared/RequirePlan";
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
@@ -84,7 +85,7 @@ export default function MultiDiffusionPage() {
     { enabled: !!recruteurId }
   );
 
-  const offers = offersData?.totalAll || offersData?.items || [];
+  const offers = offersData?.items || [];
 
   // État LinkedIn
   const [linkedInStatus, setLinkedInStatus] = useState<LinkedInStatus | null>(
@@ -389,7 +390,8 @@ ${
   }
 
   return (
-    <>
+    <RequirePlan minPlan="BUSINESS" featureName="Multi-diffusion">
+      <>
       <SiteHeader title="Multi-Diffusion" />
       <div className="flex flex-1 flex-col gap-6 p-6">
         {/* En-tête */}
@@ -917,6 +919,7 @@ ${
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+      </>
+    </RequirePlan>
   );
 }

@@ -45,12 +45,16 @@ const RichTextEditorWrapper = dynamic(
   { ssr: false, loading: () => <div className="h-40 bg-gray-100 rounded animate-pulse" /> }
 );
 import { useSession } from "@/lib/auth-client";
+import { useOffreQuota } from "@/lib/hooks/use-offre-quota";
+import { PlanSelectionModal } from "@/components/shared/PlanSelectionModal";
 import {
   useOffers,
   useDeleteOffer,
+  useBulkDeleteOffers,
   useUpdateOffer,
   useUpdateOfferStatus,
 } from "@/lib/hooks/use-offers";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   useCollaborateurByUserId,
   useRecruteurByUserId,
@@ -145,6 +149,8 @@ export default function MesOffresPage() {
   const [publishConfirmId, setPublishConfirmId] = useState<string | null>(null);
   const [draftConfirmId, setDraftConfirmId] = useState<string | null>(null);
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
 
   // Debounce : attend 350ms après la dernière frappe avant de lancer la requête
   useEffect(() => {
@@ -172,11 +178,14 @@ export default function MesOffresPage() {
   );
 
   const deleteOffer = useDeleteOffer();
+  const bulkDeleteOffers = useBulkDeleteOffers();
   const updateOffer = useUpdateOffer();
   const updateOfferStatus = useUpdateOfferStatus();
 
   const offres = data?.items || [];
   const pagination = data?.pagination;
+  const { used: quotaUsed, max: quotaMax, isAtLimit: quotaAtLimit } = useOffreQuota();
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const totalAll = data?.totalAll || [];
 
   // console.log(
@@ -190,6 +199,11 @@ export default function MesOffresPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [filterStatut, debouncedSearch]);
+
+  // Réinitialise la sélection quand la liste affichée change
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [currentPage, filterStatut, debouncedSearch]);
 
   // Vérifie si une offre est expirée en fonction de la date limite
   const isOfferExpired = (duedate?: Date | string | null) => {
@@ -225,6 +239,30 @@ export default function MesOffresPage() {
 
   const handleDeleteOffre = (id: string) => {
     setDeleteConfirmId(id);
+  };
+
+  const toggleSelectOffre = (id: string, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (checked: boolean) => {
+    setSelectedIds(checked ? new Set(displayedOffres.map((o) => o.id)) : new Set());
+  };
+
+  const confirmBulkDelete = async () => {
+    try {
+      await bulkDeleteOffers.mutateAsync(Array.from(selectedIds));
+      setSelectedIds(new Set());
+    } catch (error) {
+      console.error("Error bulk deleting offers:", error);
+    } finally {
+      setBulkDeleteConfirm(false);
+    }
   };
 
   const confirmDeleteOffre = async () => {
@@ -445,6 +483,28 @@ export default function MesOffresPage() {
                 </p>
               </div>
 
+              {/* Bandeau quota offres (plans limités) */}
+              {quotaMax !== null && (
+                <div className={`mb-5 flex items-center justify-between rounded-xl px-4 py-3 text-sm border ${
+                  quotaAtLimit
+                    ? "bg-red-50 border-red-200 text-red-800"
+                    : "bg-amber-50 border-amber-200 text-amber-800"
+                }`}>
+                  <span>
+                    <span className="font-bold">{quotaUsed}/{quotaMax}</span> offres actives utilisées
+                    {quotaAtLimit && " — quota atteint"}
+                  </span>
+                  {quotaAtLimit && (
+                    <button
+                      onClick={() => setUpgradeModalOpen(true)}
+                      className="ml-4 px-4 py-1.5 bg-[#a590ff] text-white rounded-full text-xs font-semibold hover:bg-[#9580ef] transition-colors whitespace-nowrap"
+                    >
+                      Passer à un plan supérieur
+                    </button>
+                  )}
+                </div>
+              )}
+
               {/* Statistiques */}
               <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
                 <Card>
@@ -587,8 +647,8 @@ export default function MesOffresPage() {
                         <SelectContent>
                           <SelectItem value="all">Tous les statuts</SelectItem>
                           <SelectItem value="active">Actives</SelectItem>
-
                           <SelectItem value="brouillon">Brouillons</SelectItem>
+                          <SelectItem value="expiree">Expirées</SelectItem>
                         </SelectContent>
                       </Select>
                       <Button variant="outline" size="icon">
@@ -598,6 +658,42 @@ export default function MesOffresPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Barre d'actions groupées */}
+              {!isLoading && !error && displayedOffres.length > 0 && (
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={
+                        selectedIds.size > 0 &&
+                        displayedOffres.every((o) => selectedIds.has(o.id))
+                      }
+                      onCheckedChange={(checked) => toggleSelectAll(!!checked)}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {selectedIds.size > 0
+                        ? `${selectedIds.size} offre(s) sélectionnée(s)`
+                        : "Tout sélectionner"}
+                    </span>
+                  </div>
+                  {selectedIds.size > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => setBulkDeleteConfirm(true)}
+                      disabled={bulkDeleteOffers.isPending}
+                    >
+                      {bulkDeleteOffers.isPending ? (
+                        <IconLoader className="h-4 w-4 mr-1.5 animate-spin" />
+                      ) : (
+                        <IconTrash className="h-4 w-4 mr-1.5" />
+                      )}
+                      Supprimer la sélection ({selectedIds.size})
+                    </Button>
+                  )}
+                </div>
+              )}
 
               {/* Liste des offres */}
               <div className="space-y-4">
@@ -651,6 +747,15 @@ export default function MesOffresPage() {
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div className="flex items-start gap-4 flex-1">
+                            {/* Sélection */}
+                            <Checkbox
+                              className="mt-1 shrink-0"
+                              checked={selectedIds.has(offre.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              onCheckedChange={(checked) =>
+                                toggleSelectOffre(offre.id, !!checked)
+                              }
+                            />
                             {/* Logo de l'entreprise */}
                             {offre.logo ? (
                               <div className="shrink-0">
@@ -1381,6 +1486,25 @@ export default function MesOffresPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* AlertDialog — Supprimer la sélection */}
+      <AlertDialog open={bulkDeleteConfirm} onOpenChange={(open) => !open && setBulkDeleteConfirm(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer {selectedIds.size} offre(s) ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Les offres sélectionnées et toutes leurs candidatures associées seront définitivement supprimées.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {bulkDeleteOffers.isPending ? <IconLoader className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* AlertDialog — Publier */}
       <AlertDialog open={!!publishConfirmId} onOpenChange={(open) => !open && setPublishConfirmId(null)}>
         <AlertDialogContent>
@@ -1418,6 +1542,8 @@ export default function MesOffresPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PlanSelectionModal open={upgradeModalOpen} onClose={() => setUpgradeModalOpen(false)} />
     </>
   );
 }

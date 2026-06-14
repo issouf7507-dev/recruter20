@@ -223,3 +223,10 @@ export async function deleteOffer(id: string): Promise<void> {
     throw new Error(result.error || "Failed to delete offer");
   }
 }
+
+/**
+ * Delete multiple offers
+ */
+export async function bulkDeleteOffers(ids: string[]): Promise<void> {
+  await Promise.all(ids.map((id) => deleteOffer(id)));
+}

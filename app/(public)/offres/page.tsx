@@ -1,10 +1,5 @@
 "use client";
-import {
-  Search,
-  MapPin,
-  Filter,
-
-} from "lucide-react";
+import { Search, MapPin, Filter } from "lucide-react";
 
 import { motion } from "framer-motion";
 import { useState, useMemo, useCallback, useEffect } from "react";
@@ -57,7 +52,7 @@ export default function OffresPage() {
     setCurrentPage(1);
   };
   const [selectedContractTypes, setSelectedContractTypes] = useState<string[]>(
-    []
+    [],
   );
   const [selectedExperience, setSelectedExperience] = useState<string>("");
   const [salaryMin, setSalaryMin] = useState<string>("");
@@ -223,7 +218,7 @@ export default function OffresPage() {
   const toggleFilter = (
     filterArray: string[],
     setFilter: any,
-    value: string
+    value: string,
   ) => {
     if (filterArray.includes(value)) {
       setFilter(filterArray.filter((item) => item !== value));
@@ -364,8 +359,9 @@ export default function OffresPage() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className={`${showFilters ? "block" : "hidden"
-              } lg:block w-full lg:w-72 xl:w-80 bg-white rounded-xl p-4 sm:p-6 h-fit lg:sticky lg:top-24 shadow-sm`}
+            className={`${
+              showFilters ? "block" : "hidden"
+            } lg:block w-full lg:w-72 xl:w-80 bg-white rounded-xl p-4 sm:p-6 h-fit lg:sticky lg:top-24 shadow-sm`}
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold">Filtres</h2>
@@ -415,7 +411,7 @@ export default function OffresPage() {
                         toggleFilter(
                           selectedContractTypes,
                           setSelectedContractTypes,
-                          type.value
+                          type.value,
                         )
                       }
                       className="w-4 h-4 text-green-600 rounded"
@@ -423,30 +419,6 @@ export default function OffresPage() {
                     <span className="text-gray-700">{type.label}</span>
                   </label>
                 ))}
-              </div>
-            </div>
-
-            {/* Range Salary */}
-            <div className="mb-6">
-              <h3 className="font-semibold mb-3 text-gray-800">
-                Fourchette de salaire
-              </h3>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  placeholder="Min"
-                  value={salaryMin}
-                  onChange={(e) => setSalaryMin(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-                <span className="text-gray-500">à</span>
-                <input
-                  type="number"
-                  placeholder="Max"
-                  value={salaryMax}
-                  onChange={(e) => setSalaryMax(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
               </div>
             </div>
 
@@ -465,38 +437,6 @@ export default function OffresPage() {
                   </option>
                 ))}
               </select>
-            </div>
-
-            {/* Experience */}
-            <div className="mb-6">
-              <h3 className="font-semibold mb-3 text-gray-800">
-                Années d'expérience
-              </h3>
-              <div className="space-y-2">
-                {experienceLevels.map((level) => (
-                  <label
-                    key={level.value}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <input
-                      type="radio"
-                      name="experience"
-                      checked={selectedExperience === level.value}
-                      onChange={() => setSelectedExperience(level.value)}
-                      className="w-4 h-4 text-green-600"
-                    />
-                    <span className="text-gray-700">{level.label}</span>
-                  </label>
-                ))}
-                {selectedExperience && (
-                  <button
-                    onClick={() => setSelectedExperience("")}
-                    className="text-sm text-green-600 hover:underline mt-2"
-                  >
-                    Effacer
-                  </button>
-                )}
-              </div>
             </div>
           </motion.div>
 

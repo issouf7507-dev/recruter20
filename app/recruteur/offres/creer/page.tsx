@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useOffreQuota } from "@/lib/hooks/use-offre-quota";
+import { PlanSelectionModal } from "@/components/shared/PlanSelectionModal";
+import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,8 +27,14 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import dynamic from "next/dynamic";
 const RichTextEditorWrapper = dynamic(
-  () => import("@/components/rich-text-editor-wrapper").then((m) => m.RichTextEditorWrapper),
-  { ssr: false, loading: () => <div className="h-40 bg-gray-100 rounded animate-pulse" /> }
+  () =>
+    import("@/components/rich-text-editor-wrapper").then(
+      (m) => m.RichTextEditorWrapper,
+    ),
+  {
+    ssr: false,
+    loading: () => <div className="h-40 bg-gray-100 rounded animate-pulse" />,
+  },
 );
 import { useCreateOffer } from "@/lib/hooks/use-offers";
 import { useEdgeStore } from "@/lib/edgestore";
@@ -91,6 +100,8 @@ const TIPS_MODAL_KEY = "recruteur_offre_tips_seen";
 export default function CreerOffrePage() {
   const router = useRouter();
   const createOffer = useCreateOffer();
+  const { used, max, isAtLimit, isLoading: quotaLoading, plan } = useOffreQuota();
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const { edgestore } = useEdgeStore();
   const [open, setOpen] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -262,6 +273,45 @@ export default function CreerOffrePage() {
       logo: "",
     });
   };
+
+  // Guard quota : si la limite est atteinte, afficher un écran d'upgrade
+  if (!quotaLoading && isAtLimit) {
+    return (
+      <>
+        <SiteHeader title="Créer une nouvelle offre d'emploi" />
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+          <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-6">
+            <Lock className="w-8 h-8 text-amber-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Quota d'offres atteint</h2>
+          <p className="text-gray-600 mb-2 max-w-md">
+            Vous avez utilisé{" "}
+            <span className="font-semibold text-amber-600">{used}/{max} offres actives</span>{" "}
+            autorisées par le plan{" "}
+            <span className="font-semibold text-[#a590ff]">{plan.name}</span>.
+          </p>
+          <p className="text-sm text-gray-500 mb-8 max-w-sm">
+            Passez à un plan supérieur pour publier davantage d'offres, ou archivez une offre existante pour libérer une place.
+          </p>
+          <div className="flex gap-3 flex-col sm:flex-row">
+            <button
+              onClick={() => setUpgradeModalOpen(true)}
+              className="px-8 py-3 bg-[#a590ff] text-white rounded-full font-semibold hover:bg-[#9580ef] transition-colors"
+            >
+              Voir les plans
+            </button>
+            <button
+              onClick={() => router.push("/recruteur/offres")}
+              className="px-8 py-3 bg-gray-100 text-gray-800 rounded-full font-semibold hover:bg-gray-200 transition-colors"
+            >
+              Mes offres
+            </button>
+          </div>
+        </div>
+        <PlanSelectionModal open={upgradeModalOpen} onClose={() => setUpgradeModalOpen(false)} />
+      </>
+    );
+  }
 
   return (
     <>
@@ -521,7 +571,7 @@ export default function CreerOffrePage() {
                               >
                                 {formData.duedate
                                   ? new Date(
-                                      formData.duedate
+                                      formData.duedate,
                                     ).toLocaleDateString()
                                   : "Sélectionner une date"}
                                 <ChevronDownIcon />
@@ -648,220 +698,6 @@ export default function CreerOffrePage() {
           </div>
         </div>
       </div>
-
-      {/* Modal de conseils pour optimiser le matching */}
-      <Dialog open={showTipsModal} onOpenChange={setShowTipsModal}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <IconSparkles className="h-6 w-6" />
-              Optimisez votre offre pour le matching IA
-            </DialogTitle>
-            <DialogDescription>
-              Suivez ces conseils pour que notre système de matching trouve les
-              meilleurs candidats pour votre offre.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            {/* Section Compétences */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                  <IconCode className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <h3 className="font-semibold text-lg">
-                  Compétences techniques
-                </h3>
-                <Badge variant="secondary" className="ml-auto">
-                  Poids: 40%
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Mentionnez clairement les technologies et outils requis dans la
-                description.
-              </p>
-              <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-                <p className="text-sm font-medium text-green-600 dark:text-green-400 flex items-center gap-1">
-                  <IconCheck className="h-4 w-4" /> Exemples reconnus :
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    "React",
-                    "Python",
-                    "TypeScript",
-                    "Node.js",
-                    "PostgreSQL",
-                    "AWS",
-                    "Docker",
-                    "GraphQL",
-                    "Figma",
-                    "Jira",
-                  ].map((skill) => (
-                    <Badge key={skill} variant="outline" className="text-xs">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Section Expérience */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
-                  <IconClock className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                </div>
-                <h3 className="font-semibold text-lg">Niveau d'expérience</h3>
-                <Badge variant="secondary" className="ml-auto">
-                  Poids: 20%
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Indiquez clairement les années d'expérience requises.
-              </p>
-              <div className="bg-muted/50 rounded-lg p-3">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <IconCheck className="h-4 w-4 text-green-500" />
-                    <span>"3-5 ans d'expérience"</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <IconCheck className="h-4 w-4 text-green-500" />
-                    <span>"Junior / Débutant accepté"</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <IconCheck className="h-4 w-4 text-green-500" />
-                    <span>"Profil senior (5+ ans)"</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <IconCheck className="h-4 w-4 text-green-500" />
-                    <span>"Minimum 2 ans d'expérience"</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Section Localisation */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
-                  <IconMapPinFilled className="h-5 w-5 text-green-600 dark:text-green-400" />
-                </div>
-                <h3 className="font-semibold text-lg">Localisation</h3>
-                <Badge variant="secondary" className="ml-auto">
-                  Poids: 20%
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Précisez le lieu de travail et les options de télétravail.
-              </p>
-              <div className="bg-muted/50 rounded-lg p-3">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <IconCheck className="h-4 w-4 text-green-500" />
-                    <span>"Abidjan, Côte d'Ivoire"</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <IconCheck className="h-4 w-4 text-green-500" />
-                    <span>"Remote / 100% télétravail"</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <IconCheck className="h-4 w-4 text-green-500" />
-                    <span>"Hybride (2j/semaine bureau)"</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <IconCheck className="h-4 w-4 text-green-500" />
-                    <span>"Paris, France ou remote"</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Section Formation */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
-                  <IconSchool className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                </div>
-                <h3 className="font-semibold text-lg">Formation requise</h3>
-                <Badge variant="secondary" className="ml-auto">
-                  Poids: 5%
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Mentionnez le niveau de diplôme souhaité si applicable.
-              </p>
-              <div className="bg-muted/50 rounded-lg p-3">
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    "Bac+2",
-                    "Bac+3 / Licence",
-                    "Bac+5 / Master",
-                    "Ingénieur",
-                    "BTS/DUT",
-                    "Autodidacte accepté",
-                  ].map((level) => (
-                    <Badge key={level} variant="outline" className="text-xs">
-                      {level}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Exemple complet */}
-            <div className="border-t pt-4">
-              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <IconBulb className="h-5 w-5 text-yellow-500" />
-                Exemple de description optimale
-              </h3>
-              <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-4 text-sm space-y-2 border border-primary/20">
-                <p>
-                  <strong>Missions :</strong> Développer des applications web
-                  avec <strong>React</strong> et <strong>TypeScript</strong>,
-                  concevoir des APIs <strong>GraphQL</strong> avec{" "}
-                  <strong>Node.js</strong>.
-                </p>
-                <p>
-                  <strong>Profil :</strong>{" "}
-                  <strong>2-4 ans d'expérience</strong> en développement web.
-                  Formation <strong>Bac+3</strong> minimum en informatique.
-                </p>
-                <p>
-                  <strong>Stack :</strong> React, TypeScript, Node.js, GraphQL,
-                  PostgreSQL, Docker, AWS.
-                </p>
-                <p>
-                  <strong>Localisation :</strong> Abidjan avec possibilité de{" "}
-                  <strong>télétravail partiel</strong>.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="flex-col sm:flex-row gap-3">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="dontShowAgain"
-                checked={dontShowAgain}
-                onCheckedChange={(checked) =>
-                  setDontShowAgain(checked as boolean)
-                }
-              />
-              <label
-                htmlFor="dontShowAgain"
-                className="text-sm text-muted-foreground cursor-pointer"
-              >
-                Ne plus afficher ce message
-              </label>
-            </div>
-            <Button onClick={handleCloseTipsModal} className="sm:ml-auto">
-              J'ai compris, créer mon offre
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

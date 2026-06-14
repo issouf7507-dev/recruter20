@@ -4,6 +4,8 @@ import { withErrorHandler, forbidden, badRequest } from "@/lib/api-error";
 import { jobOfferRepository } from "@/lib/api/offres/repository";
 import { recruteurRepository } from "@/lib/api/recruteurs/repository";
 import { collaborateurRepository } from "@/lib/api/collaborateur";
+import prisma from "@/lib/prisma";
+import { getEffectivePlan } from "@/lib/plans";
 
 // Cache le listing public 60s — invalider manuellement si besoin
 export const revalidate = 60;
@@ -90,6 +92,24 @@ export const POST = withErrorHandler(async (req) => {
 
   if (!recruteurId) {
     return forbidden("User is not a recruiter or collaborateur");
+  }
+
+  // Vérifier le quota d'offres actives du plan
+  const abonnement = await prisma.abonnement.findUnique({
+    where: { recruteurId },
+    select: { plan: true, statut: true },
+  });
+  const plan = getEffectivePlan(abonnement);
+
+  if (plan.limits.maxOffresActives !== null) {
+    const offresActives = await prisma.jobOffer.count({
+      where: { recruteurId, etat: "active", deletedAt: null },
+    });
+    if (offresActives >= plan.limits.maxOffresActives) {
+      return forbidden(
+        `Limite atteinte : votre plan ${plan.name} autorise au maximum ${plan.limits.maxOffresActives} offre(s) active(s). Passez à un plan supérieur pour en publier davantage.`,
+      );
+    }
   }
 
   // Create the job offer using repository with the correct recruteurId

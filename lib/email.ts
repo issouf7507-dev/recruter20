@@ -171,7 +171,7 @@ class EmailService {
     recruteurName: string;
     companyName?: string | null;
   }) {
-    const loginUrl = `${APP_URL}/auth/collaborateur/login`;
+    const loginUrl = `${APP_URL}/auth/recruteur/login`;
 
     const html = `
       <!DOCTYPE html>
@@ -313,6 +313,185 @@ class EmailService {
         success: false,
         error: "Message envoyé mais notification email non envoyée",
       };
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Envoyer un email de notification pour un entretien planifié
+   */
+  async sendEntretienScheduledEmail({
+    to,
+    candidatName,
+    recruteurName,
+    companyName,
+    jobTitle,
+    titre,
+    dateHeure,
+    type,
+    lieu,
+  }: {
+    to: string;
+    candidatName: string;
+    recruteurName: string;
+    companyName?: string | null;
+    jobTitle: string;
+    titre: string;
+    dateHeure: Date;
+    type: "VISIO" | "TELEPHONE" | "PRESENTIEL";
+    lieu?: string | null;
+  }) {
+    const loginUrl = `${APP_URL}/auth/candidat/login`;
+    const logoUrl = `${APP_URL}/img/icon2.png`;
+
+    const TYPE_LABELS: Record<string, string> = {
+      VISIO: "Entretien en visio",
+      TELEPHONE: "Entretien téléphonique",
+      PRESENTIEL: "Entretien en présentiel",
+    };
+
+    const formattedDate = new Date(dateHeure).toLocaleString("fr-FR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const meetingLink = lieu && lieu.startsWith("http") ? lieu : null;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Entretien planifié</title>
+        </head>
+        <body style="font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #e5e7eb; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #0f0f0f;">
+          <div style="background: #1a1a1a; border-radius: 16px; overflow: hidden; border: 1px solid #2a2a2a; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+            <div style="background: linear-gradient(135deg, #1a1a1a 0%, #2d1f4e 100%); padding: 40px 30px; text-align: center; border-bottom: 1px solid #3d2d5c;">
+              <img src="${logoUrl}" alt="Ylsix" style="height: 50px; margin-bottom: 20px;" />
+              <h1 style="color: #a78bfa; margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.5px;">Entretien planifié</h1>
+              <p style="color: #6b7280; margin: 8px 0 0 0; font-size: 14px;">Un recruteur a programmé un entretien avec vous</p>
+            </div>
+            <div style="padding: 35px 30px;">
+              <p style="font-size: 16px; color: #e5e7eb; margin: 0 0 20px 0;">Bonjour <span style="color: #a78bfa; font-weight: 600;">${candidatName}</span>,</p>
+              <p style="font-size: 15px; color: #9ca3af; margin: 0 0 25px 0;">
+                <strong style="color: #e5e7eb;">${recruteurName}</strong>${companyName ? ` <span style="color: #6b7280;">de</span> <strong style="color: #e5e7eb;">${companyName}</strong>` : ""} a planifié un entretien concernant votre candidature pour :
+              </p>
+              <div style="background: linear-gradient(135deg, #2d1f4e 0%, #1e1b4b 100%); padding: 18px 20px; border-radius: 12px; margin: 0 0 25px 0; border-left: 4px solid #8b5cf6;">
+                <p style="margin: 0; font-weight: 600; color: #c4b5fd; font-size: 15px;">${jobTitle}</p>
+              </div>
+              <div style="background: #252525; padding: 25px; border-radius: 12px; margin: 0 0 30px 0; border: 1px solid #333;">
+                <p style="margin: 0 0 12px 0; color: #e5e7eb; font-size: 16px; font-weight: 600;">${titre}</p>
+                <p style="margin: 0 0 8px 0; color: #d1d5db; font-size: 14px;">Date : ${formattedDate}</p>
+                <p style="margin: 0; color: #d1d5db; font-size: 14px;">Type : ${TYPE_LABELS[type] ?? type}</p>
+                ${lieu && !meetingLink ? `<p style="margin: 8px 0 0 0; color: #d1d5db; font-size: 14px;">Lieu : ${lieu}</p>` : ""}
+              </div>
+              <div style="text-align: center; margin: 35px 0;">
+                <a href="${meetingLink ?? loginUrl}" target="_blank"
+                   style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 15px; box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.4);">
+                  ${meetingLink ? "Rejoindre la réunion" : "Voir mes entretiens"}
+                </a>
+              </div>
+              ${meetingLink ? `
+              <div style="text-align: center; margin: -10px 0 30px 0;">
+                <a href="${loginUrl}" style="color: #8b5cf6; font-size: 13px; text-decoration: underline;">Voir le détail dans mon espace candidat</a>
+              </div>` : ""}
+            </div>
+            <div style="background: #151515; padding: 25px 30px; border-top: 1px solid #2a2a2a;">
+              <p style="font-size: 12px; color: #6b7280; text-align: center; margin: 0;">
+                Cet email a été envoyé automatiquement depuis la plateforme <span style="color: #a78bfa;">Ylsix</span>.
+              </p>
+            </div>
+          </div>
+          <p style="text-align: center; color: #4b5563; font-size: 11px; margin-top: 20px;">
+            © ${new Date().getFullYear()} Ylsix. Tous droits réservés.
+          </p>
+        </body>
+      </html>
+    `;
+
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to,
+      subject: `Entretien planifié - ${jobTitle}`,
+      html,
+    });
+
+    if (error) {
+      console.error("Erreur Resend:", error);
+      return { success: false, error: "Entretien créé mais notification email non envoyée" };
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Envoyer un message du formulaire "Aide et support" vers le support Ylsix
+   */
+  async sendContactSupportEmail({
+    nom,
+    email,
+    sujet,
+    message,
+  }: {
+    nom: string;
+    email: string;
+    sujet: string;
+    message: string;
+  }) {
+    const logoUrl = `${APP_URL}/img/icon2.png`;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Nouveau message de support</title>
+        </head>
+        <body style="font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #e5e7eb; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #0f0f0f;">
+          <div style="background: #1a1a1a; border-radius: 16px; overflow: hidden; border: 1px solid #2a2a2a; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+            <div style="background: linear-gradient(135deg, #1a1a1a 0%, #2d1f4e 100%); padding: 40px 30px; text-align: center; border-bottom: 1px solid #3d2d5c;">
+              <img src="${logoUrl}" alt="Ylsix" style="height: 50px; margin-bottom: 20px;" />
+              <h1 style="color: #a78bfa; margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.5px;">Nouveau message de support</h1>
+              <p style="color: #6b7280; margin: 8px 0 0 0; font-size: 14px;">Envoyé depuis "Aide et support"</p>
+            </div>
+            <div style="padding: 35px 30px;">
+              <div style="background: #252525; padding: 20px; border-radius: 12px; margin: 0 0 20px 0; border: 1px solid #333;">
+                <p style="margin: 0 0 8px 0; color: #d1d5db; font-size: 14px;"><strong style="color: #e5e7eb;">Nom :</strong> ${nom}</p>
+                <p style="margin: 0 0 8px 0; color: #d1d5db; font-size: 14px;"><strong style="color: #e5e7eb;">Email :</strong> ${email}</p>
+                <p style="margin: 0; color: #d1d5db; font-size: 14px;"><strong style="color: #e5e7eb;">Sujet :</strong> ${sujet}</p>
+              </div>
+              <div style="background: linear-gradient(135deg, #2d1f4e 0%, #1e1b4b 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #8b5cf6;">
+                <p style="margin: 0; color: #e5e7eb; font-size: 14px; white-space: pre-wrap;">${message}</p>
+              </div>
+            </div>
+            <div style="background: #151515; padding: 25px 30px; border-top: 1px solid #2a2a2a;">
+              <p style="font-size: 12px; color: #6b7280; text-align: center; margin: 0;">
+                Répondez directement à cet email pour contacter ${nom}.
+              </p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to: "contact@ylsix.com",
+      replyTo: email,
+      subject: `[Aide et support] ${sujet}`,
+      html,
+    });
+
+    if (error) {
+      console.error("Erreur Resend:", error);
+      throw new Error("Impossible d'envoyer le message");
     }
 
     return { success: true };

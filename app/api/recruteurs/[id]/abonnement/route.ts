@@ -19,6 +19,6 @@ export const GET = withErrorHandler(async (_req, ctx) => {
 
   return NextResponse.json({
     success: true,
-    data: abonnement ?? { plan: "STARTER", statut: "INACTIF", dateDebut: null, dateFin: null },
+    data: abonnement ?? { plan: "DECOUVERTE", statut: "INACTIF", dateDebut: null, dateFin: null },
   });
 });

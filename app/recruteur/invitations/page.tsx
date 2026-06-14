@@ -1,4 +1,5 @@
 "use client";
+import { RequirePlan } from "@/components/shared/RequirePlan";
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -54,8 +55,6 @@ interface Invitation {
 }
 
 export default function InvitationsPage() {
-  // const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatut, setFilterStatut] = useState("all");
   const [filterType, setFilterType] = useState("all");
@@ -64,7 +63,6 @@ export default function InvitationsPage() {
     email: "",
     role: "USER" as "ADMIN" | "USER" | "MANAGER" | "VIEWER",
   });
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { data: session, isPending: isSessionLoading } = useSession();
   const { data: recruteur } = useRecruteurByUserId(session?.user?.id);
@@ -76,8 +74,6 @@ export default function InvitationsPage() {
     refetchInvitations,
     createAnInvitation,
   } = useInvitations();
-
-  console.log(invitations);
 
   const getStatutBadge = (invitation: Invitation) => {
     if (invitation.accepted) {
@@ -140,13 +136,14 @@ export default function InvitationsPage() {
       const data = await response.json();
 
       if (data.success) {
-        invitations?.filter((inv) => inv?.id !== id);
+        toast.success("Invitation supprimée avec succès");
+        refetchInvitations();
       } else {
-        alert(data.error || "Erreur lors de la suppression");
+        toast.error(data.error || "Erreur lors de la suppression");
       }
     } catch (err) {
       console.error("Error deleting invitation:", err);
-      alert("Erreur lors de la suppression");
+      toast.error("Erreur lors de la suppression");
     }
   };
 
@@ -159,21 +156,19 @@ export default function InvitationsPage() {
       const data = await response.json();
 
       if (data.success) {
-        alert("Email renvoyé avec succès");
+        toast.success("Email renvoyé avec succès");
+        refetchInvitations();
       } else {
-        alert(data.error || "Erreur lors du renvoi de l'email");
+        toast.error(data.error || "Erreur lors du renvoi de l'email");
       }
     } catch (err) {
       console.error("Error resending invitation:", err);
-      alert("Erreur lors du renvoi de l'email");
+      toast.error("Erreur lors du renvoi de l'email");
     }
   };
 
   const handleInviteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(inviteForm);
-    // setSubmitting(true);
-    // setError(null);
 
     try {
       await createAnInvitation.mutateAsync({
@@ -189,7 +184,8 @@ export default function InvitationsPage() {
   };
 
   return (
-    <>
+    <RequirePlan minPlan="PME" featureName="Invitations collaborateurs">
+      <>
       <SiteHeader title="Invitations" />
       <div className="flex flex-1 flex-col">
         <div className="@container/main flex flex-1 flex-col gap-2">
@@ -216,7 +212,7 @@ export default function InvitationsPage() {
                           Total invitations
                         </p>
                         <p className="text-2xl font-bold">
-                          {loading ? "..." : invitations?.length}
+                          {isLoadingInvitations ? "..." : invitations?.length}
                         </p>
                       </div>
                       <IconMail className="h-8 w-8 text-blue-500" />
@@ -264,7 +260,7 @@ export default function InvitationsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">
-                          Collaborateurs
+                          Expirées
                         </p>
                         <p className="text-2xl font-bold text-purple-600">
                           {
@@ -401,8 +397,8 @@ export default function InvitationsPage() {
                         </Select>
                       </div>
                       <div className="flex gap-2">
-                        <Button type="submit" disabled={submitting}>
-                          {submitting ? (
+                        <Button type="submit" disabled={createAnInvitation.isPending}>
+                          {createAnInvitation.isPending ? (
                             <>
                               <IconRefresh className="h-4 w-4 animate-spin" />
                               Envoi...
@@ -580,6 +576,7 @@ export default function InvitationsPage() {
           </div>
         </div>
       </div>
-    </>
+      </>
+    </RequirePlan>
   );
 }

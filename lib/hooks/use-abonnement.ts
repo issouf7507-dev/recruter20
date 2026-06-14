@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 interface Abonnement {
-  plan: "STARTER" | "PRO" | "ENTREPRISE";
+  plan: "DECOUVERTE" | "PME" | "BUSINESS" | "CORPORATE";
   statut: "INACTIF" | "ACTIF" | "EXPIRE" | "SUSPENDU";
   dateDebut: string | null;
   dateFin: string | null;

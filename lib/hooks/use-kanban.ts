@@ -16,6 +16,9 @@ import type {
   CardLabel,
   CreateCardLabelData,
   UpdateCardLabelData,
+  ArchivedCard,
+  EntretienInfo,
+  CardActivity,
 } from "@/lib/api/kanban/types";
 
 /**
@@ -187,6 +190,7 @@ export function useUpdateKanbanCard() {
     }) => kanbanService.updateKanbanCard(id, recruteurId, data, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kanban-columns"] });
+      queryClient.invalidateQueries({ queryKey: ["kanban-archived-cards"] });
       toast.success("Card mise à jour avec succès");
     },
     onError: (error: Error) => {
@@ -206,6 +210,7 @@ export function useDeleteKanbanCard() {
       kanbanService.deleteKanbanCard(id, recruteurId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kanban-columns"] });
+      queryClient.invalidateQueries({ queryKey: ["kanban-archived-cards"] });
       toast.success("Card supprimée avec succès");
     },
     onError: (error: Error) => {
@@ -662,6 +667,47 @@ export function useDeleteCardAttachment() {
   });
 }
 
+/**
+ * Hook to import an application as a kanban card
+ */
+export function useImportApplicationAsCard() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { applicationId: string; columnId: string; recruteurId: string }) =>
+      kanbanService.importApplicationAsCard(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kanban-columns"] });
+      queryClient.invalidateQueries({ queryKey: ["kanban-unlinked-applications"] });
+      toast.success("Candidature ajoutée au Kanban");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Erreur lors de l'import");
+    },
+  });
+}
+
+/**
+ * Hook to fetch applications not yet in the Kanban
+ */
+export function useUnlinkedApplications(recruteurId?: string) {
+  return useQuery({
+    queryKey: ["kanban-unlinked-applications", recruteurId],
+    queryFn: () => kanbanService.fetchUnlinkedApplications(recruteurId!),
+    enabled: !!recruteurId,
+  });
+}
+
+/**
+ * Hook to fetch archived kanban cards
+ */
+export function useArchivedCards(recruteurId?: string) {
+  return useQuery({
+    queryKey: ["kanban-archived-cards", recruteurId],
+    queryFn: () => kanbanService.fetchArchivedCards(recruteurId!),
+    enabled: !!recruteurId,
+  });
+}
+
 // Re-export types
 export type {
   KanbanColumn,
@@ -671,4 +717,7 @@ export type {
   CreateKanbanCardData,
   UpdateKanbanCardData,
   ApplicationStatus,
+  ArchivedCard,
+  EntretienInfo,
+  CardActivity,
 };

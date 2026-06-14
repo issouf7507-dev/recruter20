@@ -101,43 +101,73 @@ async function handlePaymentSuccess(reference: string | undefined, data: any) {
     return;
   }
 
-  const paiement = await prisma.paiementHistory.findUnique({
+  // Chercher d'abord dans les paiements ATS
+  const paiementATS = await prisma.paiementHistory.findUnique({
     where: { reference },
     include: { abonnement: true },
   });
 
-  if (!paiement) {
-    console.warn("[Webhook] Paiement introuvable en BDD:", reference);
+  if (paiementATS) {
+    if (paiementATS.statut === "COMPLETE") {
+      console.log("[Webhook] Paiement ATS déjà traité:", reference);
+      return;
+    }
+
+    const recruteurId = paiementATS.abonnement.recruteurId;
+    const planEnum = paiementATS.plan;
+    const dateDebut = new Date();
+    const dateFin = new Date();
+    dateFin.setDate(dateFin.getDate() + 30);
+
+    await prisma.$transaction([
+      prisma.abonnement.update({
+        where: { recruteurId },
+        data: { plan: planEnum, statut: "ACTIF", dateDebut, dateFin },
+      }),
+      prisma.paiementHistory.update({
+        where: { reference },
+        data: { statut: "COMPLETE", geniuspayData: data },
+      }),
+    ]);
+
+    console.log(`[Webhook] ✅ ATS ${planEnum} activé — recruteur ${recruteurId}`);
     return;
   }
 
-  // Idempotence : déjà traité
-  if (paiement.statut === "COMPLETE") {
-    console.log("[Webhook] Paiement déjà traité:", reference);
+  // Chercher dans les paiements CVthèque
+  const paiementCV = await prisma.paiementCVtheque.findUnique({
+    where: { reference },
+    include: { abonnement: true },
+  });
+
+  if (paiementCV) {
+    if (paiementCV.statut === "COMPLETE") {
+      console.log("[Webhook] Paiement CVthèque déjà traité:", reference);
+      return;
+    }
+
+    const recruteurId = paiementCV.abonnement.recruteurId;
+    const planEnum = paiementCV.plan;
+    const dateDebut = new Date();
+    const dateFin = new Date();
+    dateFin.setDate(dateFin.getDate() + 30);
+
+    await prisma.$transaction([
+      prisma.abonnementCVtheque.update({
+        where: { recruteurId },
+        data: { plan: planEnum, statut: "ACTIF", dateDebut, dateFin, cvConsultes: 0 },
+      }),
+      prisma.paiementCVtheque.update({
+        where: { reference },
+        data: { statut: "COMPLETE", geniuspayData: data },
+      }),
+    ]);
+
+    console.log(`[Webhook] ✅ CVthèque ${planEnum} activé — recruteur ${recruteurId}`);
     return;
   }
 
-  const recruteurId = paiement.abonnement.recruteurId;
-  const planEnum = paiement.plan; // PRO | ENTREPRISE
-
-  const dateDebut = new Date();
-  const dateFin = new Date();
-  dateFin.setDate(dateFin.getDate() + 30);
-
-  await prisma.$transaction([
-    prisma.abonnement.update({
-      where: { recruteurId },
-      data: { plan: planEnum, statut: "ACTIF", dateDebut, dateFin },
-    }),
-    prisma.paiementHistory.update({
-      where: { reference },
-      data: { statut: "COMPLETE", geniuspayData: data },
-    }),
-  ]);
-
-  console.log(
-    `[Webhook] ✅ Abonnement ${planEnum} activé — recruteur ${recruteurId} jusqu'au ${dateFin.toISOString()}`,
-  );
+  console.warn("[Webhook] Aucun paiement trouvé pour la référence:", reference);
 }
 
 async function updatePaiementStatut(
@@ -149,12 +179,18 @@ async function updatePaiementStatut(
     return;
   }
 
-  const updated = await prisma.paiementHistory.updateMany({
-    where: { reference, statut: { not: statut } },
-    data: { statut },
-  });
+  const [updatedATS, updatedCV] = await Promise.all([
+    prisma.paiementHistory.updateMany({
+      where: { reference, statut: { not: statut } },
+      data: { statut },
+    }),
+    prisma.paiementCVtheque.updateMany({
+      where: { reference, statut: { not: statut } },
+      data: { statut },
+    }),
+  ]);
 
-  if (updated.count > 0) {
+  if (updatedATS.count + updatedCV.count > 0) {
     console.log(`[Webhook] Paiement ${reference} → ${statut}`);
   }
 }

@@ -6,7 +6,7 @@
 
 ## 1. Matching IA Candidat
 
-**Page** : `/candidat/matching`  
+**Page** : `/candidat/matching`
 **API** : `POST /api/candidat-matching`
 
 ### Comment ça marche
@@ -23,15 +23,15 @@ Le candidat clique sur **"Lancer l'analyse"**. Le frontend envoie le `candidatId
    - Statut de disponibilité
 4. Les résultats sont triés par score décroissant. Les 30 meilleurs sont renvoyés.
 
-Les offres avec score ≥ 60 sont affichées en "Meilleures correspondances", les autres en section secondaire.  
+Les offres avec score ≥ 60 sont affichées en "Meilleures correspondances", les autres en section secondaire.
 Le candidat peut postuler directement depuis cette page sans quitter son espace.
 
 ---
 
 ## 2. Notifications
 
-**Page** : `/candidat/notifications`  
-**API** : `GET /api/notifications`, `PUT /api/notifications` (tout marquer lu), `PUT /api/notifications/[id]`  
+**Page** : `/candidat/notifications`
+**API** : `GET /api/notifications`, `PUT /api/notifications` (tout marquer lu), `PUT /api/notifications/[id]`
 **Hook** : `lib/hooks/use-notifications.ts`
 
 ### Comment ça marche
@@ -39,6 +39,7 @@ Le candidat peut postuler directement depuis cette page sans quitter son espace.
 Le modèle `Notification` existait déjà dans la base de données. Les notifications sont créées automatiquement quand un recruteur change le statut d'une candidature (dans `app/api/recruteurs/[id]/candidatures/route.ts`).
 
 **Déclencheur** : `PUT /api/recruteurs/[id]/candidatures` → après la mise à jour du statut, une notification est créée avec :
+
 - `recipientId` : l'`userId` du candidat
 - `type` : `APPLICATION_STATUS_CHANGED`
 - `data` : message humain + titre de l'offre + statut
@@ -56,11 +57,13 @@ Le modèle `Notification` existait déjà dans la base de données. Les notifica
 ### Comment ça marche
 
 Depuis `/candidat/profil`, trois boutons sont disponibles :
+
 - **Partager mon profil** → copie l'URL `/profil/[candidatId]` dans le presse-papiers
 - **Voir la version publique** → ouvre un nouvel onglet sur la page publique
 - **Exporter PDF** → déclenche `window.print()` du navigateur
 
 La page publique `/profil/[candidatId]` charge les données du candidat via `GET /api/candidats/[id]` et affiche :
+
 - Avatar, nom, domaine, localisation, email, statut de disponibilité
 - Bio
 - Compétences
@@ -73,23 +76,23 @@ Aucune information sensible (téléphone, date de naissance, etc.) n'est exposé
 
 ## 4. Score de Complétion du Profil
 
-**Composant** : `components/candidat/ProfilCompletion.tsx`  
+**Composant** : `components/candidat/ProfilCompletion.tsx`
 **Affiché sur** : `/candidat/dashboard`
 
 ### Comment ça marche
 
 Le composant reçoit l'objet `candidat` et calcule le score localement (pas d'API). Il vérifie 8 critères :
 
-| Critère | Condition |
-|---|---|
-| Photo de profil | `candidat.image` non null |
-| Biographie | `candidat.bio` avec 20+ caractères |
-| Compétences | 3+ compétences ajoutées |
-| CV uploadé | `candidat.cv` non null |
-| Expérience | Au moins 1 expérience |
-| Formation | Au moins 1 formation |
-| Statut de disponibilité | `candidat.statut` défini |
-| Localisation | `candidat.ville` ou `candidat.pays` défini |
+| Critère                 | Condition                                  |
+| ----------------------- | ------------------------------------------ |
+| Photo de profil         | `candidat.image` non null                  |
+| Biographie              | `candidat.bio` avec 20+ caractères         |
+| Compétences             | 3+ compétences ajoutées                    |
+| CV uploadé              | `candidat.cv` non null                     |
+| Expérience              | Au moins 1 expérience                      |
+| Formation               | Au moins 1 formation                       |
+| Statut de disponibilité | `candidat.statut` défini                   |
+| Localisation            | `candidat.ville` ou `candidat.pays` défini |
 
 Le score = `(critères validés / 8) × 100`. Si le profil est incomplet, les 3 premiers éléments manquants sont affichés avec un lien direct vers la section concernée.
 
@@ -97,7 +100,7 @@ Le score = `(critères validés / 8) × 100`. Si le profil est incomplet, les 3 
 
 ## 5. Entretiens & Notes Personnelles
 
-**Page** : `/candidat/entretiens`  
+**Page** : `/candidat/entretiens`
 **API** : `GET/POST/DELETE /api/candidatures/[id]/notes`
 
 ### Comment ça marche
@@ -105,6 +108,7 @@ Le score = `(critères validés / 8) × 100`. Si le profil est incomplet, les 3 
 Les notes sont stockées dans le modèle `ApplicationNote` (déjà dans le schema Prisma) avec `authorType: "CANDIDAT_NOTE"` pour les distinguer des notes des recruteurs.
 
 Le candidat sélectionne une candidature dans la liste de gauche. Le panneau de droite charge les notes existantes pour cette candidature. Il peut :
+
 - Ajouter une date d'entretien optionnelle (préfixée dans le contenu de la note : `[Entretien: 2025-06-01T14:00] ...`)
 - Écrire une note libre (impressions, salaire discuté, questions posées...)
 - Supprimer une note
@@ -139,11 +143,12 @@ Les compétences déjà dans le profil sont exclues. Les 8 premières suggestion
 
 ## 8. API Objectifs de Carrière
 
-**API** :  
-- `GET /api/candidats/[id]/objectifs`  
-- `POST /api/objectifs`  
-- `PUT /api/objectifs/[id]`  
-- `DELETE /api/objectifs/[id]`  
+**API** :
+
+- `GET /api/candidats/[id]/objectifs`
+- `POST /api/objectifs`
+- `PUT /api/objectifs/[id]`
+- `DELETE /api/objectifs/[id]`
 
 **Lib** : `lib/api/objectifs/` (repository + service)
 
@@ -163,14 +168,14 @@ La progression est un entier entre 0 et 100 (clampé côté serveur). Les bouton
 
 ### Avant / Après
 
-| Avant | Après |
-|---|---|
-| `useState` + `useEffect` + `fetch()` brut | `useQuery` + `useMutation` |
-| `alert()` du navigateur pour les erreurs | `toast.error()` / `toast.success()` |
-| Refetch manuel après chaque mutation | `queryClient.invalidateQueries()` automatique |
-| Pas de cache | Cache React Query avec invalidation ciblée |
+| Avant                                     | Après                                         |
+| ----------------------------------------- | --------------------------------------------- |
+| `useState` + `useEffect` + `fetch()` brut | `useQuery` + `useMutation`                    |
+| `alert()` du navigateur pour les erreurs  | `toast.error()` / `toast.success()`           |
+| Refetch manuel après chaque mutation      | `queryClient.invalidateQueries()` automatique |
+| Pas de cache                              | Cache React Query avec invalidation ciblée    |
 
-`useAlertes(candidatId)` → lecture  
+`useAlertes(candidatId)` → lecture
 `useCreateAlerte()`, `useUpdateAlerte()`, `useDeleteAlerte()` → mutations
 
 ---
@@ -203,14 +208,73 @@ Quand le serveur Socket.IO (`npm run dev:socket`) n'est pas lancé, le client te
 **Fix** : Après 1 tentative échouée, `reconnection` est désactivé programmatiquement. Le socket reste disponible — recharger la page suffit à relancer la tentative de connexion si le serveur a été démarré entre-temps.
 
 **Pour utiliser le chat temps réel**, il faut lancer les deux processus :
+
 ```bash
 npm run dev:all   # lance Next.js + Socket.IO en parallèle
 ```
+
 ou séparément :
+
 ```bash
 npm run dev        # port 3000
 npm run dev:socket # port 3001
 ```
+
+---
+
+---
+
+## 12. Export CSV — Candidatures
+
+**Page** : `/recruteur/candidatures`
+**Utilitaire** : `lib/utils/export-csv.ts`
+
+Le bouton **télécharger** (icône `IconDownload`) dans la barre de filtres génère un fichier `candidatures.csv` avec les colonnes : Prénom, Nom, Email, Téléphone, Offre, Statut, Date. Le CSV est encodé UTF-8 avec BOM pour Excel. Seules les candidatures **filtrées** (par statut et recherche) sont exportées.
+
+---
+
+## 13. Templates de Messages
+
+**Page** : `/recruteur/messagerie`
+
+Un bouton **Templates** (dropdown) est ajouté au-dessus du champ de saisie de la messagerie. Cliquer sur un template insère son contenu dans le champ — il peut ensuite être édité avant envoi. 5 templates prédéfinis : Convocation entretien, Demande de disponibilités, Demande d'informations, Refus de candidature, Confirmation de recrutement.
+
+---
+
+## 14. Dashboard Enrichi
+
+**Page** : `/recruteur/dashboard`
+
+Trois nouvelles sections ajoutées après le graphique :
+
+- **Funnel de conversion** : barres horizontales montrant Reçues → En attente → En révision → Acceptées avec leur pourcentage relatif.
+- **Candidatures sans réponse depuis +5 jours** : liste des candidatures `EN_ATTENTE` dont `updatedAt < now - 5 jours`. Lien direct vers chaque candidature.
+- **Offres expirant dans 7 jours** : liste des offres actives dont `duedate` est dans les 7 prochains jours.
+
+---
+
+## 15. Module Entretiens (côté Recruteur)
+
+**Page** : `/recruteur/entretiens`
+**API** : `GET/POST /api/entretiens`, `GET/PUT/DELETE /api/entretiens/[id]`
+**Prisma** : modèle `Entretien` (migration requise : `npx prisma db push`)
+
+### Comment ça marche
+
+Le recruteur planifie un entretien en sélectionnant une candidature existante, en donnant un titre, une date/heure, un type (Visio/Téléphone/Présentiel) et un lieu/lien optionnel.
+
+**Workflow** :
+1. `PLANIFIE` → boutons "Feedback", "Marquer réalisé" (✓), "Annuler" (✗)
+2. "Feedback" ouvre un dialog pour noter (1–5 étoiles) et saisir un commentaire → passe le statut à `REALISE`
+3. `REALISE` / `ANNULE` → lecture seule, modification via le bouton crayon
+
+**Modèle Prisma** :
+```
+Entretien { id, applicationId, recruteurId, titre, dateHeure, type (PRESENTIEL|VISIO|TELEPHONE),
+            lieu, notes, feedback, evaluation (1–5), statut (PLANIFIE|REALISE|ANNULE) }
+```
+
+Relié à `Application` (cascade delete) et `Recruteur`. L'entrée "Entretiens" est ajoutée dans la sidebar recruteur (`components/app-sidebar.tsx`).
 
 ---
 

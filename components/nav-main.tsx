@@ -1,8 +1,8 @@
 "use client";
 
-import { IconCirclePlusFilled, IconMail, type Icon } from "@tabler/icons-react";
+import type { Icon } from "@tabler/icons-react";
+import { IconLock } from "@tabler/icons-react";
 
-import { Button } from "@/components/ui/button";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -14,65 +14,63 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 
+type NavItem = {
+  title: string;
+  url: string;
+  icon?: Icon | React.ComponentType<{ className?: string }>;
+  locked?: boolean;
+  subItems?: { label: string; url: string }[];
+};
+
 export function NavMain({
   items,
+  onLockedClick,
 }: {
-  items: {
-    title: string;
-    url: string;
-    icon?: Icon;
-    subItems?: {
-      label: string;
-      url: string;
-    }[];
-  }[];
+  items: NavItem[];
+  onLockedClick?: () => void;
 }) {
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
-        {/* <SidebarMenu>
-          <SidebarMenuItem className="flex items-center gap-2">
-            <SidebarMenuButton
-              tooltip="Créer rapidement"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
-            >
-              <IconCirclePlusFilled />
-              <span>Créer rapidement</span>
-            </SidebarMenuButton>
-            <Button
-              size="icon"
-              className="size-8 group-data-[collapsible=icon]:opacity-0"
-              variant="outline"
-            >
-              <IconMail />
-              <span className="sr-only">Messagerie</span>
-            </Button>
-          </SidebarMenuItem>
-        </SidebarMenu> */}
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton tooltip={item.title} asChild>
-                <a href={item.url}>
-                  {item.icon && <item.icon />}
-                  <span>{item.title}</span>
-                </a>
-              </SidebarMenuButton>
-              {item.subItems && (
-                <SidebarMenuSub>
-                  {item.subItems.map((subItem) => (
-                    <SidebarMenuSubItem key={subItem.label}>
-                      <SidebarMenuSubButton asChild>
-                        <a href={subItem.url}>
-                          <span>{subItem.label}</span>
-                        </a>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  ))}
-                </SidebarMenuSub>
-              )}
-            </SidebarMenuItem>
-          ))}
+          {items.map((item) =>
+            item.locked ? (
+              // Item verrouillé — cliquable mais ouvre le modal d'upgrade
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton
+                  tooltip={`${item.title} — Plan supérieur requis`}
+                  onClick={onLockedClick}
+                  className="opacity-50 cursor-pointer hover:opacity-70 transition-opacity"
+                >
+                  {item.icon && <item.icon className="h-4 w-4" />}
+                  <span className="flex-1">{item.title}</span>
+                  <IconLock className="h-3 w-3 ml-auto shrink-0 text-muted-foreground" />
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ) : (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton tooltip={item.title} asChild>
+                  <a href={item.url}>
+                    {item.icon && <item.icon className="h-4 w-4" />}
+                    <span>{item.title}</span>
+                  </a>
+                </SidebarMenuButton>
+                {item.subItems && (
+                  <SidebarMenuSub>
+                    {item.subItems.map((subItem) => (
+                      <SidebarMenuSubItem key={subItem.label}>
+                        <SidebarMenuSubButton asChild>
+                          <a href={subItem.url}>
+                            <span>{subItem.label}</span>
+                          </a>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ))}
+                  </SidebarMenuSub>
+                )}
+              </SidebarMenuItem>
+            )
+          )}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

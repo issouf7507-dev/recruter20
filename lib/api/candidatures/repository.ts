@@ -28,6 +28,17 @@ export class ApplicationRepository {
             type: true,
           },
         },
+        entretiens: {
+          select: {
+            id: true,
+            titre: true,
+            dateHeure: true,
+            type: true,
+            lieu: true,
+            statut: true,
+          },
+          orderBy: { dateHeure: "asc" },
+        },
       },
       orderBy: { createdAt: "desc" },
     });

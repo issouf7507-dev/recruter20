@@ -27,6 +27,27 @@ export class KanbanRepository {
             isArchived: false,
           },
           include: {
+            application: {
+              include: {
+                candidat: {
+                  include: {
+                    user: { select: { name: true, email: true, image: true } },
+                  },
+                },
+                jobOffer: { select: { id: true, title: true, company: true } },
+                entretiens: {
+                  select: {
+                    id: true,
+                    titre: true,
+                    dateHeure: true,
+                    type: true,
+                    lieu: true,
+                    statut: true,
+                  },
+                  orderBy: { dateHeure: "asc" },
+                },
+              },
+            },
             offers: {
               include: {
                 jobOffer: {
@@ -159,6 +180,7 @@ export class KanbanRepository {
         color: data.color,
         order: newOrder,
         isDefault: data.isDefault || false,
+        maxCards: data.maxCards ?? null,
         recruteurId,
       },
     });
@@ -372,6 +394,7 @@ export class KanbanRepository {
         order: newOrder,
         columnId: data.columnId,
         createdByRecruteurId: recruteurId,
+        applicationId: data.applicationId || null,
         offers: data.jobOfferIds?.length
           ? {
               create: data.jobOfferIds.map((jobOfferId) => ({
@@ -572,18 +595,15 @@ export class KanbanRepository {
     recruteurId?: string,
     userId?: string
   ): Promise<KanbanCard> {
-    // Verify column ownership if recruteurId provided
-    if (recruteurId) {
-      const targetColumn = await prisma.kanbanColumn.findFirst({
-        where: {
-          id: targetColumnId,
-          recruteurId,
-        },
-      });
+    // Fetch target column (also verifies ownership if recruteurId provided)
+    const targetColumn = await prisma.kanbanColumn.findFirst({
+      where: recruteurId
+        ? { id: targetColumnId, recruteurId }
+        : { id: targetColumnId },
+    });
 
-      if (!targetColumn) {
-        throw new Error("Target column not found or access denied");
-      }
+    if (!targetColumn) {
+      throw new Error("Target column not found or access denied");
     }
 
     // Get current order if not provided
@@ -607,55 +627,41 @@ export class KanbanRepository {
         order: finalOrder,
       },
       include: {
+        application: true,
         offers: {
           include: {
-            jobOffer: {
-              select: {
-                id: true,
-                title: true,
-                company: true,
-              },
-            },
+            jobOffer: { select: { id: true, title: true, company: true } },
           },
         },
         members: {
           include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                image: true,
-              },
-            },
+            user: { select: { id: true, name: true, email: true, image: true } },
           },
         },
         notes: true,
         checklist: true,
         attachments: true,
-        labels: {
-          include: {
-            label: true,
-          },
-        },
+        labels: { include: { label: true } },
         activities: true,
         dueDates: true,
       },
     });
 
-    // Log activity (only if userId is provided)
+    // Sync Application.status when card is linked to a candidature
+    if (card.applicationId && targetColumn.mappedStatus) {
+      await prisma.application.update({
+        where: { id: card.applicationId },
+        data: { status: targetColumn.mappedStatus as any },
+      });
+    }
+
     if (userId) {
       await prisma.cardActivity.create({
         data: {
           cardId: card.id,
-          userId: userId,
+          userId,
           action: "card_moved",
-          meta: JSON.parse(
-            JSON.stringify({
-              targetColumnId,
-              newOrder: finalOrder,
-            })
-          ),
+          meta: JSON.parse(JSON.stringify({ targetColumnId, newOrder: finalOrder })),
         },
       });
     }
@@ -1320,6 +1326,84 @@ export class KanbanRepository {
 
     // Return updated card
     return this.findCardById(attachment.cardId, recruteurId);
+  }
+
+  /**
+   * Import an application as a kanban card in the given column
+   */
+  async importApplicationAsCard(
+    applicationId: string,
+    columnId: string,
+    recruteurId: string
+  ): Promise<KanbanCard> {
+    const existing = await prisma.kanbanCard.findUnique({ where: { applicationId } });
+    if (existing) throw new Error("Cette candidature est déjà dans le Kanban");
+
+    const application = await prisma.application.findUnique({
+      where: { id: applicationId },
+      include: {
+        candidat: { include: { user: { select: { name: true } } } },
+        jobOffer: { select: { title: true } },
+      },
+    });
+    if (!application) throw new Error("Candidature introuvable");
+
+    const candidatName =
+      application.candidat?.user?.name ||
+      `${application.candidat?.prenom || ""} ${application.candidat?.nom || ""}`.trim() ||
+      "Candidat";
+    const title = `${candidatName} — ${application.jobOffer?.title || "Poste"}`;
+
+    return this.createCard(recruteurId, { title, columnId, applicationId, priority: "medium" });
+  }
+
+  /**
+   * Get applications for a recruteur that are not yet in the Kanban
+   */
+  async getUnlinkedApplications(recruteurId: string) {
+    return prisma.application.findMany({
+      where: {
+        jobOffer: { recruteurId },
+        kanbanCard: null,
+        deletedAt: null,
+      },
+      include: {
+        candidat: {
+          include: { user: { select: { name: true, email: true, image: true } } },
+        },
+        jobOffer: { select: { id: true, title: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  /**
+   * Get archived cards for a recruteur
+   */
+  async findArchivedCards(recruteurId: string) {
+    return prisma.kanbanCard.findMany({
+      where: {
+        createdByRecruteurId: recruteurId,
+        isArchived: true,
+      },
+      include: {
+        column: { select: { id: true, name: true } },
+        application: {
+          include: {
+            candidat: {
+              include: {
+                user: { select: { name: true, email: true, image: true } },
+              },
+            },
+            jobOffer: { select: { id: true, title: true, company: true } },
+          },
+        },
+        labels: {
+          include: { label: true },
+        },
+      },
+      orderBy: { archivedAt: "desc" },
+    });
   }
 }
 

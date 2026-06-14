@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     // Cas succès → activer l'abonnement
     const recruteurId = paiement.abonnement.recruteurId;
-    const planEnum = paiement.plan; // déjà "PRO" ou "ENTREPRISE"
+    const planEnum = paiement.plan; // PME | BUSINESS | CORPORATE
 
     const dateDebut = new Date();
     const dateFin = new Date();
