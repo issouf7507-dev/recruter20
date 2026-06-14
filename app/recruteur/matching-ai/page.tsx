@@ -1,4 +1,5 @@
 "use client";
+import { RequirePlan } from "@/components/shared/RequirePlan";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -204,7 +205,8 @@ export default function MatchingAIPage() {
   // ─── UI ─────────────────────────────────────────────────────────────────────
 
   return (
-    <>
+    <RequirePlan minPlan="BUSINESS" featureName="Matching IA">
+      <>
       <SiteHeader title="Matching IA" />
       <div className="flex flex-1 flex-col">
         <div className="flex flex-col gap-5 py-4 md:py-6 px-4 lg:px-6 @container/main w-full">
@@ -634,6 +636,7 @@ export default function MatchingAIPage() {
 
         </div>
       </div>
-    </>
+      </>
+    </RequirePlan>
   );
 }

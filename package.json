@@ -9,7 +9,8 @@
     "build": "next build --turbopack",
     "start": "next start",
     "start:socket": "node dist/server/socket.js",
-    "seed:offres": "npx tsx prisma/seeds/seed-offres.ts"
+    "seed:offres": "npx tsx prisma/seeds/seed-offres.ts",
+    "seed:test": "npx tsx prisma/seeds/seed-test-data.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -56,6 +57,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
+    "docx": "^9.7.1",
     "dotenv": "^17.2.3",
     "framer-motion": "^12.23.24",
     "lenis": "^1.3.11",
@@ -63,6 +65,7 @@
     "next": "16.1.4",
     "next-themes": "^0.4.6",
     "nodemailer": "^7.0.10",
+    "pdfkit": "^0.19.1",
     "react": "19.1.0",
     "react-day-picker": "^9.11.1",
     "react-dom": "19.1.0",
@@ -81,6 +84,7 @@
     "@prisma/client": "7.6.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pdfkit": "^0.17.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "concurrently": "^9.2.1",

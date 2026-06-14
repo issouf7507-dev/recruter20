@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { IconArrowRight } from "@tabler/icons-react";
+import { IconArrowRight, IconAlertTriangle, IconClock, IconCalendarDue } from "@tabler/icons-react";
 import { useSession } from "@/lib/auth-client";
 import {
   useRecruteurByUserId,
@@ -122,6 +122,49 @@ export default function RecruteurDashboardPage() {
         .slice(0, 10),
     [candidatures]
   );
+
+  const funnelData = useMemo(() => {
+    const total = candidatures.length || 1;
+    const steps = [
+      { label: "Reçues", status: null, color: "bg-blue-500" },
+      { label: "En attente", status: "EN_ATTENTE", color: "bg-yellow-500" },
+      { label: "En révision", status: "EN_REVISION", color: "bg-orange-500" },
+      { label: "Acceptées", status: "ACCEPTE", color: "bg-green-500" },
+    ];
+    return steps.map((s) => {
+      const count = s.status
+        ? candidatures.filter((c: { status: string }) => c.status === s.status).length
+        : candidatures.length;
+      return { ...s, count, pct: Math.round((count / total) * 100) };
+    });
+  }, [candidatures]);
+
+  const stagnantCandidatures = useMemo(() => {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 5);
+    return candidatures
+      .filter(
+        (c: { status: string; createdAt: string; updatedAt: string }) =>
+          c.status === "EN_ATTENTE" &&
+          new Date(c.updatedAt) < cutoff
+      )
+      .slice(0, 5);
+  }, [candidatures]);
+
+  const expiringOffers = useMemo(() => {
+    const now = new Date();
+    const in7days = new Date();
+    in7days.setDate(now.getDate() + 7);
+    return offers
+      .filter(
+        (o: { duedate?: Date | string | null; etat?: string | null }) =>
+          o.etat === "active" &&
+          o.duedate &&
+          new Date(o.duedate) > now &&
+          new Date(o.duedate) <= in7days
+      )
+      .slice(0, 5);
+  }, [offers]);
 
   const [timeRange, setTimeRange] = useState("30d");
   const filteredChartData = useMemo(() => {
@@ -280,6 +323,114 @@ export default function RecruteurDashboardPage() {
                       />
                     </AreaChart>
                   </ChartContainer>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Funnel de conversion */}
+            <div className="px-4 lg:px-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Funnel de conversion</CardTitle>
+                  <CardDescription>
+                    Répartition des candidatures par étape
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {funnelData.map((step) => (
+                      <div key={step.label} className="flex items-center gap-3">
+                        <span className="w-24 text-sm text-muted-foreground shrink-0">
+                          {step.label}
+                        </span>
+                        <div className="flex-1 h-6 bg-muted rounded overflow-hidden">
+                          <div
+                            className={`h-full ${step.color} transition-all duration-500`}
+                            style={{ width: `${step.pct}%` }}
+                          />
+                        </div>
+                        <span className="w-12 text-right text-sm font-semibold tabular-nums">
+                          {step.count}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Candidatures stagnantes + Offres expirant bientôt */}
+            <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2">
+              <Card>
+                <CardHeader className="flex flex-row items-center gap-2 space-y-0">
+                  <IconClock className="h-5 w-5 text-yellow-500" />
+                  <div>
+                    <CardTitle className="text-base">Sans réponse depuis +5 jours</CardTitle>
+                    <CardDescription>Candidatures EN_ATTENTE à traiter</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {stagnantCandidatures.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Aucune candidature en attente.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {stagnantCandidatures.map(
+                        (c: {
+                          id: string;
+                          candidat?: { nom?: string | null; prenom?: string | null };
+                          jobOffer?: { title: string };
+                          createdAt: string;
+                        }) => (
+                          <li key={c.id} className="flex items-center justify-between text-sm">
+                            <span>
+                              {c.candidat
+                                ? `${c.candidat.prenom ?? ""} ${c.candidat.nom ?? ""}`.trim()
+                                : "—"}{" "}
+                              <span className="text-muted-foreground">— {c.jobOffer?.title}</span>
+                            </span>
+                            <Button variant="ghost" size="sm" asChild>
+                              <Link href={`/recruteur/candidatures?applicationId=${c.id}`}>
+                                Voir
+                              </Link>
+                            </Button>
+                          </li>
+                        )
+                      )}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center gap-2 space-y-0">
+                  <IconCalendarDue className="h-5 w-5 text-red-500" />
+                  <div>
+                    <CardTitle className="text-base">Offres expirant dans 7 jours</CardTitle>
+                    <CardDescription>À renouveler avant expiration</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {expiringOffers.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Aucune offre n'expire prochainement.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {expiringOffers.map(
+                        (o: { id: string; title: string; duedate?: Date | string | null }) => (
+                          <li key={o.id} className="flex items-center justify-between text-sm">
+                            <span>{o.title}</span>
+                            <span className="text-muted-foreground text-xs">
+                              {o.duedate
+                                ? new Date(o.duedate).toLocaleDateString("fr-FR", {
+                                    day: "numeric",
+                                    month: "short",
+                                  })
+                                : ""}
+                            </span>
+                          </li>
+                        )
+                      )}
+                    </ul>
+                  )}
                 </CardContent>
               </Card>
             </div>

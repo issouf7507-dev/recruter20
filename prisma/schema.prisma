@@ -127,7 +127,9 @@ model Recruteur {
   JobOffer            JobOffer[]
   KanbanColumns       KanbanColumn[]
   OfferTemplate       OfferTemplate[]
-  abonnement  Abonnement?
+  abonnement          Abonnement?
+  abonnementCVtheque  AbonnementCVtheque?
+  entretiens          Entretien[]
   user                User                  @relation("UserAsRecruteur", fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -287,6 +289,8 @@ model Application {
   files          ApplicationFile[]
   notes          ApplicationNote[]
   checklist      ChecklistItem[]
+  entretiens     Entretien[]
+  kanbanCard     KanbanCard?
 
   @@index([candidatId], map: "Application_candidatId_fkey")
   @@index([jobOfferId], map: "Application_jobOfferId_fkey")
@@ -305,6 +309,7 @@ model ApplicationNote {
   id            String      @id @default(cuid())
   applicationId String
   content       String
+  entretienDate DateTime?
   authorId      String
   authorName    String?
   authorType    String
@@ -590,55 +595,51 @@ model Message {
 }
 
 model KanbanColumn {
-  id                   String              @id @default(cuid())
-  color                String
-  name                 String
-  order                Int
-  isDefault            Boolean             @default(false)
-  // jobOfferId           String
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
-  recruteurId          String
-  // applicationsCustomid String
-  // applicationsCustom   ApplicationCustom[]
-  recruteur            Recruteur           @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
-
- cards       KanbanCard[]
+  id            String       @id @default(cuid())
+  color         String
+  name          String
+  order         Int
+  isDefault     Boolean      @default(false)
+  mappedStatus  String?      // EN_ATTENTE | EN_REVISION | ACCEPTE | REFUSE
+  maxCards      Int?         // limite WIP (optionnelle)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  recruteurId   String
+  recruteur     Recruteur    @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
+  cards         KanbanCard[]
 
   @@index([recruteurId], map: "KanbanColumn_recruteurId_fkey")
 }
 
 
 model KanbanCard {
-  id          String        @id @default(cuid())
-  title       String
-  description String?
-  priority    String?       // low | medium | high | urgent
-  order       Int
-  isArchived  Boolean       @default(false)
-  archivedAt  DateTime?
-  
-  columnId    String
+  id                   String        @id @default(cuid())
+  title                String
+  description          String?
+  priority             String?       // low | medium | high | urgent
+  order                Int
+  isArchived           Boolean       @default(false)
+  archivedAt           DateTime?
+  applicationId        String?       @unique
+  columnId             String
   createdByRecruteurId String
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   column      KanbanColumn @relation(fields: [columnId], references: [id], onDelete: Cascade)
-  // createdBy   Recruteur         @relation("CardCreator", fields: [createdByRecruteurId], references: [id])
+  application Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
 
-
-// JobOffers liées à une card
   offers      CardJobOffer[]
-  // Collaborateurs assignés à une card
   members     CardMember[]
-  // Notes liées à une card
   notes       CardNote[]
   checklist   CheckItem[]
   attachments CardAttachment[]
   labels      CardLabelPivot[]
   activities  CardActivity[]
   dueDates    CardDueDate[]
+
+  @@index([applicationId])
 }
 
 model CardMember {
@@ -899,9 +900,93 @@ model PaiementHistory {
 }
 
 enum PlanType {
-  STARTER   // Gratuit
-  PRO       // Payant mensuel
-  ENTREPRISE // Sur mesure
+  DECOUVERTE // 0 FCFA — gratuit
+  PME        // 15 000 FCFA/mois
+  BUSINESS   // 45 000 FCFA/mois
+  CORPORATE  // 150 000 FCFA/mois
+}
+
+enum CVthequePlanType {
+  BASIC    // 10 000 FCFA/mois — 100 CV consultables
+  PRO      // 25 000 FCFA/mois — 500 CV consultables
+  ILLIMITE // 50 000 FCFA/mois — illimité
+}
+
+// ========================================
+// CVTHÈQUE PREMIUM
+// ========================================
+
+model AbonnementCVtheque {
+  id          String           @id @default(cuid())
+  recruteurId String           @unique
+  plan        CVthequePlanType
+  statut      AbonnementStatut @default(INACTIF)
+  cvConsultes Int              @default(0)
+  dateDebut   DateTime?
+  dateFin     DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  recruteur   Recruteur          @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
+  paiements   PaiementCVtheque[]
+
+  @@map("abonnement_cvtheque")
+}
+
+model PaiementCVtheque {
+  id            String           @id @default(cuid())
+  abonnementId  String
+  reference     String           @unique
+  montant       Float
+  devise        String           @default("XOF")
+  statut        PaiementStatut   @default(EN_ATTENTE)
+  plan          CVthequePlanType
+  geniuspayData Json?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  abonnement    AbonnementCVtheque @relation(fields: [abonnementId], references: [id], onDelete: Cascade)
+
+  @@index([reference])
+  @@map("paiement_cvtheque")
+}
+
+// ========================================
+// ENTRETIENS
+// ========================================
+
+model Entretien {
+  id            String          @id @default(cuid())
+  applicationId String
+  recruteurId   String
+  titre         String
+  dateHeure     DateTime
+  type          EntretienType   @default(VISIO)
+  lieu          String?
+  notes         String?         @db.Text
+  feedback      String?         @db.Text
+  evaluation    Int?
+  statut        EntretienStatut @default(PLANIFIE)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  application   Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  recruteur     Recruteur       @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([recruteurId])
+}
+
+enum EntretienType {
+  PRESENTIEL
+  VISIO
+  TELEPHONE
+}
+
+enum EntretienStatut {
+  PLANIFIE
+  REALISE
+  ANNULE
 }
 
 enum AbonnementStatut {

@@ -17,6 +17,8 @@ import type {
   CreateCardDueDateData,
   UpdateCardDueDateData,
   CreateCardAttachmentData,
+  ImportApplicationData,
+  ArchivedCard,
 } from "./types";
 import { kanbanRepository } from "./repository";
 
@@ -614,6 +616,50 @@ export async function createCardAttachment(
     throw new Error(result.error || "Failed to create attachment");
   }
 
+  return result.data;
+}
+
+/**
+ * Import an application as a kanban card
+ */
+export async function importApplicationAsCard(data: ImportApplicationData): Promise<KanbanCard> {
+  const response = await fetch("/api/kanban/applications/import", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  const result: ApiResponse<KanbanCard> = await response.json();
+  if (!result.success || !result.data) {
+    throw new Error(result.error || "Impossible d'importer la candidature");
+  }
+  return result.data;
+}
+
+/**
+ * Fetch applications not yet linked to a kanban card
+ */
+export async function fetchUnlinkedApplications(recruteurId: string): Promise<any[]> {
+  const response = await fetch(
+    `/api/kanban/applications/unlinked?recruteurId=${recruteurId}`
+  );
+  const result: ApiResponse<any[]> = await response.json();
+  if (!result.success || !result.data) {
+    throw new Error(result.error || "Impossible de récupérer les candidatures");
+  }
+  return result.data;
+}
+
+/**
+ * Fetch archived cards for a recruteur
+ */
+export async function fetchArchivedCards(recruteurId: string): Promise<ArchivedCard[]> {
+  const response = await fetch(
+    `/api/kanban/cards/archived?recruteurId=${recruteurId}`
+  );
+  const result: ApiResponse<ArchivedCard[]> = await response.json();
+  if (!result.success || !result.data) {
+    throw new Error(result.error || "Impossible de récupérer les cartes archivées");
+  }
   return result.data;
 }
 

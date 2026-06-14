@@ -18,7 +18,7 @@ export const GET = withErrorHandler(async (req, ctx) => {
 export const POST = withErrorHandler(async (req, ctx) => {
   const session = await requireSession(req as NextRequest);
   const { id: applicationId } = await (ctx as Ctx).params;
-  const { content } = await (req as NextRequest).json();
+  const { content, entretienDate } = await (req as NextRequest).json();
 
   const application = await prisma.application.findUnique({
     where: { id: applicationId },
@@ -27,7 +27,13 @@ export const POST = withErrorHandler(async (req, ctx) => {
   if (!application || application.candidat.userId !== session.user.id) return forbidden();
 
   const note = await prisma.applicationNote.create({
-    data: { applicationId, content, authorId: session.user.id, authorType: "CANDIDAT_NOTE" },
+    data: {
+      applicationId,
+      content,
+      entretienDate: entretienDate ? new Date(entretienDate) : null,
+      authorId: session.user.id,
+      authorType: "CANDIDAT_NOTE",
+    },
   });
   return NextResponse.json({ success: true, data: note }, { status: 201 });
 });

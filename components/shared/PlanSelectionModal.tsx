@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Check, Sparkles, Building2 } from "lucide-react";
+import {
+  Loader2,
+  Check,
+  Sparkles,
+  Building2,
+  Briefcase,
+  Crown,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,51 +18,16 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { PLAN_LIST, type PlanId } from "@/lib/plans";
 
-type PlanId = "pro" | "entreprise";
+const PAYABLE_PLANS = PLAN_LIST.filter((p) => p.id !== "decouverte");
 
-const PLANS = [
-  {
-    id: "pro" as PlanId,
-    name: "Pro",
-    price: "250",
-    currency: "FCFA",
-    period: "/ mois",
-    icon: Sparkles,
-    description: "Pour les recruteurs indépendants et PME",
-    features: [
-      "Offres d'emploi illimitées",
-      "Multi-diffusion sur tous les jobboards",
-      "Tableau Kanban avancé",
-      "Matching IA",
-      "Statistiques détaillées",
-      "Messagerie intégrée",
-      "Support prioritaire",
-    ],
-    highlight: true,
-    badge: "Populaire",
-  },
-  {
-    id: "entreprise" as PlanId,
-    name: "Entreprise",
-    price: "75 000",
-    currency: "FCFA",
-    period: "/ mois",
-    icon: Building2,
-    description: "Pour les grandes entreprises et agences RH",
-    features: [
-      "Tout ce qui est inclus dans Pro",
-      "Collaborateurs illimités",
-      "Tableau de bord multi-comptes",
-      "API dédiée",
-      "Rapports personnalisés",
-      "Account manager dédié",
-      "SLA garanti 99,9%",
-    ],
-    highlight: false,
-    badge: null,
-  },
-];
+const PLAN_ICONS: Record<PlanId, typeof Sparkles> = {
+  decouverte: Sparkles,
+  pme: Briefcase,
+  business: Sparkles,
+  corporate: Crown,
+};
 
 interface PlanSelectionModalProps {
   open: boolean;
@@ -63,7 +35,7 @@ interface PlanSelectionModalProps {
 }
 
 export function PlanSelectionModal({ open, onClose }: PlanSelectionModalProps) {
-  const [selectedPlan, setSelectedPlan] = useState<PlanId>("pro");
+  const [selectedPlan, setSelectedPlan] = useState<PlanId>("business");
   const [loading, setLoading] = useState(false);
 
   const handleCheckout = async () => {
@@ -86,7 +58,9 @@ export function PlanSelectionModal({ open, onClose }: PlanSelectionModalProps) {
         return;
       }
       if (!data.success || !data.checkout_url) {
-        toast.error(data.error || "Erreur lors de l'initialisation du paiement");
+        toast.error(
+          data.error || "Erreur lors de l'initialisation du paiement",
+        );
         return;
       }
 
@@ -103,15 +77,18 @@ export function PlanSelectionModal({ open, onClose }: PlanSelectionModalProps) {
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Choisissez votre plan</DialogTitle>
+          <DialogTitle className="text-xl font-bold">
+            Choisissez votre plan
+          </DialogTitle>
           <DialogDescription>
-            Sélectionnez le plan qui correspond à vos besoins, puis passez au paiement.
+            Sélectionnez le plan qui correspond à vos besoins, puis passez au
+            paiement.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-          {PLANS.map((plan) => {
-            const Icon = plan.icon;
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
+          {PAYABLE_PLANS.map((plan) => {
+            const Icon = PLAN_ICONS[plan.id];
             const isSelected = selectedPlan === plan.id;
             return (
               <button
@@ -121,12 +98,12 @@ export function PlanSelectionModal({ open, onClose }: PlanSelectionModalProps) {
                   "relative text-left rounded-xl border-2 p-4 transition-all focus:outline-none",
                   isSelected
                     ? "border-[#a590ff] bg-[#a590ff]/5"
-                    : "border-border hover:border-[#a590ff]/50"
+                    : "border-border hover:border-[#a590ff]/50",
                 )}
               >
-                {plan.badge && (
+                {plan.popular && (
                   <span className="absolute -top-2.5 left-4 bg-[#a590ff] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    {plan.badge}
+                    Populaire
                   </span>
                 )}
 
@@ -134,27 +111,36 @@ export function PlanSelectionModal({ open, onClose }: PlanSelectionModalProps) {
                   <div
                     className={cn(
                       "flex h-8 w-8 items-center justify-center rounded-lg",
-                      isSelected ? "bg-[#a590ff] text-white" : "bg-muted text-muted-foreground"
+                      isSelected
+                        ? "bg-[#a590ff] text-white"
+                        : "bg-muted text-muted-foreground",
                     )}
                   >
                     <Icon className="h-4 w-4" />
                   </div>
                   <div>
                     <p className="font-semibold text-sm">{plan.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{plan.description}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {plan.description}
+                    </p>
                   </div>
                 </div>
 
                 <div className="mb-3">
-                  <span className="text-2xl font-bold">{plan.price}</span>
+                  <span className="text-2xl font-bold">
+                    {plan.price.toLocaleString("fr-FR")}
+                  </span>
                   <span className="text-xs text-muted-foreground ml-1">
-                    {plan.currency} {plan.period}
+                    FCFA / {plan.period}
                   </span>
                 </div>
 
                 <ul className="space-y-1.5">
                   {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2 text-xs text-muted-foreground">
+                    <li
+                      key={feature}
+                      className="flex items-start gap-2 text-xs text-muted-foreground"
+                    >
                       <Check className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[#a590ff]" />
                       {feature}
                     </li>

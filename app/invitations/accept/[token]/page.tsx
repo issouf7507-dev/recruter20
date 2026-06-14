@@ -228,13 +228,7 @@ export default function AcceptInvitationPage() {
                           type="button"
                           variant="outline"
                           className="w-full"
-                          onClick={() =>
-                            router.push(
-                              `/auth/collaborateur/login?email=${
-                                invitation?.email || ""
-                              }`
-                            )
-                          }
+                          onClick={() => router.push("/auth/recruteur/login")}
                         >
                           Se connecter avec {invitation?.email}
                         </Button>

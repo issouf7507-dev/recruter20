@@ -56,7 +56,16 @@ export class JobOfferRepository {
     }
 
     if (etat && etat !== "all") {
-      where.etat = etat;
+      if (etat === "expiree") {
+        // Une offre est "expirée" si elle est explicitement marquée comme telle,
+        // ou si elle est active mais que sa date limite est dépassée.
+        where.OR = [
+          { etat: "expiree" },
+          { etat: "active", duedate: { lt: new Date() } },
+        ];
+      } else {
+        where.etat = etat;
+      }
     }
 
     // Filtre par localisation

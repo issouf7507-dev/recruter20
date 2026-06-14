@@ -4,25 +4,56 @@ export interface KanbanColumn {
   name: string;
   order: number;
   isDefault: boolean;
+  mappedStatus?: string | null;
+  maxCards?: number | null;
   recruteurId: string;
   createdAt: Date | string;
   updatedAt: Date | string;
   cards?: KanbanCard[];
 }
 
+export interface EntretienInfo {
+  id: string;
+  titre: string;
+  dateHeure: Date | string;
+  type: string;
+  lieu?: string | null;
+  statut: string;
+}
+
+export interface ApplicationCardInfo {
+  id: string;
+  candidatId: string;
+  jobOfferId: string;
+  status: string;
+  rating?: number | null;
+  message?: string | null;
+  cv?: string | null;
+  createdAt: Date | string;
+  candidat?: {
+    id: string;
+    nom?: string | null;
+    prenom?: string | null;
+    user?: { name?: string | null; email: string; image?: string | null };
+  };
+  jobOffer?: { id: string; title: string; company?: string | null };
+  entretiens?: EntretienInfo[];
+}
+
 export interface KanbanCard {
   id: string;
   title: string;
   description?: string | null;
-  priority?: string | null; // low | medium | high | urgent
+  priority?: string | null;
   order: number;
   isArchived: boolean;
   archivedAt?: Date | string | null;
+  applicationId?: string | null;
   columnId: string;
   createdByRecruteurId: string;
   createdAt: Date | string;
   updatedAt: Date | string;
-  // Relations
+  application?: ApplicationCardInfo | null;
   offers?: CardJobOffer[];
   members?: CardMember[];
   notes?: CardNote[];
@@ -195,6 +226,7 @@ export interface CreateKanbanColumnData {
   color: string;
   order?: number;
   isDefault?: boolean;
+  maxCards?: number | null;
   jobOfferId?: string; // Optional, not really used since Kanban is independent
 }
 
@@ -203,6 +235,8 @@ export interface UpdateKanbanColumnData {
   color?: string;
   order?: number;
   isDefault?: boolean;
+  mappedStatus?: string | null;
+  maxCards?: number | null;
 }
 
 export interface MoveApplicationData {
@@ -219,10 +253,17 @@ export interface ReorderColumnData {
 export interface CreateKanbanCardData {
   title: string;
   description?: string;
-  priority?: string; // low | medium | high | urgent
+  priority?: string;
   columnId: string;
   jobOfferIds?: string[];
   memberIds?: string[];
+  applicationId?: string;
+}
+
+export interface ImportApplicationData {
+  applicationId: string;
+  columnId: string;
+  recruteurId: string;
 }
 
 export interface UpdateKanbanCardData {
@@ -290,4 +331,8 @@ export interface CreateCardAttachmentData {
   fileSize?: number;
   recruteurId: string;
   uploadedById: string;
+}
+
+export interface ArchivedCard extends KanbanCard {
+  column?: { id: string; name: string } | null;
 }

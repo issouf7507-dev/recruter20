@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,10 +27,8 @@ import {
   IconChevronRight,
   IconStar,
   IconClock,
-  IconUser,
   IconQuestionMark,
-  IconBulb,
-  IconSettings,
+  IconLoader,
 } from "@tabler/icons-react";
 
 // Données mockées pour les FAQ
@@ -78,7 +77,7 @@ const faqData = [
     id: 6,
     question: "Comment contacter le support technique ?",
     answer:
-      "Vous pouvez nous contacter par email à support@recruteur20.com, par téléphone au +33 1 23 45 67 89, ou utiliser le formulaire de contact ci-dessous. Nous répondons sous 24h.",
+      "Vous pouvez nous contacter par email à contact@ylsix.com, par téléphone au +225 07 08 71 78 68, ou utiliser le formulaire de contact ci-dessous. Nous répondons sous 24h.",
     category: "Support",
     popular: true,
   },
@@ -92,9 +91,10 @@ const ressourcesData = [
     description:
       "Apprenez à rédiger des offres d'emploi attractives qui génèrent plus de candidatures.",
     type: "PDF",
-    taille: "2.3 MB",
+    taille: "3.8 KB",
     downloads: 1247,
     icon: IconBook,
+    href: "/documents/guide-creation-offres-efficaces.pdf",
   },
   {
     id: 2,
@@ -112,9 +112,10 @@ const ressourcesData = [
     description:
       "Modèle professionnel pour vos communications avec les candidats.",
     type: "DOCX",
-    taille: "156 KB",
+    taille: "9.2 KB",
     downloads: 567,
     icon: IconDownload,
+    href: "/documents/template-lettre-motivation.docx",
   },
   {
     id: 4,
@@ -122,9 +123,10 @@ const ressourcesData = [
     description:
       "Liste de contrôle pour ne rien oublier lors de vos processus de recrutement.",
     type: "PDF",
-    taille: "890 KB",
+    taille: "3.2 KB",
     downloads: 423,
     icon: IconBook,
+    href: "/documents/checklist-recrutement.pdf",
   },
 ];
 
@@ -138,6 +140,7 @@ export default function AideSupportPage() {
     sujet: "",
     message: "",
   });
+  const [isSending, setIsSending] = useState(false);
 
   const categories = [
     "all",
@@ -162,12 +165,28 @@ export default function AideSupportPage() {
     setExpandedFAQ(expandedFAQ === id ? null : id);
   };
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Formulaire de contact soumis:", contactForm);
-    // Ici vous pouvez ajouter la logique pour envoyer le message
-    alert("Votre message a été envoyé ! Nous vous répondrons sous 24h.");
-    setContactForm({ nom: "", email: "", sujet: "", message: "" });
+    setIsSending(true);
+    try {
+      const response = await fetch("/api/support/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(contactForm),
+      });
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || "Erreur lors de l'envoi du message");
+      }
+      toast.success("Votre message a été envoyé ! Nous vous répondrons sous 24h.");
+      setContactForm({ nom: "", email: "", sujet: "", message: "" });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Erreur lors de l'envoi du message"
+      );
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -237,10 +256,10 @@ export default function AideSupportPage() {
                     <IconMail className="h-8 w-8 text-blue-500 mx-auto mb-2" />
                     <h3 className="font-semibold mb-1">Email</h3>
                     <p className="text-sm text-muted-foreground mb-2">
-                      support@recruteur20.com
+                      contact@ylsix.com
                     </p>
                     <Button variant="outline" size="sm" asChild>
-                      <a href="mailto:support@recruteur20.com">
+                      <a href="mailto:contact@ylsix.com">
                         Envoyer un email
                       </a>
                     </Button>
@@ -251,10 +270,10 @@ export default function AideSupportPage() {
                     <IconPhone className="h-8 w-8 text-green-500 mx-auto mb-2" />
                     <h3 className="font-semibold mb-1">Téléphone</h3>
                     <p className="text-sm text-muted-foreground mb-2">
-                      +33 1 23 45 67 89
+                      +225 07 08 71 78 68
                     </p>
                     <Button variant="outline" size="sm" asChild>
-                      <a href="tel:+33123456789">Appeler</a>
+                      <a href="tel:+2250708717868">Appeler</a>
                     </Button>
                   </CardContent>
                 </Card>
@@ -386,10 +405,19 @@ export default function AideSupportPage() {
                                   </span>
                                 )}
                               </div>
-                              <Button variant="outline" size="sm">
-                                <IconDownload className="h-4 w-4" />
-                                Télécharger
-                              </Button>
+                              {ressource.href ? (
+                                <Button variant="outline" size="sm" asChild>
+                                  <a href={ressource.href} download>
+                                    <IconDownload className="h-4 w-4" />
+                                    Télécharger
+                                  </a>
+                                </Button>
+                              ) : (
+                                <Button variant="outline" size="sm" disabled>
+                                  <IconDownload className="h-4 w-4" />
+                                  Bientôt disponible
+                                </Button>
+                              )}
                             </div>
                             <div className="mt-2 text-xs text-muted-foreground">
                               {ressource.downloads &&
@@ -472,8 +500,12 @@ export default function AideSupportPage() {
                       <IconClock className="h-4 w-4" />
                       <span>Nous répondons généralement sous 24h</span>
                     </div>
-                    <Button type="submit" className="w-full md:w-auto">
-                      <IconMail className="h-4 w-4" />
+                    <Button type="submit" className="w-full md:w-auto" disabled={isSending}>
+                      {isSending ? (
+                        <IconLoader className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <IconMail className="h-4 w-4" />
+                      )}
                       Envoyer le message
                     </Button>
                   </form>

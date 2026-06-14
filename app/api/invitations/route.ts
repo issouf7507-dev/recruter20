@@ -4,6 +4,7 @@ import { withErrorHandler, forbidden, notFound, badRequest } from "@/lib/api-err
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { invitationRepository } from "@/lib/api/invitation/repository";
+import { getEffectivePlan } from "@/lib/plans";
 
 const createInvitationSchema = z.object({
   email: z.string().email("Email invalide"),
@@ -72,6 +73,29 @@ export const POST = withErrorHandler(async (req) => {
 
   const body = await request.json();
   const validatedData = createInvitationSchema.parse(body);
+
+  // Vérifier le quota d'utilisateurs du plan (titulaire + collaborateurs + invitations en attente)
+  const abonnement = await prisma.abonnement.findUnique({
+    where: { recruteurId: recruteur.id },
+    select: { plan: true, statut: true },
+  });
+  const plan = getEffectivePlan(abonnement);
+
+  if (plan.limits.maxUtilisateurs !== null) {
+    const [collaborateurs, invitationsEnAttente] = await Promise.all([
+      prisma.collaborateur.count({ where: { recruteurId: recruteur.id } }),
+      prisma.invitation.count({
+        where: { recruteurId: recruteur.id, accepted: false, expiresAt: { gt: new Date() } },
+      }),
+    ]);
+    const utilisateursActuels = 1 + collaborateurs + invitationsEnAttente; // +1 pour le titulaire du compte
+
+    if (utilisateursActuels >= plan.limits.maxUtilisateurs) {
+      return forbidden(
+        `Limite atteinte : votre plan ${plan.name} autorise au maximum ${plan.limits.maxUtilisateurs} utilisateur(s). Passez à un plan supérieur pour inviter davantage de collaborateurs.`,
+      );
+    }
+  }
 
   // Créer l'invitation
   const invitation = await invitationRepository.create({

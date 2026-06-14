@@ -122,6 +122,24 @@ export function useDeleteOffer() {
 }
 
 /**
+ * Hook to delete multiple offers at once
+ */
+export function useBulkDeleteOffers() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: offerService.bulkDeleteOffers,
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      toast.success(`${ids.length} offre(s) supprimée(s) avec succès`);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Erreur lors de la suppression des offres");
+    },
+  });
+}
+
+/**
  * Hook to update offer status (publish or draft)
  */
 export function useUpdateOfferStatus() {

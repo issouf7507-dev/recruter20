@@ -6,15 +6,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { useCandidat } from "@/lib/hooks/use-candidat";
 import { useCandidatures } from "@/lib/hooks/use-candidatures";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   IconCalendar, IconBriefcase, IconMapPin, IconPlus,
-  IconNotes, IconTrash, IconBuilding,
+  IconNotes, IconTrash, IconBuilding, IconExternalLink,
 } from "@tabler/icons-react";
+import { ChevronDownIcon } from "lucide-react";
 import { toast } from "sonner";
 
 const STATUT_COLORS: Record<string, string> = {
@@ -27,6 +29,24 @@ const STATUT_LABELS: Record<string, string> = {
   ACCEPTE: "Accepté", EN_REVISION: "En révision", EN_ATTENTE: "En attente", REFUSE: "Refusé",
 };
 
+const ENTRETIEN_TYPE_LABELS: Record<string, string> = {
+  VISIO: "Visio", TELEPHONE: "Téléphone", PRESENTIEL: "Présentiel",
+};
+const ENTRETIEN_STATUT_LABELS: Record<string, string> = {
+  PLANIFIE: "Planifié", REALISE: "Réalisé", ANNULE: "Annulé",
+};
+const ENTRETIEN_STATUT_COLORS: Record<string, string> = {
+  PLANIFIE: "bg-blue-100 text-blue-800",
+  REALISE: "bg-green-100 text-green-800",
+  ANNULE: "bg-red-100 text-red-800",
+};
+
+function formatEntretienDate(date: string | Date) {
+  return new Date(date).toLocaleString("fr-FR", {
+    weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+  });
+}
+
 export default function EntretiensPage() {
   const { candidat } = useCandidat();
   const { candidatures = [] } = useCandidatures(candidat?.id);
@@ -34,7 +54,8 @@ export default function EntretiensPage() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newNote, setNewNote] = useState("");
-  const [dateEntretien, setDateEntretien] = useState("");
+  const [entretienDate, setEntretienDate] = useState<Date | undefined>(undefined);
+  const [dateOpen, setDateOpen] = useState(false);
 
   const accepted = (candidatures as any[]).filter((c) =>
     ["ACCEPTE", "EN_REVISION"].includes(c.status)
@@ -51,18 +72,18 @@ export default function EntretiensPage() {
   });
 
   const addNote = useMutation({
-    mutationFn: async ({ id, content }: { id: string; content: string }) => {
+    mutationFn: async ({ id, content, entretienDate }: { id: string; content: string; entretienDate?: Date }) => {
       const res = await fetch(`/api/candidatures/${id}/notes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, entretienDate: entretienDate ? entretienDate.toISOString() : null }),
       });
       if (!res.ok) throw new Error("Erreur");
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["candidature-notes", selectedId] });
       setNewNote("");
-      setDateEntretien("");
+      setEntretienDate(undefined);
       toast.success("Note ajoutée");
     },
   });
@@ -76,10 +97,7 @@ export default function EntretiensPage() {
 
   const handleAddNote = () => {
     if (!selectedId || !newNote.trim()) return;
-    const content = dateEntretien
-      ? `[Entretien: ${dateEntretien}] ${newNote}`
-      : newNote;
-    addNote.mutate({ id: selectedId, content });
+    addNote.mutate({ id: selectedId, content: newNote, entretienDate });
   };
 
   const selected = (candidatures as any[]).find((c) => c.id === selectedId);
@@ -125,6 +143,17 @@ export default function EntretiensPage() {
                           {STATUT_LABELS[c.status] ?? c.status}
                         </Badge>
                       </div>
+                      {(() => {
+                        const upcoming = (c.entretiens as { dateHeure: string; statut: string }[] | undefined)?.find(
+                          (e) => e.statut === "PLANIFIE"
+                        );
+                        return upcoming ? (
+                          <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 mt-1.5 pl-6">
+                            <IconCalendar className="h-3 w-3" />
+                            Entretien le {formatEntretienDate(upcoming.dateHeure)}
+                          </div>
+                        ) : null;
+                      })()}
                     </CardContent>
                   </Card>
                 ))
@@ -153,12 +182,75 @@ export default function EntretiensPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {/* Entretiens planifiés par le recruteur */}
+                    {selected?.entretiens && selected.entretiens.length > 0 && (
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-semibold flex items-center gap-2">
+                          <IconCalendar className="h-4 w-4" />
+                          Entretien(s) planifié(s)
+                        </h3>
+                        {(selected.entretiens as {
+                          id: string; titre: string; dateHeure: string;
+                          type: string; lieu: string | null; statut: string;
+                        }[]).map((e) => (
+                          <div key={e.id} className="flex items-center justify-between gap-2 p-3 bg-muted/40 rounded-lg">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{e.titre}</p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {formatEntretienDate(e.dateHeure)}
+                                {e.lieu && !e.lieu.startsWith("http") && ` · ${e.lieu}`}
+                              </p>
+                              {e.lieu && e.lieu.startsWith("http") && (
+                                <a
+                                  href={e.lieu}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-xs text-blue-600 hover:underline dark:text-blue-400 mt-0.5"
+                                >
+                                  <IconExternalLink className="h-3 w-3" />
+                                  Rejoindre la réunion
+                                </a>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <Badge variant="outline" className="text-xs">
+                                {ENTRETIEN_TYPE_LABELS[e.type] ?? e.type}
+                              </Badge>
+                              <Badge className={`text-xs border-0 ${ENTRETIEN_STATUT_COLORS[e.statut] ?? "bg-gray-100 text-gray-700"}`}>
+                                {ENTRETIEN_STATUT_LABELS[e.statut] ?? e.statut}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     {/* Ajouter une note */}
                     <div className="space-y-2 p-3 bg-muted/40 rounded-lg">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div className="space-y-1">
                           <Label className="text-xs">Date d'entretien (optionnel)</Label>
-                          <Input type="datetime-local" value={dateEntretien} onChange={(e) => setDateEntretien(e.target.value)} className="h-8 text-xs" />
+                          <Popover open={dateOpen} onOpenChange={setDateOpen}>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" className="h-8 w-full justify-between text-xs font-normal">
+                                {entretienDate
+                                  ? entretienDate.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
+                                  : "Sélectionner une date"}
+                                <ChevronDownIcon className="h-3.5 w-3.5 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={entretienDate}
+                                captionLayout="dropdown"
+                                onSelect={(date) => {
+                                  setEntretienDate(date);
+                                  setDateOpen(false);
+                                }}
+                              />
+                            </PopoverContent>
+                          </Popover>
                         </div>
                       </div>
                       <Textarea
@@ -181,6 +273,12 @@ export default function EntretiensPage() {
                         notesData.map((note: any) => (
                           <div key={note.id} className="flex items-start gap-2 p-3 bg-background border rounded-lg">
                             <div className="flex-1 min-w-0">
+                              {note.entretienDate && (
+                                <Badge variant="outline" className="text-xs mb-1.5 gap-1">
+                                  <IconCalendar className="h-3 w-3" />
+                                  Entretien du {new Date(note.entretienDate).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                                </Badge>
+                              )}
                               <p className="text-sm whitespace-pre-wrap">{note.content}</p>
                               <p className="text-xs text-muted-foreground mt-1">
                                 {new Date(note.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}

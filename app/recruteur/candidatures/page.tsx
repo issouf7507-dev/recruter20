@@ -37,7 +37,9 @@ import {
   IconClock,
   IconMessage,
   IconLoader,
+  IconDownload,
 } from "@tabler/icons-react";
+import { exportToCSV } from "@/lib/utils/export-csv";
 import { useSession } from "@/lib/auth-client";
 import {
   useCollaborateurByUserId,
@@ -381,6 +383,27 @@ export default function CandidaturesRecuesPage() {
                       </Select>
                       <Button variant="outline" size="icon">
                         <IconFilter className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        title="Exporter en CSV"
+                        onClick={() => {
+                          const rows = (filteredCandidatures ?? []).map(
+                            (c: CandidatureRecruteur) => ({
+                              Prénom: c.candidat.prenom,
+                              Nom: c.candidat.nom,
+                              Email: c.candidat.user?.email ?? "",
+                              Téléphone: c.candidat.telephone ?? "",
+                              Offre: c.jobOffer.title,
+                              Statut: c.status,
+                              Date: new Date(c.createdAt).toLocaleDateString("fr-FR"),
+                            })
+                          );
+                          exportToCSV(rows, "candidatures.csv");
+                        }}
+                      >
+                        <IconDownload className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>

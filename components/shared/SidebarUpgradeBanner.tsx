@@ -4,6 +4,7 @@ import { useState } from "react";
 import { IconSparkles, IconCheck } from "@tabler/icons-react";
 import { useAbonnement } from "@/lib/hooks/use-abonnement";
 import { PlanSelectionModal } from "@/components/shared/PlanSelectionModal";
+import { PLANS } from "@/lib/plans";
 
 interface Props {
   recruteurId?: string;
@@ -24,7 +25,7 @@ export function SidebarUpgradeBanner({ recruteurId }: Props) {
         </div>
         <div className="min-w-0">
           <p className="text-xs font-semibold text-[#a590ff]">
-            Plan {abonnement.plan}
+            Plan {PLANS[abonnement.plan.toLowerCase() as keyof typeof PLANS]?.name ?? abonnement.plan}
           </p>
           {abonnement.dateFin && (
             <p className="text-[10px] text-muted-foreground truncate">
@@ -49,10 +50,10 @@ export function SidebarUpgradeBanner({ recruteurId }: Props) {
           <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20">
             <IconSparkles className="h-3.5 w-3.5 text-white" />
           </div>
-          <p className="text-xs font-bold">Passer au plan Pro</p>
+          <p className="text-xs font-bold">Passer à un plan supérieur</p>
         </div>
         <p className="text-[10px] leading-relaxed opacity-90 mb-3">
-          Multi-diffusion, offres illimitées, Kanban avancé et statistiques détaillées.
+          Offres illimitées, CVthèque avancée, multi-utilisateurs et reporting avancé.
         </p>
         <button
           onClick={() => setModalOpen(true)}

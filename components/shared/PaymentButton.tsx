@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
-type PlanId = "pro" | "entreprise";
+type PlanId = "pme" | "business" | "corporate";
 
 type PaymentButtonProps = {
     planId: PlanId;

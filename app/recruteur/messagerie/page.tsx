@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,44 @@ import {
   IconChecks,
   IconSend,
   IconArrowLeft,
+  IconTemplate,
 } from "@tabler/icons-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const MESSAGE_TEMPLATES = [
+  {
+    label: "Convocation entretien",
+    content:
+      "Bonjour,\n\nNous avons bien reçu votre candidature et nous serions ravis de vous rencontrer pour un entretien. Seriez-vous disponible prochainement ?\n\nCordialement,",
+  },
+  {
+    label: "Demande de disponibilités",
+    content:
+      "Bonjour,\n\nAfin de planifier un échange, pourriez-vous nous indiquer vos disponibilités pour la semaine prochaine ?\n\nCordialement,",
+  },
+  {
+    label: "Demande d'informations complémentaires",
+    content:
+      "Bonjour,\n\nMerci pour votre candidature. Afin de compléter notre étude de votre dossier, pourriez-vous nous faire parvenir des informations supplémentaires sur votre expérience ?\n\nCordialement,",
+  },
+  {
+    label: "Refus de candidature",
+    content:
+      "Bonjour,\n\nNous vous remercions de l'intérêt que vous portez à notre entreprise. Après examen attentif de votre dossier, nous ne sommes malheureusement pas en mesure de donner suite à votre candidature. Nous vous souhaitons bonne chance dans vos recherches.\n\nCordialement,",
+  },
+  {
+    label: "Confirmation de recrutement",
+    content:
+      "Bonjour,\n\nNous avons le plaisir de vous informer que votre candidature a été retenue. Nous reviendrons vers vous très prochainement avec les détails de notre offre.\n\nCordialement,",
+  },
+];
 import { useSession } from "@/lib/auth-client";
 import { useRecruteurByUserId } from "@/lib/hooks/use-recruteurs";
 import { toast } from "sonner";
@@ -107,7 +144,7 @@ export default function MessageriePage() {
         });
       }
     },
-    [selectedConversation?.id]
+    [selectedConversation?.id],
   );
 
   // Callback pour les mises à jour de conversation (liste des conversations)
@@ -145,7 +182,7 @@ export default function MessageriePage() {
   useEffect(() => {
     if (conversationIdFromUrl && conversationsRecruteur?.length > 0) {
       const conversation = conversationsRecruteur?.find(
-        (c: Conversation) => c.id === conversationIdFromUrl
+        (c: Conversation) => c.id === conversationIdFromUrl,
       );
       if (conversation) {
         handleConversationSelect(conversation);
@@ -192,7 +229,7 @@ export default function MessageriePage() {
             senderType: "RECRUTEUR",
             content: newMessage,
           }),
-        }
+        },
       );
 
       const result = await response.json();
@@ -260,7 +297,7 @@ export default function MessageriePage() {
     (conv: Conversation) =>
       `${conv.candidat.prenom} ${conv.candidat.nom}`
         .toLowerCase()
-        .includes(searchTerm.toLowerCase())
+        .includes(searchTerm.toLowerCase()),
   );
 
   if (isLoadingConversationsRecruteur) {
@@ -361,7 +398,7 @@ export default function MessageriePage() {
                                 <AvatarFallback>
                                   {getInitials(
                                     conversation.candidat.nom,
-                                    conversation.candidat.prenom
+                                    conversation.candidat.prenom,
                                   )}
                                 </AvatarFallback>
                               </Avatar>
@@ -374,7 +411,7 @@ export default function MessageriePage() {
                                   {lastMessage && (
                                     <span className="text-muted-foreground flex-none text-xs">
                                       {formatLastMessageTime(
-                                        lastMessage.createdAt
+                                        lastMessage.createdAt,
                                       )}
                                     </span>
                                   )}
@@ -393,7 +430,7 @@ export default function MessageriePage() {
                               </div>
                             </div>
                           );
-                        }
+                        },
                       )}
                     </div>
                   </div>
@@ -425,7 +462,7 @@ export default function MessageriePage() {
                             <AvatarFallback>
                               {getInitials(
                                 selectedConversation.candidat.nom,
-                                selectedConversation.candidat.prenom
+                                selectedConversation.candidat.prenom,
                               )}
                             </AvatarFallback>
                           </Avatar>
@@ -538,6 +575,35 @@ export default function MessageriePage() {
                             <span>Le candidat est en train d'écrire</span>
                           </div>
                         )}
+                        <div className="mb-2 flex gap-1 flex-wrap">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 gap-1 text-xs"
+                              >
+                                <IconTemplate className="h-3 w-3" />
+                                Templates
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-64">
+                              <DropdownMenuLabel>
+                                Insérer un template
+                              </DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              {MESSAGE_TEMPLATES.map((t) => (
+                                <DropdownMenuItem
+                                  key={t.label}
+                                  onSelect={() => setNewMessage(t.content)}
+                                  className="cursor-pointer"
+                                >
+                                  {t.label}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                         <div className="bg-muted relative flex items-center rounded-md border">
                           <Input
                             placeholder="Tapez votre message..."
