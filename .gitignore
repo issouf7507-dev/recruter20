@@ -49,3 +49,6 @@ logs/
 # sql
 /sql
 
+.sh
+.txt
+.md

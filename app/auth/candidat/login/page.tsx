@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import AuthForm from "@/components/auth/AuthForm";
 import AuthSidePanel from "@/components/auth/AuthSidePanel";
-import { signIn } from "@/lib/auth-client";
+import { signIn, signOut } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { getCandidat } from "@/lib/actions/getCandidat";
 
@@ -47,6 +47,14 @@ export default function CandidateLoginPage() {
       }
 
       if (res.data) {
+        // Bloquer les nouveaux utilisateurs non vérifiés
+        if (res.data.user.emailVerified === false) {
+          await signOut();
+          toast.error("Veuillez vérifier votre email avant de vous connecter.");
+          window.location.href = `/auth/verify-email?email=${encodeURIComponent(data.email)}&type=candidat`;
+          return;
+        }
+
         try {
           const candidat = await getCandidat(res.data.user.id);
 

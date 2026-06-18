@@ -15,6 +15,7 @@ import {
   IconSparkles,
   IconCalendar,
   IconSearch,
+  IconSettings,
 } from "@tabler/icons-react";
 import { useNotifications } from "@/lib/hooks/use-notifications";
 import {
@@ -61,6 +62,10 @@ const NAV_OUTILS = [
   { title: "Documents", url: "/candidat/documents", icon: IconFolder },
   { title: "Objectifs", url: "/candidat/objectifs", icon: IconTarget },
   { title: "Notifications", url: "/candidat/notifications", icon: IconBell, badge: true },
+];
+
+const NAV_COMPTE = [
+  { title: "Paramètres", url: "/candidat/parametres", icon: IconSettings },
 ];
 
 // ─── Nav group ─────────────────────────────────────────────────────────
@@ -204,6 +209,7 @@ export function CandidatSidebar({ ...props }: React.ComponentProps<typeof Sideba
         <NavGroup label="Général" items={NAV_GENERAL} pathname={pathname} />
         <NavGroup label="Recrutement" items={NAV_RECRUTEMENT} pathname={pathname} />
         <NavGroup label="Outils" items={NAV_OUTILS} pathname={pathname} unreadCount={unreadCount} />
+        <NavGroup label="Compte" items={NAV_COMPTE} pathname={pathname} />
 
         {/* Bottom shortcut */}
         <SidebarGroup style={{ marginTop: "auto", borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 10 }}>

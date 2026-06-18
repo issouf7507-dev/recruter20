@@ -1,0 +1,23 @@
+Bonne idée, mais il faut distinguer deux cas très différents :
+
+Cas 1 — Candidat qui a déjà postulé (simple, safe)
+Envoyer un email pour lui proposer une autre offre du même recruteur. Consentement implicite, relation déjà établie. C'est le cas le plus facile à implémenter.
+
+Cas 2 — Candidat dans la CVthèque (plus complexe)
+Prospection froide vers quelqu'un qui ne connaît pas le recruteur. Là il y a deux vrais problèmes :
+- RGPD : le candidat doit avoir consenti à recevoir des offres, et chaque email doit avoir un lien de désabonnement fonctionnel — sinon risque légal sérieux
+- Réputation email : si les recruteurs abusent, le domaine finit en spam et ça casse tous les emails transactionnels de la plateforme (confirmations, notifications)
+
+Ma recommandation : commencer par le Cas 1 uniquement — dans la fiche candidature, un bouton "Proposer une autre offre" qui envoie un email pré-rempli avec une offre sélectionnée. C'est utile, rapide à implémenter, et sans risque légal.
+
+Le Cas 2 (prospection CVthèque) mériterait son propre système plus tard avec opt-in côté candidat dans ses paramètres + quota par plan d'abonnement.
+
+Tu veux qu'on commence par le Cas 1 ?
+
+✻ Sautéed for 22s
+
+※ recap: Ajout du sélecteur de fournisseur IA (Claude, GPT-4, Gemini/Kimi à venir) dans les paramètres recruteur, avec migration DB et backend mis à jour. La prochaine étape est d'implémenter l'envoi d'emails de proposition d'offres aux candidats ayant déjà postulé. (disable recaps in /config)
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────

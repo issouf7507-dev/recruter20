@@ -219,7 +219,7 @@ export async function deleteOffer(id: string): Promise<void> {
 
   const result: ApiResponse<void> = await response.json();
 
-  if (!result.success || !result.data) {
+  if (!result.success) {
     throw new Error(result.error || "Failed to delete offer");
   }
 }

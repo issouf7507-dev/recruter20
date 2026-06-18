@@ -13,12 +13,9 @@ interface MatchResult {
   resume: string;
 }
 
-async function callClaude(
-  apiKey: string,
-  candidatProfile: string,
-  offreDescription: string
-): Promise<MatchResult["niveau"] extends infer N ? { score: number; niveau: N; forces: string[]; manques: string[]; resume: string } : never> {
-  const prompt = `Tu es un expert en recrutement. Analyse la compatibilité entre ce profil candidat et cette offre d'emploi.
+type AIAnalysis = Pick<MatchResult, "score" | "niveau" | "forces" | "manques" | "resume">;
+
+const PROMPT_TEMPLATE = (candidatProfile: string, offreDescription: string) => `Tu es un expert en recrutement. Analyse la compatibilité entre ce profil candidat et cette offre d'emploi.
 
 PROFIL CANDIDAT :
 ${candidatProfile}
@@ -41,6 +38,7 @@ Critères de score :
 - 40-59 : moyen (profil partiel, manques significatifs)
 - 0-39 : faible (profil peu adapté)`;
 
+async function callClaude(apiKey: string, candidatProfile: string, offreDescription: string): Promise<AIAnalysis> {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -51,7 +49,7 @@ Critères de score :
     body: JSON.stringify({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 512,
-      messages: [{ role: "user", content: prompt }],
+      messages: [{ role: "user", content: PROMPT_TEMPLATE(candidatProfile, offreDescription) }],
     }),
   });
 
@@ -64,12 +62,48 @@ Critères de score :
 
   const data = await response.json();
   const content = data.content?.[0]?.text ?? "";
-
   try {
     return JSON.parse(content);
   } catch {
     throw new Error("Réponse Claude invalide (JSON malformé).");
   }
+}
+
+async function callOpenAI(apiKey: string, candidatProfile: string, offreDescription: string): Promise<AIAnalysis> {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      max_tokens: 512,
+      messages: [
+        { role: "user", content: PROMPT_TEMPLATE(candidatProfile, offreDescription) },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    if (response.status === 401) throw new Error("Clé API OpenAI invalide ou expirée.");
+    if (response.status === 429) throw new Error("Limite de l'API OpenAI atteinte. Réessayez dans quelques instants.");
+    throw new Error(`Erreur OpenAI API (${response.status}): ${err.slice(0, 200)}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content ?? "";
+  try {
+    return JSON.parse(content);
+  } catch {
+    throw new Error("Réponse OpenAI invalide (JSON malformé).");
+  }
+}
+
+async function callAI(provider: string, apiKey: string, candidatProfile: string, offreDescription: string): Promise<AIAnalysis> {
+  if (provider === "openai") return callOpenAI(apiKey, candidatProfile, offreDescription);
+  return callClaude(apiKey, candidatProfile, offreDescription);
 }
 
 function buildCandidatProfile(candidat: {
@@ -96,15 +130,12 @@ function buildCandidatProfile(candidat: {
   if (candidat.niveauEtude?.length) {
     lines.push(`Niveau d'étude : ${candidat.niveauEtude.map((n) => n.nom).join(", ")}`);
   }
-
   if (candidat.candidatCompetences?.length) {
     lines.push(`Compétences : ${candidat.candidatCompetences.map((c) => c.competence).join(", ")}`);
   }
-
   if (candidat.certifications?.length) {
     lines.push(`Certifications : ${candidat.certifications.map((c) => c.nom).join(", ")}`);
   }
-
   if (candidat.experiences?.length) {
     lines.push("Expériences :");
     candidat.experiences.slice(0, 4).forEach((exp) => {
@@ -114,7 +145,6 @@ function buildCandidatProfile(candidat: {
       if (exp.description) lines.push(`    ${exp.description.slice(0, 150)}`);
     });
   }
-
   if (candidat.formations?.length) {
     lines.push("Formations :");
     candidat.formations.slice(0, 2).forEach((f) => {
@@ -158,21 +188,16 @@ export const POST = withErrorHandler(async (req) => {
     return badRequest("Maximum 10 candidats par analyse");
   }
 
-  // Vérifier que le recruteur — cast to any car claudeApiKey sera disponible
-  // après `prisma generate` (ajouté au schema mais pas encore régénéré)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recruteur = await (prisma.recruteur as any).findUnique({
+  const recruteur = await prisma.recruteur.findUnique({
     where: { id: recruteurId },
-    select: { userId: true, claudeApiKey: true },
-  }) as { userId: string; claudeApiKey: string | null } | null;
+    select: { userId: true, aiApiKey: true, aiProvider: true },
+  });
 
   if (!recruteur || recruteur.userId !== session.user.id) return forbidden();
-  if (!recruteur.claudeApiKey) {
-    return badRequest("Aucune clé API Claude configurée. Ajoutez-la dans les Paramètres → onglet IA.");
+  if (!recruteur.aiApiKey) {
+    return badRequest("Aucune clé API IA configurée. Ajoutez-la dans les Paramètres → onglet IA.");
   }
 
-  // Récupérer l'offre (champs de base disponibles dans le schéma actuel)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const offre = await (prisma.jobOffer as any).findUnique({
     where: { id: jobOfferId },
     select: {
@@ -187,7 +212,6 @@ export const POST = withErrorHandler(async (req) => {
 
   if (!offre) return notFound("Offre d'emploi");
 
-  // Récupérer les candidats
   const candidats = await prisma.candidat.findMany({
     where: { id: { in: candidatIds } },
     include: {
@@ -199,15 +223,14 @@ export const POST = withErrorHandler(async (req) => {
     },
   });
 
+  const provider = recruteur.aiProvider || "claude";
   const offreDescription = buildOffreDescription(offre);
-
-  // Analyser chaque candidat (séquentiel pour éviter le rate limiting)
   const results: MatchResult[] = [];
 
   for (const candidat of candidats) {
     try {
       const profile = buildCandidatProfile(candidat);
-      const analysis = await callClaude(recruteur.claudeApiKey, profile, offreDescription);
+      const analysis = await callAI(provider, recruteur.aiApiKey, profile, offreDescription);
       results.push({
         candidatId: candidat.id,
         score: Math.min(100, Math.max(0, analysis.score)),
@@ -216,13 +239,10 @@ export const POST = withErrorHandler(async (req) => {
         manques: analysis.manques || [],
         resume: analysis.resume || "",
       });
-      // Petite pause entre chaque appel (évite le rate limiting)
       if (candidats.length > 1) await new Promise((r) => setTimeout(r, 300));
     } catch (error) {
       logger.error("Erreur matching candidat", { candidatId: candidat.id, error: String(error) });
-      // Propager l'erreur de clé invalide immédiatement
       if (String(error).includes("invalide") || String(error).includes("401")) throw error;
-      // Pour les autres erreurs, continuer avec un score nul
       results.push({
         candidatId: candidat.id,
         score: 0,
@@ -234,7 +254,6 @@ export const POST = withErrorHandler(async (req) => {
     }
   }
 
-  // Trier par score décroissant
   results.sort((a, b) => b.score - a.score);
 
   return NextResponse.json({ success: true, data: { results, offre: offre.title } });

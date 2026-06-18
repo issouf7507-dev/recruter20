@@ -71,8 +71,8 @@ export default function CandidateRegisterPage() {
             nationalite: "CIV",
             type: "CANDIDAT",
           });
-          toast.success("Inscription réussie ! Redirection...");
-          router.push("/auth/candidat/login");
+          toast.success("Inscription réussie ! Vérifiez votre email.");
+          router.push(`/auth/verify-email?email=${encodeURIComponent(data.email)}&type=candidat`);
         } catch (signupError) {
           console.error("Erreur lors de la finalisation de l'inscription:", signupError);
           toast.error("Erreur lors de la finalisation de l'inscription. Veuillez contacter le support.");
