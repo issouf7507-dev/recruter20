@@ -431,6 +431,183 @@ class EmailService {
   }
 
   /**
+   * Envoyer un code de vérification email (6 chiffres)
+   */
+  async sendVerificationCodeEmail({
+    to,
+    name,
+    code,
+  }: {
+    to: string;
+    name: string;
+    code: string;
+  }) {
+    const logoUrl = `${APP_URL}/img/icon2.png`;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Vérification de votre adresse email</title>
+        </head>
+        <body style="font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #e5e7eb; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #0f0f0f;">
+          <div style="background: #1a1a1a; border-radius: 16px; overflow: hidden; border: 1px solid #2a2a2a; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+            <div style="background: linear-gradient(135deg, #1a1a1a 0%, #2d1f4e 100%); padding: 40px 30px; text-align: center; border-bottom: 1px solid #3d2d5c;">
+              <img src="${logoUrl}" alt="Ylsix" style="height: 50px; margin-bottom: 20px;" />
+              <h1 style="color: #a78bfa; margin: 0; font-size: 24px; font-weight: 600;">Vérification de votre email</h1>
+              <p style="color: #6b7280; margin: 8px 0 0 0; font-size: 14px;">Entrez ce code pour activer votre compte</p>
+            </div>
+            <div style="padding: 35px 30px; text-align: center;">
+              <p style="font-size: 16px; color: #e5e7eb; margin-bottom: 20px; text-align: left;">Bonjour <span style="color: #a78bfa; font-weight: 600;">${name}</span>,</p>
+              <p style="font-size: 15px; color: #9ca3af; margin-bottom: 30px; text-align: left;">
+                Voici votre code de vérification. Il est valable <strong style="color: #e5e7eb;">15 minutes</strong>.
+              </p>
+              <div style="background: linear-gradient(135deg, #2d1f4e 0%, #1e1b4b 100%); border: 2px solid #8b5cf6; border-radius: 16px; padding: 30px; margin: 0 auto 30px; display: inline-block; min-width: 220px;">
+                <p style="margin: 0; font-size: 42px; font-weight: 700; letter-spacing: 12px; color: #a78bfa; font-family: monospace;">${code}</p>
+              </div>
+              <div style="background: #252525; padding: 16px 20px; border-radius: 12px; margin-top: 10px; text-align: left;">
+                <p style="margin: 0; color: #6b7280; font-size: 13px;">
+                  Si vous n'avez pas créé de compte sur Ylsix, ignorez cet email.
+                </p>
+              </div>
+            </div>
+            <div style="background: #151515; padding: 25px 30px; border-top: 1px solid #2a2a2a;">
+              <p style="font-size: 12px; color: #6b7280; text-align: center; margin: 0;">
+                Cet email a été envoyé automatiquement depuis la plateforme <span style="color: #a78bfa;">Ylsix</span>.
+              </p>
+            </div>
+          </div>
+          <p style="text-align: center; color: #4b5563; font-size: 11px; margin-top: 20px;">
+            © ${new Date().getFullYear()} Ylsix. Tous droits réservés.
+          </p>
+        </body>
+      </html>
+    `;
+
+    const { data, error } = await resend.emails.send({
+      from: FROM,
+      to,
+      subject: `${code} – Votre code de vérification Ylsix`,
+      html,
+    });
+
+    if (error) {
+      console.error("Erreur Resend:", error);
+      throw new Error("Impossible d'envoyer le code de vérification");
+    }
+
+    return { success: true, messageId: data?.id };
+  }
+
+  /**
+   * Proposer une offre d'emploi à un candidat ayant déjà postulé
+   */
+  async sendJobProposalEmail({
+    to,
+    candidatName,
+    recruteurName,
+    companyName,
+    jobTitle,
+    jobLocation,
+    jobType,
+    jobDescription,
+    personalMessage,
+    jobUrl,
+  }: {
+    to: string;
+    candidatName: string;
+    recruteurName: string;
+    companyName?: string | null;
+    jobTitle: string;
+    jobLocation?: string | null;
+    jobType?: string | null;
+    jobDescription?: string | null;
+    personalMessage?: string | null;
+    jobUrl: string;
+  }) {
+    const logoUrl = `${APP_URL}/img/icon2.png`;
+    const truncatedDesc = jobDescription
+      ? jobDescription.replace(/<[^>]+>/g, "").slice(0, 300)
+      : null;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Une offre pour vous</title>
+        </head>
+        <body style="font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #e5e7eb; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #0f0f0f;">
+          <div style="background: #1a1a1a; border-radius: 16px; overflow: hidden; border: 1px solid #2a2a2a; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+            <div style="background: linear-gradient(135deg, #1a1a1a 0%, #2d1f4e 100%); padding: 40px 30px; text-align: center; border-bottom: 1px solid #3d2d5c;">
+              <img src="${logoUrl}" alt="Ylsix" style="height: 50px; margin-bottom: 20px;" />
+              <h1 style="color: #a78bfa; margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.5px;">Une offre d'emploi pour vous</h1>
+              <p style="color: #6b7280; margin: 8px 0 0 0; font-size: 14px;">Un recruteur pense que ce poste vous correspond</p>
+            </div>
+            <div style="padding: 35px 30px;">
+              <p style="font-size: 16px; color: #e5e7eb; margin: 0 0 20px 0;">Bonjour <span style="color: #a78bfa; font-weight: 600;">${candidatName}</span>,</p>
+              <p style="font-size: 15px; color: #9ca3af; margin: 0 0 25px 0;">
+                <strong style="color: #e5e7eb;">${recruteurName}</strong>${companyName ? ` <span style="color: #6b7280;">de</span> <strong style="color: #e5e7eb;">${companyName}</strong>` : ""} a pensé à vous pour cette opportunité :
+              </p>
+
+              ${personalMessage ? `
+              <div style="background: linear-gradient(135deg, #1e3a2f 0%, #14532d 100%); padding: 20px; border-radius: 12px; margin: 0 0 25px 0; border-left: 4px solid #22c55e;">
+                <p style="margin: 0 0 6px 0; color: #86efac; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Message personnel</p>
+                <p style="margin: 0; color: #d1fae5; font-size: 14px; font-style: italic;">"${personalMessage}"</p>
+              </div>` : ""}
+
+              <div style="background: linear-gradient(135deg, #2d1f4e 0%, #1e1b4b 100%); padding: 24px; border-radius: 12px; margin: 0 0 25px 0; border: 1px solid #4c1d95;">
+                <p style="margin: 0 0 10px 0; font-weight: 700; color: #c4b5fd; font-size: 18px;">${jobTitle}</p>
+                ${companyName ? `<p style="margin: 0 0 6px 0; color: #a78bfa; font-size: 14px;">🏢 ${companyName}</p>` : ""}
+                ${jobLocation ? `<p style="margin: 0 0 6px 0; color: #9ca3af; font-size: 13px;">📍 ${jobLocation}</p>` : ""}
+                ${jobType ? `<p style="margin: 0; color: #9ca3af; font-size: 13px;">📋 ${jobType}</p>` : ""}
+              </div>
+
+              ${truncatedDesc ? `
+              <div style="background: #252525; padding: 20px; border-radius: 12px; margin: 0 0 30px 0; border: 1px solid #333;">
+                <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Aperçu du poste</p>
+                <p style="margin: 0; color: #d1d5db; font-size: 14px; line-height: 1.7;">${truncatedDesc}${jobDescription && jobDescription.replace(/<[^>]+>/g, "").length > 300 ? "..." : ""}</p>
+              </div>` : ""}
+
+              <div style="text-align: center; margin: 35px 0;">
+                <a href="${jobUrl}"
+                   style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 15px; box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.4);">
+                  Voir l'offre et postuler
+                </a>
+              </div>
+            </div>
+            <div style="background: #151515; padding: 20px 30px; border-top: 1px solid #2a2a2a;">
+              <p style="font-size: 11px; color: #4b5563; text-align: center; margin: 0 0 6px 0;">
+                Vous recevez cet email car vous avez déjà postulé via la plateforme <span style="color: #a78bfa;">Ylsix</span>.
+              </p>
+              <p style="font-size: 11px; color: #4b5563; text-align: center; margin: 0;">
+                © ${new Date().getFullYear()} Ylsix. Tous droits réservés.
+              </p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to,
+      subject: `${recruteurName}${companyName ? ` (${companyName})` : ""} vous propose : ${jobTitle}`,
+      html,
+    });
+
+    if (error) {
+      console.error("Erreur Resend:", error);
+      throw new Error("Impossible d'envoyer l'email de proposition");
+    }
+
+    return { success: true };
+  }
+
+  /**
    * Envoyer un message du formulaire "Aide et support" vers le support Ylsix
    */
   async sendContactSupportEmail({

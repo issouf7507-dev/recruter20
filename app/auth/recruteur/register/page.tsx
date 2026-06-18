@@ -63,8 +63,8 @@ export default function RecruiterRegisterPage() {
             type: "ENTREPRISE",
             phone: data.phone || "",
           });
-          toast.success("Inscription réussie ! Redirection...");
-          router.push("/auth/recruteur/login");
+          toast.success("Inscription réussie ! Vérifiez votre email.");
+          router.push(`/auth/verify-email?email=${encodeURIComponent(data.email)}&type=recruteur`);
         } catch (signupError) {
           console.error("Erreur lors de la finalisation de l'inscription:", signupError);
           toast.error("Erreur lors de la finalisation de l'inscription. Veuillez contacter le support.");

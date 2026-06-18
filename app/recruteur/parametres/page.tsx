@@ -63,13 +63,15 @@ export default function ParametresPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("profil");
 
-  // Claude API Key state
-  const [claudeKeyInput, setClaudeKeyInput] = useState("");
-  const [claudeKeyVisible, setClaudeKeyVisible] = useState(false);
-  const [claudeKeyStatus, setClaudeKeyStatus] = useState<{
+  // IA API Key state
+  const [aiKeyInput, setAiKeyInput] = useState("");
+  const [aiKeyVisible, setAiKeyVisible] = useState(false);
+  const [aiKeyStatus, setAiKeyStatus] = useState<{
     hasKey: boolean;
     maskedKey: string | null;
+    provider: string;
   } | null>(null);
+  const [aiProvider, setAiProvider] = useState("claude");
   const [isSavingKey, setIsSavingKey] = useState(false);
 
   // Form states
@@ -100,6 +102,13 @@ export default function ParametresPage() {
     newPassword: "",
     confirmPassword: "",
   });
+
+  // Email verification states
+  const [verifCode, setVerifCode] = useState("");
+  const [isSendingVerifCode, setIsSendingVerifCode] = useState(false);
+  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
+  const [verifCodeSent, setVerifCodeSent] = useState(false);
+  const [verifCountdown, setVerifCountdown] = useState(0);
 
   // Update form data when recruteur data loads
   useEffect(() => {
@@ -221,19 +230,121 @@ export default function ParametresPage() {
     }
   };
 
-  // Charger le statut de la clé Claude quand le recruteurId est disponible
+  // Countdown pour renvoi de code de vérification
+  useEffect(() => {
+    if (verifCountdown <= 0) return;
+    const t = setTimeout(() => setVerifCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [verifCountdown]);
+
+  const handleSendVerifCode = async () => {
+    const email = session?.user?.email;
+    if (!email) return;
+    setIsSendingVerifCode(true);
+    try {
+      const res = await fetch("/api/auth/send-verification-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Erreur lors de l'envoi du code");
+      } else {
+        toast.success("Code envoyé ! Vérifiez votre boîte email.");
+        setVerifCodeSent(true);
+        setVerifCountdown(60);
+      }
+    } catch {
+      toast.error("Erreur réseau");
+    } finally {
+      setIsSendingVerifCode(false);
+    }
+  };
+
+  const handleVerifyEmail = async () => {
+    const email = session?.user?.email;
+    if (!email || verifCode.length !== 6) return;
+    setIsVerifyingEmail(true);
+    try {
+      const res = await fetch("/api/auth/verify-email-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code: verifCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Code incorrect");
+        setVerifCode("");
+      } else {
+        toast.success("Email vérifié avec succès !");
+        setVerifCodeSent(false);
+        setVerifCode("");
+        // Rafraîchir la session pour refléter emailVerified = true
+        window.location.reload();
+      }
+    } catch {
+      toast.error("Erreur réseau");
+    } finally {
+      setIsVerifyingEmail(false);
+    }
+  };
+
+  const AI_PROVIDERS = [
+    {
+      id: "claude",
+      label: "Claude (Anthropic)",
+      placeholder: "sk-ant-api03-...",
+      prefix: "sk-ant-",
+      model: "claude-haiku-4-5-20251001",
+      cost: "~0,01 $ par analyse (Claude Haiku)",
+      consoleUrl: "https://console.anthropic.com",
+      consoleName: "console.anthropic.com",
+      steps: [
+        'Connectez-vous sur console.anthropic.com',
+        'Allez dans API Keys → Create Key',
+        'Copiez la clé et collez-la ci-dessus',
+        'Vous aurez besoin de crédits sur votre compte Anthropic',
+      ],
+    },
+    {
+      id: "openai",
+      label: "GPT-4 (OpenAI)",
+      placeholder: "sk-proj-...",
+      prefix: "sk-",
+      model: "gpt-4o-mini",
+      cost: "~0,01 $ par analyse (GPT-4o mini)",
+      consoleUrl: "https://platform.openai.com/api-keys",
+      consoleName: "platform.openai.com",
+      steps: [
+        'Connectez-vous sur platform.openai.com',
+        'Allez dans API keys → Create new secret key',
+        'Copiez la clé et collez-la ci-dessus',
+        'Vous aurez besoin de crédits sur votre compte OpenAI',
+      ],
+    },
+  ] as const;
+
+  // Charger le statut de la clé IA quand le recruteurId est disponible
   useEffect(() => {
     if (!recruteurId) return;
     fetch(`/api/recruteurs/${recruteurId}/claude-key`)
       .then((r) => r.json())
-      .then((d) => { if (d.success) setClaudeKeyStatus(d.data); })
+      .then((d) => {
+        if (d.success) {
+          setAiKeyStatus(d.data);
+          if (d.data.provider) setAiProvider(d.data.provider);
+        }
+      })
       .catch(() => {});
   }, [recruteurId]);
 
-  const handleSaveClaudeKey = async () => {
+  const handleSaveAiKey = async () => {
     if (!recruteurId) return;
-    if (!claudeKeyInput.startsWith("sk-ant-")) {
-      toast.error("La clé doit commencer par 'sk-ant-'");
+    const provider = AI_PROVIDERS.find((p) => p.id === aiProvider);
+    if (!provider) return;
+    if (!aiKeyInput.startsWith(provider.prefix)) {
+      toast.error(`La clé ${provider.label} doit commencer par '${provider.prefix}'`);
       return;
     }
     setIsSavingKey(true);
@@ -241,20 +352,19 @@ export default function ParametresPage() {
       const res = await fetch(`/api/recruteurs/${recruteurId}/claude-key`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: claudeKeyInput }),
+        body: JSON.stringify({ apiKey: aiKeyInput, provider: aiProvider }),
       });
       const data = await res.json();
       if (!res.ok) { toast.error(data.message || "Erreur de sauvegarde"); return; }
-      toast.success("Clé API Claude sauvegardée !");
-      setClaudeKeyInput("");
-      // Rafraîchir le statut
+      toast.success(`Clé API ${provider.label} sauvegardée !`);
+      setAiKeyInput("");
       const status = await fetch(`/api/recruteurs/${recruteurId}/claude-key`).then((r) => r.json());
-      if (status.success) setClaudeKeyStatus(status.data);
+      if (status.success) setAiKeyStatus(status.data);
     } catch { toast.error("Erreur réseau"); }
     finally { setIsSavingKey(false); }
   };
 
-  const handleDeleteClaudeKey = async () => {
+  const handleDeleteAiKey = async () => {
     if (!recruteurId) return;
     setIsSavingKey(true);
     try {
@@ -263,7 +373,7 @@ export default function ParametresPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ apiKey: null }),
       });
-      setClaudeKeyStatus({ hasKey: false, maskedKey: null });
+      setAiKeyStatus({ hasKey: false, maskedKey: null, provider: "claude" });
       toast.success("Clé API supprimée");
     } catch { toast.error("Erreur réseau"); }
     finally { setIsSavingKey(false); }
@@ -324,7 +434,7 @@ export default function ParametresPage() {
                   <TabsTrigger value="ia" className="flex items-center gap-1.5">
                     <IconRobot className="h-3.5 w-3.5" />
                     IA
-                    {claudeKeyStatus?.hasKey && (
+                    {aiKeyStatus?.hasKey && (
                       <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
                     )}
                   </TabsTrigger>
@@ -733,6 +843,98 @@ export default function ParametresPage() {
 
                 {/* Sécurité Tab */}
                 <TabsContent value="securite" className="space-y-6">
+                  {/* Email Verification Card */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <IconMail className="h-5 w-5" />
+                        Vérification de l&apos;email
+                      </CardTitle>
+                      <CardDescription>
+                        Vérifiez que vous êtes bien propriétaire de votre adresse email
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {session?.user?.emailVerified ? (
+                        <div className="flex items-center gap-3 p-4 rounded-lg bg-green-50 border border-green-200 dark:bg-green-950 dark:border-green-800">
+                          <IconCircleCheck className="h-5 w-5 text-green-600 shrink-0" />
+                          <div>
+                            <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                              Email vérifié
+                            </p>
+                            <p className="text-xs text-green-700 dark:text-green-300 mt-0.5">
+                              {session.user.email}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="flex items-start gap-3 p-4 rounded-lg bg-yellow-50 border border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800">
+                            <IconAlertCircle className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                                Email non vérifié
+                              </p>
+                              <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-0.5">
+                                {session?.user?.email}
+                              </p>
+                            </div>
+                          </div>
+                          {!verifCodeSent ? (
+                            <Button
+                              onClick={handleSendVerifCode}
+                              disabled={isSendingVerifCode}
+                              variant="outline"
+                            >
+                              {isSendingVerifCode ? (
+                                <IconLoader className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <IconMail className="h-4 w-4 mr-2" />
+                              )}
+                              Envoyer un code de vérification
+                            </Button>
+                          ) : (
+                            <div className="space-y-3">
+                              <p className="text-sm text-muted-foreground">
+                                Entrez le code à 6 chiffres reçu par email
+                              </p>
+                              <div className="flex gap-2">
+                                <Input
+                                  value={verifCode}
+                                  onChange={(e) => setVerifCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                  placeholder="123456"
+                                  maxLength={6}
+                                  className="font-mono tracking-widest max-w-[140px]"
+                                />
+                                <Button
+                                  onClick={handleVerifyEmail}
+                                  disabled={isVerifyingEmail || verifCode.length !== 6}
+                                >
+                                  {isVerifyingEmail ? (
+                                    <IconLoader className="h-4 w-4 mr-2 animate-spin" />
+                                  ) : (
+                                    <IconCheck className="h-4 w-4 mr-2" />
+                                  )}
+                                  Vérifier
+                                </Button>
+                              </div>
+                              <button
+                                onClick={handleSendVerifCode}
+                                disabled={isSendingVerifCode || verifCountdown > 0}
+                                className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-50 flex items-center gap-1"
+                              >
+                                <IconInfoCircle className="h-3 w-3" />
+                                {verifCountdown > 0
+                                  ? `Renvoyer dans ${verifCountdown}s`
+                                  : "Renvoyer le code"}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -826,10 +1028,10 @@ export default function ParametresPage() {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <IconRobot className="h-5 w-5 text-primary" />
-                        Matching IA — Clé API Claude
+                        Matching IA — Clé API
                       </CardTitle>
                       <CardDescription>
-                        Configurez votre clé API Claude (Anthropic) pour activer l&apos;analyse IA des candidats.
+                        Configurez votre fournisseur IA et votre clé API pour activer l&apos;analyse intelligente des candidats.
                         La clé est stockée de façon sécurisée et n&apos;est jamais exposée dans le navigateur.
                       </CardDescription>
                     </CardHeader>
@@ -837,38 +1039,38 @@ export default function ParametresPage() {
 
                       {/* Statut actuel */}
                       <div className={`flex items-start gap-3 p-4 rounded-lg border ${
-                        claudeKeyStatus?.hasKey
+                        aiKeyStatus?.hasKey
                           ? "bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800"
                           : "bg-muted/50 border-muted"
                       }`}>
-                        {claudeKeyStatus?.hasKey ? (
+                        {aiKeyStatus?.hasKey ? (
                           <IconCircleCheck className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
                         ) : (
                           <IconAlertCircle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium">
-                            {claudeKeyStatus?.hasKey
-                              ? "Clé API configurée"
+                            {aiKeyStatus?.hasKey
+                              ? `Clé API configurée — ${AI_PROVIDERS.find((p) => p.id === aiKeyStatus.provider)?.label ?? aiKeyStatus.provider}`
                               : "Aucune clé API configurée"}
                           </p>
-                          {claudeKeyStatus?.maskedKey && (
+                          {aiKeyStatus?.maskedKey && (
                             <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                              {claudeKeyStatus.maskedKey}
+                              {aiKeyStatus.maskedKey}
                             </p>
                           )}
-                          {!claudeKeyStatus?.hasKey && (
+                          {!aiKeyStatus?.hasKey && (
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              Ajoutez votre clé pour activer le matching IA.
+                              Choisissez un fournisseur et ajoutez votre clé pour activer le matching IA.
                             </p>
                           )}
                         </div>
-                        {claudeKeyStatus?.hasKey && (
+                        {aiKeyStatus?.hasKey && (
                           <Button
                             variant="ghost"
                             size="sm"
                             className="text-destructive hover:text-destructive shrink-0"
-                            onClick={handleDeleteClaudeKey}
+                            onClick={handleDeleteAiKey}
                             disabled={isSavingKey}
                           >
                             <IconTrash className="h-4 w-4" />
@@ -876,74 +1078,120 @@ export default function ParametresPage() {
                         )}
                       </div>
 
-                      {/* Formulaire de saisie */}
+                      {/* Sélecteur de provider */}
                       <div className="space-y-3">
-                        <Label htmlFor="claude-key">
-                          {claudeKeyStatus?.hasKey ? "Remplacer la clé" : "Ajouter votre clé API"}
-                        </Label>
-                        <div className="flex gap-2">
-                          <div className="relative flex-1">
-                            <Input
-                              id="claude-key"
-                              type={claudeKeyVisible ? "text" : "password"}
-                              placeholder="sk-ant-api03-..."
-                              value={claudeKeyInput}
-                              onChange={(e) => setClaudeKeyInput(e.target.value)}
-                              className="pr-10 font-mono text-sm"
-                            />
+                        <Label>Fournisseur IA</Label>
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                          {AI_PROVIDERS.map((p) => (
                             <button
+                              key={p.id}
                               type="button"
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                              onClick={() => setClaudeKeyVisible((v) => !v)}
+                              onClick={() => { setAiProvider(p.id); setAiKeyInput(""); }}
+                              className={`flex flex-col items-center gap-1.5 rounded-lg border-2 p-3 text-sm font-medium transition-all ${
+                                aiProvider === p.id
+                                  ? "border-primary bg-primary/5 text-primary"
+                                  : "border-muted hover:border-muted-foreground/40 text-muted-foreground"
+                              }`}
                             >
-                              {claudeKeyVisible
-                                ? <IconEyeOff className="h-4 w-4" />
-                                : <IconEye className="h-4 w-4" />}
+                              <IconRobot className="h-5 w-5" />
+                              <span className="text-xs leading-tight text-center">{p.label}</span>
                             </button>
-                          </div>
-                          <Button
-                            onClick={handleSaveClaudeKey}
-                            disabled={!claudeKeyInput || isSavingKey}
-                          >
-                            {isSavingKey ? (
-                              <IconLoader className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <IconCheck className="h-4 w-4 mr-1" />
-                            )}
-                            Sauvegarder
-                          </Button>
+                          ))}
+                          {/* Providers à venir */}
+                          {(["Gemini", "Kimi"] as const).map((name) => (
+                            <div
+                              key={name}
+                              className="flex flex-col items-center gap-1.5 rounded-lg border-2 border-dashed border-muted p-3 text-sm opacity-50 cursor-not-allowed"
+                            >
+                              <IconRobot className="h-5 w-5 text-muted-foreground" />
+                              <span className="text-xs leading-tight text-center text-muted-foreground">{name}</span>
+                              <span className="text-[10px] text-muted-foreground">Bientôt</span>
+                            </div>
+                          ))}
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          La clé doit commencer par{" "}
-                          <code className="bg-muted px-1 rounded">sk-ant-</code>.
-                          Elle est chiffrée côté serveur.
-                        </p>
                       </div>
 
-                      {/* Instructions */}
-                      <div className="rounded-lg border p-4 space-y-3">
-                        <p className="text-sm font-medium">Comment obtenir votre clé API ?</p>
-                        <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-                          <li>Connectez-vous sur{" "}
-                            <a
-                              href="https://console.anthropic.com"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary underline inline-flex items-center gap-1"
-                            >
-                              console.anthropic.com <IconExternalLink className="h-3 w-3" />
-                            </a>
-                          </li>
-                          <li>Allez dans <strong>API Keys</strong> → <strong>Create Key</strong></li>
-                          <li>Copiez la clé générée et collez-la ci-dessus</li>
-                          <li>Vous aurez besoin de crédits sur votre compte Anthropic</li>
-                        </ol>
-                        <div className="bg-muted/50 rounded p-3 text-xs text-muted-foreground flex items-start gap-2">
-                          <IconInfoCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                          <span><strong>Coût estimé :</strong> ~0,01 $ par analyse de candidat (modèle Claude Haiku).
-                          Une analyse de 10 candidats coûte moins de 0,10 $.</span>
-                        </div>
-                      </div>
+                      {/* Formulaire de saisie */}
+                      {(() => {
+                        const selectedProvider = AI_PROVIDERS.find((p) => p.id === aiProvider)!;
+                        return (
+                          <div className="space-y-3">
+                            <Label htmlFor="ai-key">
+                              {aiKeyStatus?.hasKey ? "Remplacer la clé" : `Clé API ${selectedProvider.label}`}
+                            </Label>
+                            <div className="flex gap-2">
+                              <div className="relative flex-1">
+                                <Input
+                                  id="ai-key"
+                                  type={aiKeyVisible ? "text" : "password"}
+                                  placeholder={selectedProvider.placeholder}
+                                  value={aiKeyInput}
+                                  onChange={(e) => setAiKeyInput(e.target.value)}
+                                  className="pr-10 font-mono text-sm"
+                                />
+                                <button
+                                  type="button"
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                  onClick={() => setAiKeyVisible((v) => !v)}
+                                >
+                                  {aiKeyVisible
+                                    ? <IconEyeOff className="h-4 w-4" />
+                                    : <IconEye className="h-4 w-4" />}
+                                </button>
+                              </div>
+                              <Button
+                                onClick={handleSaveAiKey}
+                                disabled={!aiKeyInput || isSavingKey}
+                              >
+                                {isSavingKey ? (
+                                  <IconLoader className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <IconCheck className="h-4 w-4 mr-1" />
+                                )}
+                                Sauvegarder
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              La clé doit commencer par{" "}
+                              <code className="bg-muted px-1 rounded">{selectedProvider.prefix}</code>.
+                              Elle est chiffrée côté serveur.
+                            </p>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Instructions dynamiques selon le provider */}
+                      {(() => {
+                        const selectedProvider = AI_PROVIDERS.find((p) => p.id === aiProvider)!;
+                        return (
+                          <div className="rounded-lg border p-4 space-y-3">
+                            <p className="text-sm font-medium">Comment obtenir votre clé {selectedProvider.label} ?</p>
+                            <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+                              <li>
+                                Connectez-vous sur{" "}
+                                <a
+                                  href={selectedProvider.consoleUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary underline inline-flex items-center gap-1"
+                                >
+                                  {selectedProvider.consoleName} <IconExternalLink className="h-3 w-3" />
+                                </a>
+                              </li>
+                              {selectedProvider.steps.slice(1).map((step, i) => (
+                                <li key={i}>{step}</li>
+                              ))}
+                            </ol>
+                            <div className="bg-muted/50 rounded p-3 text-xs text-muted-foreground flex items-start gap-2">
+                              <IconInfoCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                              <span>
+                                <strong>Coût estimé :</strong> {selectedProvider.cost}.{" "}
+                                Une analyse de 10 candidats coûte moins de 0,10 $.
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       {/* Fonctionnement */}
                       <div className="rounded-lg border p-4 space-y-2">

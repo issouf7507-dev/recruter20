@@ -22,9 +22,11 @@ model User {
   candidat            Candidat?      @relation("UserAsCandidat")
   collaborateur       Collaborateur?
   recruteur           Recruteur?     @relation("UserAsRecruteur")
-  resetPasswordToken  String?
-  resetPasswordExpiry DateTime?
-  accounts            Account[]
+  resetPasswordToken     String?
+  resetPasswordExpiry    DateTime?
+  verificationCode       String?
+  verificationCodeExpiry DateTime?
+  accounts               Account[]
   sessions            Session[]
   notifications       Notification[]
   CardMember          CardMember[]
@@ -119,7 +121,8 @@ model Recruteur {
   phone               String?
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
-  claudeApiKey        String?               // Clé API Claude personnelle du recruteur
+  aiApiKey            String?               // Clé API IA personnelle du recruteur
+  aiProvider          String?   @default("claude") // Provider IA : claude | openai
   collaborateurs      Collaborateur[]
   social              CompanySocial?
   conversations       Conversation[]
