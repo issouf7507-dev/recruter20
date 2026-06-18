@@ -50,3 +50,5 @@ logs/
 /sql
 
 .sh
+.txt
+.md
