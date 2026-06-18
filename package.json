@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack",
     "dev:socket": "npx tsx server/socket.ts",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:socket\"",
-    "build": "next build --turbopack",
+    "build": "prisma generate && next build --turbopack",
     "start": "next start",
     "start:socket": "node dist/server/socket.js",
     "seed:offres": "npx tsx prisma/seeds/seed-offres.ts",
