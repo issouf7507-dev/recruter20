@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { twoFactor } from "better-auth/plugins";
 import prisma from "@/lib/prisma";
 import { nextCookies } from "better-auth/next-js";
 // import { sendEmail } from "@/lib/email";
@@ -103,7 +104,9 @@ export const auth = betterAuth({
     "https://ylsix.com",
   ],
 
-  plugins: [nextCookies()],
+  // twoFactor : TOTP obligatoire pour les superadmins (imposé côté guard).
+  // nextCookies() doit rester le dernier plugin.
+  plugins: [twoFactor({ issuer: "Ylsix Super Admin" }), nextCookies()],
 
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 jours

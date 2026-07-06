@@ -17,6 +17,8 @@ model User {
   passwordNeedsUpdate Boolean        @default(false)
   image               String?
   type                UserType?
+  isSuperAdmin        Boolean        @default(false)
+  twoFactorEnabled    Boolean?       @default(false)
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
   candidat            Candidat?      @relation("UserAsCandidat")
@@ -28,6 +30,7 @@ model User {
   verificationCodeExpiry DateTime?
   accounts               Account[]
   sessions            Session[]
+  twofactors          TwoFactor[]
   notifications       Notification[]
   CardMember          CardMember[]
   CardNote            CardNote[]
@@ -356,6 +359,19 @@ model Session {
 
   @@index([userId], map: "session_userId_fkey")
   @@map("session")
+}
+
+model TwoFactor {
+  id          String  @id @default(cuid())
+  secret      String
+  backupCodes String  @db.Text
+  verified    Boolean @default(true)
+  userId      String
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([secret])
+  @@index([userId], map: "two_factor_userId_fkey")
+  @@map("two_factor")
 }
 
 model Account {
