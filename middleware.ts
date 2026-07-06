@@ -18,6 +18,26 @@ function getIp(req: NextRequest): string {
   );
 }
 
+// Restriction d'accès par IP pour /superadmin.
+// Config via `SUPERADMIN_ALLOWED_IPS` (IP séparées par des virgules).
+// Sûreté : liste vide → pas de filtrage (on ne se verrouille pas soi-même) ;
+// localhost toujours autorisé (dev).
+const LOCALHOST_IPS = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
+
+function superadminIpDenied(req: NextRequest): NextResponse | null {
+  const allowlist = (process.env.SUPERADMIN_ALLOWED_IPS ?? "")
+    .split(",")
+    .map((ip) => ip.trim())
+    .filter(Boolean);
+
+  if (allowlist.length === 0) return null;
+
+  const ip = getIp(req);
+  if (LOCALHOST_IPS.has(ip) || allowlist.includes(ip)) return null;
+
+  return new NextResponse("Accès refusé", { status: 403 });
+}
+
 function isRateLimited(
   key: string,
   windowMs: number,
@@ -38,6 +58,12 @@ function isRateLimited(
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Restriction IP de l'espace superadmin (toutes méthodes, y compris la page de login)
+  if (pathname.startsWith("/superadmin")) {
+    const denied = superadminIpDenied(request);
+    if (denied) return denied;
+  }
 
   // Only rate-limit POST requests on auth routes
   if (request.method !== "POST") return NextResponse.next();
@@ -61,5 +87,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/auth/:path*"],
+  matcher: ["/api/auth/:path*", "/superadmin/:path*"],
 };

@@ -1,0 +1,125 @@
+## IDENTITÉ VISUELLE — à respecter strictement
+
+Palette de couleurs :
+- Violet primaire : #a590ff
+- Violet medium : #8c74ff
+- Violet foncé : #7c5cbf
+- Violet très clair (bg) : #f3efff
+- Violet pâle : #e8e1ff
+- Fond chaud : #FAF8F5
+- Fond blanc : #FFFFFF
+- Fond doux : #F3F0EB
+- Texte principal : #13111C
+- Texte secondaire : #3A3748
+- Texte tertiaire : #6E6A7E
+- Vert succès : #16a34a
+
+Style visuel :
+- Typographie : Inter ou système sans-serif moderne
+- Coins arrondis (border-radius 12-16px)
+- Ombres douces : box-shadow 0 18px 40px -16px rgba(60,40,120,0.18)
+- Orbs décoratifs floutés en arrière-plan (cercles violets avec filter: blur(60px) et opacity 20-30%)
+- Badge "pill" violet clair sur les titres de section
+- Gradient de bouton : linear-gradient(135deg, #a590ff 0%, #7c5cbf 100%)
+- Fond général des slides : #FAF8F5
+- Accent chiffres/stats : couleur #a590ff, font-weight 700
+
+Navigation : flèches gauche/droite pour passer d'un slide à l'autre. Numéro de slide en bas à droite.
+
+---
+
+## CONTENU DES 12 SLIDES
+
+### Slide 1 — Cover
+Titre : "YLSIX — Stratégie de Communication"
+Sous-titre : "Lancement Afrique francophone · 2026"
+Badge pill : "Confidentiel"
+Orbs décoratifs violets en haut à droite et bas à gauche
+
+### Slide 2 — Contexte produit
+Titre : "Ce qu'on lance"
+3 colonnes avec icônes :
+- ATS SaaS : Gérez vos recrutements de A à Z
+- CVthèque Premium : Base de talents panafricaine
+- Multi-diffusion : 160+ jobboards en 1 clic
+Note en bas : "Positionnement : 1er ATS pensé pour l'Afrique francophone"
+
+### Slide 3 — Marché cible
+Titre : "Qui on adresse"
+2 grandes cartes côte à côte :
+- Gauche (violet) : "Recruteurs" — PME, Cabinets RH, Startups, Grandes entreprises · Prix : 15K à 150K FCFA/mois
+- Droite (blanc bordure violette) : "Candidats" — Chercheurs d'emploi, Profils qualifiés · Prix : Gratuit
+
+### Slide 4 — Diagnostic comm actuel
+Titre : "Notre point de départ"
+Grille 2x2 :
+- ✅ Atout : Prix FCFA + essai 14j gratuit
+- ✅ Atout : Différenciation africaine claire
+- ⚠️ Frein : Témoignages non authentiques
+- ⚠️ Frein : Stats aspirationnelles sans preuves
+
+### Slide 5 — Vue d'ensemble stratégie
+Titre : "3 phases · 6 mois"
+Timeline horizontale avec 3 étapes :
+- Phase 1 (Mois 1-2) : Crédibilité — fond violet foncé
+- Phase 2 (Mois 2-4) : Acquisition organique — fond violet medium
+- Phase 3 (Mois 4-6) : Paid & Scale — fond violet clair
+Flèches de connexion entre les phases
+
+### Slide 6 — Phase 1 : Crédibilité
+Badge "Phase 1 · Mois 1-2"
+Titre : "Construire la preuve sociale"
+3 actions concrètes avec numéros cerclés :
+1. Recruter 10 bêta-testeurs DRH (Abidjan, Dakar, Douala) → accès gratuit 3 mois
+2. Remplacer témoignages fictifs → vrais retours clients
+3. Mettre à jour les stats avec données réelles
+Encadré bas : "Règle : La crédibilité vaut plus que l'apparence de taille"
+
+### Slide 7 — Phase 2 : Canaux organiques
+Badge "Phase 2 · Mois 2-4"
+Titre : "4 canaux d'acquisition"
+4 cartes avec icônes :
+- LinkedIn : 3 posts/semaine, tutos produit, actualités RH Afrique
+- WhatsApp/Telegram : Groupes DRH locaux, apporter de la valeur d'abord
+- Instagram/TikTok : Contenu candidats, conseils CV, offres de la semaine
+- Partenariats : Écoles de commerce, cabinets RH, incubateurs
+
+### Slide 8 — Partenariats stratégiques
+Badge "Accélérateurs"
+Titre : "Les bons relais locaux"
+Grille 3 colonnes :
+- Écoles : ESCA, ISG Abidjan, CESAG Dakar → offre étudiants gratuite
+- Cabinets RH : partenaire avec commission sur conversions
+- Incubateurs : Orange Fab, YUX, Jeune Afrique Startup
+
+### Slide 9 — Messages clés
+Titre : "Ce qu'on dit, à qui"
+Tableau 3 lignes :
+| Persona | Message | Preuve |
+| Recruteur PME | "Tout votre recrutement depuis votre téléphone, dès 15 000 FCFA/mois" | Kanban + multi-diffusion |
+| DRH grande entreprise | "Centralisez vos recrutements multi-filiales" | Plan Corporate |
+| Candidat | "Votre profil vu par les recruteurs qui recrutent vraiment en Afrique" | CVthèque |
+
+### Slide 10 — Phase 3 : Paid
+Badge "Phase 3 · Mois 4-6"
+Titre : "Passer à l'échelle"
+3 colonnes avec budget estimé :
+- LinkedIn Ads : DRH / Talent Acquisition · 50-100€/mois
+- Meta Ads : Candidats 18-35 ans · 30-50€/mois
+- Google SEA : "logiciel recrutement Côte d'Ivoire" · budget test
+
+### Slide 11 — Actions immédiates
+Titre : "Cette semaine"
+Liste de 5 items avec checkbox visuelle :
+☐ Identifier 10 DRH bêta-testeurs à contacter
+☐ Supprimer les faux témoignages du site
+☐ Créer page LinkedIn YLSIX
+☐ Rejoindre 3 groupes WhatsApp DRH locaux
+☐ Rédiger le premier post LinkedIn (tutoriel Kanban)
+
+### Slide 12 — Clôture
+Titre grand : "L'Afrique mérite un ATS pensé pour elle."
+Sous-titre : "YLSIX · Lancement 2026"
+Site web : ylsix.com (ou votre domaine)
+Orbs décoratifs violets forts sur tout le fond
+Gradient en bas : #a590ff → #7c5cbf
