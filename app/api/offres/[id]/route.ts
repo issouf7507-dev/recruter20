@@ -4,6 +4,8 @@ import { requireSession } from "@/lib/api-auth";
 import { withErrorHandler, forbidden, notFound } from "@/lib/api-error";
 import { recruteurRepository } from "@/lib/api/recruteurs/repository";
 import { collaborateurRepository } from "@/lib/api/collaborateur";
+import { notify } from "@/lib/notify";
+import { emailService } from "@/lib/email";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -101,6 +103,42 @@ export const PUT = withErrorHandler(async (req, ctx) => {
       logo: body.logo,
     },
   });
+
+  // Notifier le recruteur si l'état de l'offre a changé (publiée / clôturée)
+  const prevEtat = existingOffre.etat;
+  const nextEtat = offre.etat;
+  if (nextEtat !== prevEtat && (nextEtat === "active" || nextEtat === "expiree")) {
+    try {
+      const ownerUser = existingOffre.recruteur?.user;
+      if (ownerUser?.id) {
+        const status = nextEtat === "active" ? "published" : "closed";
+        await notify({
+          recipientId: ownerUser.id,
+          recipientType: "RECRUTEUR",
+          type: nextEtat === "active" ? "OFFER_PUBLISHED" : "OFFER_CLOSED",
+          data: {
+            message:
+              nextEtat === "active"
+                ? `Votre offre « ${offre.title} » est publiée`
+                : `Votre offre « ${offre.title} » est clôturée`,
+            offreId: offre.id,
+            offreTitle: offre.title,
+          },
+          email: ownerUser.email
+            ? () =>
+                emailService.sendOfferStatusEmail({
+                  to: ownerUser.email!,
+                  recruteurName: ownerUser.name || "Recruteur",
+                  jobTitle: offre.title,
+                  status,
+                })
+            : null,
+        });
+      }
+    } catch {
+      // Notification non critique
+    }
+  }
 
   return NextResponse.json({
     success: true,

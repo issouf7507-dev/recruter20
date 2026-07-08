@@ -26,6 +26,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SignupsChart } from "@/components/superadmin/signups-chart";
+import { TestEmailButton } from "@/components/superadmin/test-email-button";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +60,7 @@ async function getSignupsPerDay(days: number) {
 }
 
 export default async function SuperadminDashboardPage() {
-  await requireSuperAdmin();
+  const admin = await requireSuperAdmin();
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
@@ -158,6 +159,19 @@ export default async function SuperadminDashboardPage() {
         </CardHeader>
         <CardContent>
           <SignupsChart data={signups} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Test d&apos;envoi email</CardTitle>
+          <CardDescription>
+            Vérifie la configuration Brevo (envoi transactionnel) en envoyant un
+            email de test.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TestEmailButton defaultEmail={admin.email} />
         </CardContent>
       </Card>
 

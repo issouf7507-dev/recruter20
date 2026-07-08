@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { twoFactor } from "better-auth/plugins";
 import prisma from "@/lib/prisma";
@@ -103,6 +104,29 @@ export const auth = betterAuth({
     "http://localhost:3004",
     "https://ylsix.com",
   ],
+
+  // Blocage de compte : un utilisateur marqué `blocked` ne peut plus obtenir de
+  // nouvelle session (connexion refusée). Le blocage supprime aussi ses sessions
+  // existantes côté action superadmin, ce qui le déconnecte immédiatement.
+  databaseHooks: {
+    session: {
+      create: {
+        before: async (session) => {
+          const user = await prisma.user.findUnique({
+            where: { id: session.userId },
+            select: { blocked: true },
+          });
+          if (user?.blocked) {
+            throw new APIError("FORBIDDEN", {
+              message:
+                "Votre compte a été bloqué. Contactez l'administrateur pour plus d'informations.",
+            });
+          }
+          return { data: session };
+        },
+      },
+    },
+  },
 
   // twoFactor : TOTP obligatoire pour les superadmins (imposé côté guard).
   // nextCookies() doit rester le dernier plugin.

@@ -6,6 +6,8 @@ import { recruteurRepository } from "@/lib/api/recruteurs/repository";
 import { collaborateurRepository } from "@/lib/api/collaborateur";
 import prisma from "@/lib/prisma";
 import { getEffectivePlan } from "@/lib/plans";
+import { notify } from "@/lib/notify";
+import { emailService } from "@/lib/email";
 
 // Cache le listing public 60s — invalider manuellement si besoin
 export const revalidate = 60;
@@ -130,6 +132,36 @@ export const POST = withErrorHandler(async (req) => {
     logo: body.logo || undefined,
     etat: body.etat || "active",
   });
+
+  // Confirmer au recruteur la publication de l'offre (notif DB + email)
+  if (offre.etat === "active") {
+    try {
+      const owner = await prisma.recruteur.findUnique({
+        where: { id: recruteurId },
+        select: { user: { select: { id: true, name: true, email: true } } },
+      });
+      const ownerUser = owner?.user;
+      if (ownerUser?.id) {
+        await notify({
+          recipientId: ownerUser.id,
+          recipientType: "RECRUTEUR",
+          type: "OFFER_PUBLISHED",
+          data: { message: `Votre offre « ${offre.title} » est publiée`, offreId: offre.id, offreTitle: offre.title },
+          email: ownerUser.email
+            ? () =>
+                emailService.sendOfferStatusEmail({
+                  to: ownerUser.email!,
+                  recruteurName: ownerUser.name || "Recruteur",
+                  jobTitle: offre.title,
+                  status: "published",
+                })
+            : null,
+        });
+      }
+    } catch {
+      // Notification non critique
+    }
+  }
 
   return NextResponse.json({
     success: true,

@@ -19,6 +19,9 @@ model User {
   type                UserType?
   isSuperAdmin        Boolean        @default(false)
   twoFactorEnabled    Boolean?       @default(false)
+  blocked             Boolean        @default(false)
+  blockedAt           DateTime?
+  blockedReason       String?
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
   candidat            Candidat?      @relation("UserAsCandidat")
@@ -79,8 +82,11 @@ model Candidat {
   portfolioUrl        String?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
+  recommandationsEmail Boolean  @default(true)
+  dernierEmailReco    DateTime?
   niveauEtude         NiveauEtude[]
   alertes             AlerteEmploi[]
+  offresRecommandees  OffreRecommandee[]
   applications        Application[]
   // cvs relation supprimée car le modèle CV n'existe plus
   user                User                 @relation("UserAsCandidat", fields: [userId], references: [id], onDelete: Cascade)
@@ -240,6 +246,7 @@ model JobOffer {
   applications        Application[]
   conversations       Conversation[]
   CardJobOffer        CardJobOffer[]
+  offresRecommandees  OffreRecommandee[]
   recruteur           Recruteur            @relation(fields: [recruteurId], references: [id], onDelete: Cascade)
   template            OfferTemplate?       @relation(fields: [templateId], references: [id])
   
@@ -545,6 +552,20 @@ model AlerteEmploi {
   alerteMotsCles    AlerteMotCle[]
 
   @@index([candidatId], map: "AlerteEmploi_candidatId_fkey")
+}
+
+model OffreRecommandee {
+  id         String   @id @default(cuid())
+  candidatId String
+  jobOfferId String
+  score      Int
+  sentAt     DateTime @default(now())
+  candidat   Candidat @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  jobOffer   JobOffer @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
+
+  @@unique([candidatId, jobOfferId])
+  @@index([candidatId])
+  @@index([jobOfferId], map: "OffreRecommandee_jobOfferId_fkey")
 }
 
 model AlerteMotCle {
@@ -986,6 +1007,7 @@ model Entretien {
   feedback      String?         @db.Text
   evaluation    Int?
   statut        EntretienStatut @default(PLANIFIE)
+  reminderSentAt DateTime?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 

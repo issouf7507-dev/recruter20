@@ -27,6 +27,7 @@ import {
   IconEyeOff,
 } from "@tabler/icons-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RecommandationsEmailToggle } from "@/components/notifications/recommandations-email-toggle";
 
 export default function CandidatParametresPage() {
   const { data: session, isPending: isSessionLoading } = useSession();
@@ -163,9 +164,27 @@ export default function CandidatParametresPage() {
           </div>
 
           <Tabs defaultValue="securite" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-1 max-w-xs">
+            <TabsList className="grid w-full grid-cols-2 max-w-md">
               <TabsTrigger value="securite">Sécurité</TabsTrigger>
+              <TabsTrigger value="notifications">Notifications</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="notifications" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <IconMail className="h-5 w-5" />
+                    Notifications par email
+                  </CardTitle>
+                  <CardDescription>
+                    Choisissez les emails que vous souhaitez recevoir de Ylsix.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RecommandationsEmailToggle />
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             <TabsContent value="securite" className="space-y-6">
               {/* Email Verification Card */}
