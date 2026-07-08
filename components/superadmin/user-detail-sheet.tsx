@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { IconEye, IconLoader2, IconShieldLock } from "@tabler/icons-react";
+import { IconEye, IconLoader2, IconShieldLock, IconBan } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { setSuperAdminRole } from "@/lib/actions/superadminUsers";
+import { setSuperAdminRole, setBlockedStatus } from "@/lib/actions/superadminUsers";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Sheet,
   SheetContent,
@@ -26,6 +27,8 @@ export type UserDetail = {
   emailVerified: boolean | null;
   isSuperAdmin: boolean;
   twoFactorEnabled: boolean | null;
+  blocked: boolean;
+  blockedReason: string | null;
   createdAt: Date;
   companyName: string | null;
   phone: string | null;
@@ -57,6 +60,33 @@ export function UserDetailSheet({
   const router = useRouter();
   const [isSuperAdmin, setIsSuperAdmin] = useState(user.isSuperAdmin);
   const [saving, setSaving] = useState(false);
+  const [blocked, setBlocked] = useState(user.blocked);
+  const [reason, setReason] = useState("");
+  const [blocking, setBlocking] = useState(false);
+
+  const handleBlockToggle = async () => {
+    const next = !blocked;
+    setBlocking(true);
+    try {
+      const res = await setBlockedStatus(user.id, next, next ? reason : undefined);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      setBlocked(next);
+      setReason("");
+      toast.success(
+        next
+          ? "Compte bloqué. L'utilisateur a été déconnecté."
+          : "Compte débloqué.",
+      );
+      router.refresh();
+    } catch {
+      toast.error("Une erreur inattendue s'est produite.");
+    } finally {
+      setBlocking(false);
+    }
+  };
 
   const handleToggle = async (next: boolean) => {
     setSaving(true);
@@ -96,6 +126,7 @@ export function UserDetailSheet({
           <SheetTitle className="flex items-center gap-2">
             {user.name ?? "Utilisateur"}
             {isSuperAdmin && <Badge>Super admin</Badge>}
+            {blocked && <Badge variant="destructive">Bloqué</Badge>}
           </SheetTitle>
           <SheetDescription>{user.email}</SheetDescription>
         </SheetHeader>
@@ -181,6 +212,59 @@ export function UserDetailSheet({
               </p>
             )}
           </div>
+
+          {!isSelf && (
+            <div className="mt-3 rounded-lg border border-destructive/30 p-3">
+              <div className="flex items-start gap-2">
+                <IconBan className="mt-0.5 size-4 text-destructive" />
+                <div>
+                  <p className="text-sm font-medium">
+                    {blocked ? "Compte bloqué" : "Bloquer le compte"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {blocked
+                      ? "L'utilisateur ne peut plus se connecter."
+                      : "Déconnecte l'utilisateur et l'empêche de se reconnecter."}
+                  </p>
+                </div>
+              </div>
+
+              {blocked && user.blockedReason && (
+                <p className="mt-2 rounded bg-muted px-2 py-1.5 text-xs text-muted-foreground">
+                  Motif : {user.blockedReason}
+                </p>
+              )}
+
+              {!blocked && (
+                <Textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Motif du blocage (facultatif)"
+                  rows={2}
+                  className="mt-3 text-sm"
+                  disabled={blocking}
+                />
+              )}
+
+              <Button
+                type="button"
+                variant={blocked ? "outline" : "destructive"}
+                size="sm"
+                className="mt-3 w-full gap-1.5"
+                disabled={blocking || (isSuperAdmin && !blocked)}
+                onClick={handleBlockToggle}
+              >
+                {blocking && <IconLoader2 className="size-4 animate-spin" />}
+                {blocked ? "Débloquer le compte" : "Bloquer le compte"}
+              </Button>
+
+              {isSuperAdmin && !blocked && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Retirez d'abord le rôle super admin pour pouvoir bloquer ce compte.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>

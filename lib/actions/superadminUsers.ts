@@ -136,3 +136,69 @@ export async function setSuperAdminRole(
   revalidatePath("/superadmin/utilisateurs");
   return { ok: true, isSuperAdmin };
 }
+
+export type BlockResult =
+  | { ok: true; blocked: boolean }
+  | { ok: false; error: string };
+
+/**
+ * Bloque ou débloque un compte utilisateur.
+ *
+ * Un compte bloqué :
+ * - ne peut plus se reconnecter (refus dans le hook session.create de better-auth) ;
+ * - est déconnecté immédiatement de toutes ses sessions actives (supprimées ici).
+ *
+ * Garde-fous : on ne peut ni se bloquer soi-même, ni bloquer un autre super admin
+ * (il faut d'abord lui retirer son rôle), pour éviter de se verrouiller hors de l'espace.
+ */
+export async function setBlockedStatus(
+  userId: string,
+  blocked: boolean,
+  reason?: string,
+): Promise<BlockResult> {
+  const admin = await requireSuperAdmin();
+
+  if (!userId) return { ok: false, error: "Utilisateur introuvable." };
+
+  if (userId === admin.id) {
+    return { ok: false, error: "Vous ne pouvez pas bloquer votre propre compte." };
+  }
+
+  const target = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, isSuperAdmin: true },
+  });
+  if (!target) return { ok: false, error: "Utilisateur introuvable." };
+
+  if (blocked && target.isSuperAdmin) {
+    return {
+      ok: false,
+      error: "Impossible de bloquer un super admin. Retirez d'abord son rôle.",
+    };
+  }
+
+  const trimmedReason = reason?.trim() || null;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          blocked,
+          blockedAt: blocked ? new Date() : null,
+          blockedReason: blocked ? trimmedReason : null,
+        },
+      });
+      // Déconnexion immédiate : on invalide les sessions actives du compte bloqué.
+      if (blocked) {
+        await tx.session.deleteMany({ where: { userId } });
+      }
+    });
+  } catch (err) {
+    console.error("setBlockedStatus:", err);
+    return { ok: false, error: "L'opération a échoué. Réessayez." };
+  }
+
+  revalidatePath("/superadmin/utilisateurs");
+  return { ok: true, blocked };
+}

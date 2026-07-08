@@ -10,13 +10,16 @@ const envSchema = z.object({
     .min(32, "BETTER_AUTH_SECRET doit faire au moins 32 caractères"),
   BETTER_AUTH_URL: z.string().url().optional(),
 
-  // Email (Resend)
-  RESEND_API_KEY: z
+  // Email transactionnel (Brevo)
+  BREVO_API_KEY: z
     .string()
-    .min(1, "RESEND_API_KEY est requis")
-    .refine((v) => v.startsWith("re_"), {
-      message: "RESEND_API_KEY doit commencer par 're_'",
+    .min(1, "BREVO_API_KEY est requis")
+    .refine((v) => v.startsWith("xkeysib-"), {
+      message: "BREVO_API_KEY doit commencer par 'xkeysib-'",
     }),
+
+  // Email (Resend) — déprécié, conservé optionnel le temps de la bascule vers Brevo
+  RESEND_API_KEY: z.string().optional(),
 
   // Paiements (GeniusPay)
   GENIUSPAY_API_KEY: z.string().min(1, "GENIUSPAY_API_KEY est requis"),
@@ -52,6 +55,10 @@ const envSchema = z.object({
 
   // Serveur Socket.IO
   SOCKET_SERVER_URL: z.string().url().optional(),
+
+  // Secret partagé pour les endpoints cron (rappels d'entretien, etc.)
+  // Optionnel : si absent, les endpoints cron répondent 503 (désactivés).
+  CRON_SECRET: z.string().min(16).optional(),
 
   // IA — optionnel selon la feature activée
   ANTHROPIC_API_KEY: z.string().optional(),

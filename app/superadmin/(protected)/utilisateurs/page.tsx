@@ -72,6 +72,8 @@ export default async function SuperadminUtilisateursPage({
         emailVerified: true,
         isSuperAdmin: true,
         twoFactorEnabled: true,
+        blocked: true,
+        blockedReason: true,
         createdAt: true,
         recruteur: { select: { companyName: true, phone: true } },
         candidat: { select: { ville: true, telephone: true } },
@@ -171,6 +173,7 @@ export default async function SuperadminUtilisateursPage({
                     <span className="flex items-center gap-2">
                       {u.name ?? "—"}
                       {u.isSuperAdmin && <Badge>Super admin</Badge>}
+                      {u.blocked && <Badge variant="destructive">Bloqué</Badge>}
                     </span>
                   </TableCell>
                   <TableCell>{u.email}</TableCell>
@@ -201,6 +204,8 @@ export default async function SuperadminUtilisateursPage({
                         emailVerified: u.emailVerified,
                         isSuperAdmin: u.isSuperAdmin,
                         twoFactorEnabled: u.twoFactorEnabled,
+                        blocked: u.blocked,
+                        blockedReason: u.blockedReason,
                         createdAt: u.createdAt,
                         companyName: u.recruteur?.companyName ?? null,
                         phone: u.recruteur?.phone ?? u.candidat?.telephone ?? null,
