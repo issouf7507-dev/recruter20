@@ -53,6 +53,10 @@ On avance **point par point**. Cocher au fur et à mesure.
 - [x] Template `sendJobRecommendationsEmail`
 - [x] Cron hebdo `GET /api/cron/reco-offres` (protégé `CRON_SECRET`)
 - [x] Toggle candidat (onglet Notifications des paramètres)
+- [x] Retrait de l'UI d'alertes manuelle (`AlerteEmploi`) : page `/candidat/alertes`, lien
+      sidebar, carte dashboard, onglet dans la fiche candidat → l'activation passe
+      désormais par le seul switch (Paramètres → Notifications).
+      Modèle + API + données **conservés** (réversible, UI seulement masquée).
 - [ ] **Ops** : ajouter la ligne crontab hebdo (voir bas de fichier)
 - [ ] Reste possible plus tard : fréquence « Immédiate » (à la publication d'une offre)
 
