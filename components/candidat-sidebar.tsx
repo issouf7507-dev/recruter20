@@ -52,7 +52,6 @@ const NAV_GENERAL = [
 const NAV_RECRUTEMENT = [
   { title: "Candidatures", url: "/candidat/candidatures", icon: IconFileText },
   { title: "Matching IA", url: "/candidat/matching", icon: IconSparkles },
-  { title: "Alertes emploi", url: "/candidat/alertes", icon: IconBell },
   { title: "Parcourir les offres", url: "/candidat/offres", icon: IconSearch },
 ];
 

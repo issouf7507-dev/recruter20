@@ -17,7 +17,6 @@ import {
   Briefcase,
   GraduationCap,
   FileText,
-  Bell,
   Target,
   FolderOpen,
   MessageCircle,
@@ -25,7 +24,6 @@ import {
 import { ProfilSection } from "./candidat-sections/ProfilSection";
 import { ExperiencesFormationsSection } from "./candidat-sections/ExperiencesFormationsSection";
 import { CandidaturesSection } from "./candidat-sections/CandidaturesSection";
-import { AlertesSection } from "./candidat-sections/AlertesSection";
 import { ObjectifsSection } from "./candidat-sections/ObjectifsSection";
 import { DocumentsSection } from "./candidat-sections/DocumentsSection";
 import { MessagesSection } from "./candidat-sections/MessagesSection";
@@ -99,13 +97,6 @@ export function CandidatSheet({ open, onOpenChange }: CandidatSheetProps) {
                     <span className="text-[10px] sm:text-xs">Candidatures</span>
                   </TabsTrigger>
                   <TabsTrigger
-                    value="alertes"
-                    className="flex flex-col items-center gap-1 py-2 sm:py-3 px-2 sm:px-3 data-[state=active]:bg-[#a590ff] data-[state=active]:text-white whitespace-nowrap shrink-0"
-                  >
-                    <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span className="text-[10px] sm:text-xs">Alertes</span>
-                  </TabsTrigger>
-                  <TabsTrigger
                     value="objectifs"
                     className="flex flex-col items-center gap-1 py-2 sm:py-3 px-2 sm:px-3 data-[state=active]:bg-[#a590ff] data-[state=active]:text-white whitespace-nowrap shrink-0"
                   >
@@ -141,10 +132,6 @@ export function CandidatSheet({ open, onOpenChange }: CandidatSheetProps) {
 
               <TabsContent value="candidatures" className="mt-0">
                 <CandidaturesSection candidatId={candidat?.id} />
-              </TabsContent>
-
-              <TabsContent value="alertes" className="mt-0">
-                <AlertesSection candidatId={candidat?.id} />
               </TabsContent>
 
               <TabsContent value="objectifs" className="mt-0">

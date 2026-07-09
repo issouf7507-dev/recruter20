@@ -7,7 +7,7 @@ import { useAlertes } from "@/lib/hooks/use-alertes";
 import { ProfilCompletion } from "@/components/candidat/ProfilCompletion";
 import {
   IconUser, IconBriefcase, IconFileText, IconMessage,
-  IconBell, IconTarget, IconFolder, IconArrowRight,
+  IconTarget, IconFolder, IconArrowRight,
   IconSparkles, IconCalendar,
 } from "@tabler/icons-react";
 
@@ -62,7 +62,6 @@ const QUICK_NAV = [
   { title: "Parcourir les offres", url: "/candidat/offres",      icon: IconBriefcase, desc: "Rechercher et postuler"          },
   { title: "Messages",             url: "/candidat/messages",    icon: IconMessage,   desc: "Vos conversations"               },
   { title: "Documents",            url: "/candidat/documents",   icon: IconFolder,    desc: "CV, lettres de motivation"       },
-  { title: "Alertes emploi",       url: "/candidat/alertes",     icon: IconBell,      desc: "Recevoir de nouvelles opportunités" },
   { title: "Entretiens & Notes",   url: "/candidat/entretiens",  icon: IconCalendar,  desc: "Suivi de vos entretiens"         },
   { title: "Objectifs",            url: "/candidat/objectifs",   icon: IconTarget,    desc: "Suivi de carrière"               },
 ];
