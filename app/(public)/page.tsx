@@ -1,22 +1,36 @@
 import { HeroSection } from "./_sections/HeroSection";
-import { StatsSection } from "./_sections/StatsSection";
-import { FeaturesSection } from "./_sections/FeaturesSection";
-import { MissionSection } from "./_sections/MissionSection";
+import { SalaryTickerSection } from "./_sections/SalaryTickerSection";
+import { FeaturedOffersSection } from "./_sections/FeaturedOffersSection";
+import { ExpertsSection } from "./_sections/ExpertsSection";
+import { SectorsSection } from "./_sections/SectorsSection";
+import { BrowseByJobSection } from "./_sections/BrowseByJobSection";
+import { ResourcesKeysSection } from "./_sections/ResourcesKeysSection";
 import { TestimonialsSection } from "./_sections/TestimonialsSection";
-import { PricingSection } from "./_sections/PricingSection";
-import { FAQSection } from "./_sections/FAQSection";
+import { BlogSection } from "./_sections/BlogSection";
 import { CTASection } from "./_sections/CTASection";
 
 export default function LandingPage() {
   return (
-    <div className="container mx-auto px-4 pt-24 pb-10">
+    <div style={{ background: "var(--y-bg)" }}>
+      {/* 1 — Accroche dual-persona candidat / recruteur */}
       <HeroSection />
-      <StatsSection />
-      <FeaturesSection />
-      <MissionSection />
+      {/* 1b — Bandeau défilant offres + salaires (ticker) */}
+      <SalaryTickerSection />
+      {/* 2 — Offres réelles du moment */}
+      <FeaturedOffersSection />
+      {/* 3 — Positionnement « experts du recrutement » + CTA */}
+      <ExpertsSection />
+      {/* 4 — Qui recrute : navigation par secteur */}
+      <SectorsSection />
+      {/* 5 — Navigation par métier */}
+      <BrowseByJobSection />
+      {/* 6 — Ressources candidats (les clés pour décrocher le poste) */}
+      <ResourcesKeysSection />
+      {/* 7 — Preuve sociale */}
       <TestimonialsSection />
-      <PricingSection />
-      <FAQSection />
+      {/* 8 — Blog & ressources */}
+      <BlogSection />
+      {/* 9 — Appel à l'action final */}
       <CTASection />
     </div>
   );

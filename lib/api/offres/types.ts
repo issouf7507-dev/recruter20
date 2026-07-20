@@ -26,6 +26,16 @@ export interface JobOffer {
   applicationCount?: number;
   applications?: any[];
   anneesexperience?: string;
+  recruteur?: {
+    id?: string;
+    companyName?: string | null;
+    description?: string | null;
+    industry?: string | null;
+    size?: string | null;
+    location?: string | null;
+    website?: string | null;
+    logo?: string | null;
+  } | null;
 }
 
 export interface CreateOfferData {

@@ -10,10 +10,11 @@ type PlanId = "pme" | "business" | "corporate";
 type PaymentButtonProps = {
     planId: PlanId;
     className?: string;
+    style?: React.CSSProperties;
     children?: React.ReactNode;
 };
 
-export function PaymentButton({ planId, className, children }: PaymentButtonProps) {
+export function PaymentButton({ planId, className, style, children }: PaymentButtonProps) {
     const [loading, setLoading] = useState(false);
 
     const handlePayment = async () => {
@@ -56,6 +57,7 @@ export function PaymentButton({ planId, className, children }: PaymentButtonProp
         <button
             onClick={handlePayment}
             disabled={loading}
+            style={style}
             className={
                 className ||
                 "w-full py-3 px-6 bg-[#a590ff] hover:bg-[#9580ef] text-white rounded-lg font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"

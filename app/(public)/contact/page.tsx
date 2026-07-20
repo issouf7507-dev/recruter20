@@ -1,5 +1,8 @@
 "use client";
+
+import { useState } from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import {
   Mail,
   Phone,
@@ -8,8 +11,10 @@ import {
   MessageSquare,
   Clock,
   HelpCircle,
+  Check,
+  ChevronDown,
+  AlertCircle,
 } from "lucide-react";
-import { useState } from "react";
 
 const contactMethods = [
   {
@@ -23,33 +28,39 @@ const contactMethods = [
     icon: Phone,
     title: "Téléphone",
     description: "Lun-Ven 9h-18h",
-    contact: "+225 0544659490",
+    contact: "+225 05 44 65 94 90",
     link: "tel:+2250544659490",
   },
   {
     icon: MapPin,
     title: "Adresse",
     description: "Visitez nos bureaux",
-    contact: "Cocody- Abatta ( Abidjan - Cote d'Ivoire)",
-    link: "https://maps.google.com",
+    contact: "Cocody-Abatta, Abidjan — Côte d'Ivoire",
+    link: "https://maps.google.com/?q=Cocody+Abatta+Abidjan",
   },
+];
+
+const HORAIRES = [
+  { jour: "Lundi - Vendredi", heures: "9h00 - 18h00" },
+  { jour: "Samedi", heures: "10h00 - 16h00" },
+  { jour: "Dimanche", heures: "Fermé", ferme: true },
 ];
 
 const faqs = [
   {
     question: "Comment publier une offre d'emploi ?",
     answer:
-      "Créez un compte recruteur, complétez votre profil entreprise, puis cliquez sur 'Publier une offre'. Suivez les étapes et votre offre sera en ligne en quelques minutes.",
+      "Créez un compte recruteur, complétez votre profil entreprise, puis cliquez sur « Publier une offre ». Suivez les étapes et votre offre sera en ligne en quelques minutes.",
   },
   {
     question: "Combien coûte la publication d'une offre ?",
     answer:
-      "Nous proposons un plan gratuit avec 3 offres, et des plans payants à partir de 99€/mois pour des offres illimitées. Consultez notre page Tarifs pour plus de détails.",
+      "Le plan Découverte est gratuit. Les plans payants démarrent ensuite selon vos besoins en offres et en fonctionnalités — le détail est sur la page Tarifs, en FCFA.",
   },
   {
     question: "Comment puis-je voir les candidatures ?",
     answer:
-      "Toutes vos candidatures sont accessibles depuis votre tableau de bord recruteur. Vous recevez également des notifications par email pour chaque nouvelle candidature.",
+      "Toutes vos candidatures sont accessibles depuis votre tableau de bord recruteur. Vous recevez également une notification par email à chaque nouvelle candidature.",
   },
   {
     question: "Puis-je modifier une offre après publication ?",
@@ -58,148 +69,209 @@ const faqs = [
   },
 ];
 
-export default function ContactPage() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    subject: "",
-    message: "",
-  });
+const INITIAL_FORM = {
+  name: "",
+  email: "",
+  phone: "",
+  subject: "",
+  message: "",
+  website: "", // honeypot
+};
 
+const fieldStyle = {
+  background: "var(--y-bg-soft)",
+  color: "var(--y-ink)",
+  boxShadow: "inset 0 0 0 1px var(--y-line)",
+};
+
+export default function ContactPage() {
+  const [formData, setFormData] = useState(INITIAL_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
 
-    // Simuler l'envoi du formulaire
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    setIsSubmitting(false);
-    setSubmitted(true);
-
-    // Réinitialiser le formulaire après 3 secondes
-    setTimeout(() => {
-      setSubmitted(false);
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        subject: "",
-        message: "",
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
       });
-    }, 3000);
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.success) {
+        setError(data.error ?? "L'envoi a échoué. Réessayez ou écrivez-nous à contact@ylsix.com.");
+        return;
+      }
+
+      setSubmitted(true);
+      setFormData(INITIAL_FORM);
+    } catch {
+      setError("Connexion impossible. Vérifiez votre réseau et réessayez.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
-      {/* Hero Section */}
-      <div className=" bg-[#a590ff] py-16 md:py-32">
-        <div className="container mx-auto px-4">
+    <div className="pb-24" style={{ background: "var(--y-bg)" }}>
+      {/* ── Héros ── */}
+      <section className="pt-28 px-6 md:px-12 lg:px-20">
+        <div
+          className="relative overflow-hidden max-w-7xl mx-auto rounded-[32px] px-8 md:px-12 py-14 md:py-20 text-center"
+          style={{ background: "linear-gradient(155deg, #7c5cbf 0%, #5f47a0 55%, #4a3781 100%)" }}
+        >
+          <div
+            className="yl-orb"
+            style={{ width: 400, height: 400, top: -160, left: -100, background: "rgba(255,255,255,0.14)" }}
+          />
+          <div
+            className="yl-stripes absolute opacity-40"
+            style={{ width: 140, height: 140, bottom: -40, right: 32, borderRadius: 24 }}
+          />
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-center text-white max-w-4xl mx-auto"
+            className="relative z-10 max-w-2xl mx-auto"
           >
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+            <p className="text-sm font-semibold" style={{ color: "#e0d6ff" }}>
+              Nous écrire
+            </p>
+            <h1
+              className="mt-3 text-4xl md:text-5xl lg:text-6xl font-semibold tracking-[-0.035em]"
+              style={{ color: "#fff" }}
+            >
               Contactez-nous
             </h1>
-            <p className="text-lg md:text-xl opacity-90">
-              Une question ? Une demande particulière ? Notre équipe est là pour
-              vous aider.
+            <p className="mt-5 text-base md:text-lg" style={{ color: "rgba(255,255,255,0.78)" }}>
+              Une question, un besoin de recrutement, un partenariat ? Notre équipe basée à
+              Abidjan vous répond sous 24 heures.
             </p>
           </motion.div>
         </div>
-      </div>
+      </section>
 
-      {/* Contact Methods */}
-      <div className="container mx-auto px-4 -mt-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+      {/* ── Moyens de contact ── */}
+      <section className="px-6 md:px-12 lg:px-20 -mt-10 relative z-10">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-5">
           {contactMethods.map((method, index) => (
             <motion.a
               key={method.title}
               href={method.link}
               target={method.link.startsWith("http") ? "_blank" : undefined}
-              rel={
-                method.link.startsWith("http")
-                  ? "noopener noreferrer"
-                  : undefined
-              }
+              rel={method.link.startsWith("http") ? "noopener noreferrer" : undefined}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white rounded-xl border border-gray-200 p-6  "
+              className="rounded-2xl p-6 transition-transform duration-200 hover:-translate-y-1"
+              style={{ background: "var(--y-bg-pure)", boxShadow: "var(--y-shadow-md)" }}
             >
-              <div className="w-12 h-12 flex items-center justify-center mb-4">
-                <method.icon className="w-6 h-6 text-[#a590ff]" />
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                style={{ background: "var(--y-primary-50)", color: "var(--y-primary-700)" }}
+              >
+                <method.icon size={22} />
               </div>
-              <h3 className="font-bold text-lg text-gray-900 mb-2">
+              <h2 className="text-lg font-semibold tracking-tight" style={{ color: "var(--y-ink)" }}>
                 {method.title}
-              </h3>
-              <p className="text-sm text-gray-600 mb-3">{method.description}</p>
-              <p className="text-[#a590ff] font-semibold">{method.contact}</p>
+              </h2>
+              <p className="mt-1 text-sm" style={{ color: "var(--y-ink-3)" }}>
+                {method.description}
+              </p>
+              <p className="mt-3 text-sm font-medium" style={{ color: "var(--y-primary-700)" }}>
+                {method.contact}
+              </p>
             </motion.a>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Contact Form & Info */}
-      <div className="container mx-auto px-4 py-24">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
-          {/* Form */}
+      {/* ── Formulaire + infos ── */}
+      <section className="mt-20 md:mt-24 px-6 md:px-12 lg:px-20">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-6 lg:gap-8 items-start">
+          {/* Formulaire */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="bg-white rounded-2xl border border-gray-200 p-8"
+            className="rounded-3xl p-7 md:p-10"
+            style={{ background: "var(--y-bg-pure)", boxShadow: "var(--y-shadow-sm)" }}
           >
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12  rounded-lg flex items-center justify-center">
-                <MessageSquare className="w-6 h-6 text-[#a590ff]" />
+            <div className="flex items-center gap-4 mb-7">
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+                style={{ background: "var(--y-primary-50)", color: "var(--y-primary-700)" }}
+              >
+                <MessageSquare size={22} />
               </div>
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+              <h2
+                className="text-2xl md:text-3xl font-semibold tracking-[-0.02em]"
+                style={{ color: "var(--y-ink)" }}
+              >
                 Envoyez-nous un message
               </h2>
             </div>
 
             {submitted ? (
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-green-50 border border-green-200 rounded-lg p-6 text-center"
+                className="rounded-2xl p-8 text-center"
+                style={{ background: "rgba(22,163,74,0.08)", boxShadow: "inset 0 0 0 1px rgba(22,163,74,0.2)" }}
               >
-                <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Send className="w-8 h-8 text-white" />
+                <div
+                  className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5 text-white"
+                  style={{ background: "var(--y-success)" }}
+                >
+                  <Check size={26} strokeWidth={3} />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  Message envoyé !
+                <h3 className="text-xl font-semibold" style={{ color: "var(--y-ink)" }}>
+                  Message envoyé
                 </h3>
-                <p className="text-gray-600">
-                  Nous avons bien reçu votre message et nous vous répondrons
-                  dans les plus brefs délais.
+                <p className="mt-2 text-sm" style={{ color: "var(--y-ink-2)" }}>
+                  Nous avons bien reçu votre message et vous répondrons sous 24 heures ouvrées.
                 </p>
+                <button
+                  onClick={() => setSubmitted(false)}
+                  className="mt-6 text-sm font-medium"
+                  style={{ color: "var(--y-primary-700)" }}
+                >
+                  Envoyer un autre message
+                </button>
               </motion.div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                {error && (
+                  <div
+                    role="alert"
+                    className="flex items-start gap-3 rounded-2xl p-4"
+                    style={{ background: "rgba(220,38,38,0.07)", boxShadow: "inset 0 0 0 1px rgba(220,38,38,0.2)" }}
+                  >
+                    <AlertCircle size={18} className="shrink-0 mt-0.5" style={{ color: "#dc2626" }} />
+                    <span className="text-sm" style={{ color: "var(--y-ink-2)" }}>
+                      {error}
+                    </span>
+                  </div>
+                )}
+
                 <div>
                   <label
                     htmlFor="name"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
+                    className="block text-sm font-medium mb-2"
+                    style={{ color: "var(--y-ink-2)" }}
                   >
                     Nom complet *
                   </label>
@@ -210,16 +282,18 @@ export default function ContactPage() {
                     required
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#a590ff] focus:border-transparent transition-colors"
-                    placeholder="Jean Dupont"
+                    placeholder="Awa Koné"
+                    className="w-full h-12 px-4 rounded-xl text-sm outline-none transition-shadow focus:ring-2"
+                    style={fieldStyle}
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label
                       htmlFor="email"
-                      className="block text-sm font-semibold text-gray-700 mb-2"
+                      className="block text-sm font-medium mb-2"
+                      style={{ color: "var(--y-ink-2)" }}
                     >
                       Email *
                     </label>
@@ -230,15 +304,17 @@ export default function ContactPage() {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#a590ff] focus:border-transparent transition-colors"
-                      placeholder="jean@exemple.fr"
+                      placeholder="awa@exemple.ci"
+                      className="w-full h-12 px-4 rounded-xl text-sm outline-none transition-shadow focus:ring-2"
+                      style={fieldStyle}
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="phone"
-                      className="block text-sm font-semibold text-gray-700 mb-2"
+                      className="block text-sm font-medium mb-2"
+                      style={{ color: "var(--y-ink-2)" }}
                     >
                       Téléphone
                     </label>
@@ -248,8 +324,9 @@ export default function ContactPage() {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#a590ff] focus:border-transparent transition-colors"
-                      placeholder="+33 6 12 34 56 78"
+                      placeholder="+225 07 00 00 00 00"
+                      className="w-full h-12 px-4 rounded-xl text-sm outline-none transition-shadow focus:ring-2"
+                      style={fieldStyle}
                     />
                   </div>
                 </div>
@@ -257,7 +334,8 @@ export default function ContactPage() {
                 <div>
                   <label
                     htmlFor="subject"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
+                    className="block text-sm font-medium mb-2"
+                    style={{ color: "var(--y-ink-2)" }}
                   >
                     Sujet *
                   </label>
@@ -267,7 +345,8 @@ export default function ContactPage() {
                     required
                     value={formData.subject}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#a590ff] focus:border-transparent transition-colors"
+                    className="w-full h-12 px-4 rounded-xl text-sm outline-none transition-shadow focus:ring-2 appearance-none"
+                    style={fieldStyle}
                   >
                     <option value="">Sélectionnez un sujet</option>
                     <option value="support">Support technique</option>
@@ -280,7 +359,8 @@ export default function ContactPage() {
                 <div>
                   <label
                     htmlFor="message"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
+                    className="block text-sm font-medium mb-2"
+                    style={{ color: "var(--y-ink-2)" }}
                   >
                     Message *
                   </label>
@@ -288,120 +368,153 @@ export default function ContactPage() {
                     id="message"
                     name="message"
                     required
+                    minLength={10}
                     value={formData.message}
                     onChange={handleChange}
                     rows={6}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#a590ff] focus:border-transparent transition-colors resize-none"
-                    placeholder="Décrivez votre demande..."
+                    placeholder="Décrivez votre demande…"
+                    className="w-full p-4 rounded-xl text-sm outline-none resize-none transition-shadow focus:ring-2"
+                    style={fieldStyle}
                   />
                 </div>
+
+                {/* Honeypot anti-bot — masqué aux utilisateurs et aux lecteurs d'écran */}
+                <input
+                  type="text"
+                  name="website"
+                  value={formData.website}
+                  onChange={handleChange}
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  className="hidden"
+                />
 
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-[#a590ff] hover:bg-[#9580ef] text-white px-6 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="h-12 px-6 rounded-full text-sm font-medium text-white flex items-center justify-center gap-2 transition-transform hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
+                  style={{
+                    background: "linear-gradient(135deg, var(--y-primary) 0%, var(--y-primary-700) 100%)",
+                    boxShadow: "var(--y-shadow-violet)",
+                  }}
                 >
                   {isSubmitting ? (
                     <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Envoi en cours...</span>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Envoi en cours…
                     </>
                   ) : (
                     <>
-                      <Send className="w-5 h-5" />
-                      <span>Envoyer le message</span>
+                      <Send size={16} /> Envoyer le message
                     </>
                   )}
                 </button>
+
+                <p className="text-xs text-center" style={{ color: "var(--y-ink-4)" }}>
+                  Vos données servent uniquement à traiter votre demande.
+                </p>
               </form>
             )}
           </motion.div>
 
-          {/* Additional Info */}
+          {/* Infos complémentaires */}
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
             viewport={{ once: true }}
-            className="space-y-8"
+            className="flex flex-col gap-6"
           >
-            {/* Office Hours */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12  rounded-lg flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-[#a590ff]" />
+            {/* Horaires */}
+            <div
+              className="rounded-3xl p-7 md:p-8"
+              style={{ background: "var(--y-bg-pure)", boxShadow: "var(--y-shadow-sm)" }}
+            >
+              <div className="flex items-center gap-4 mb-6">
+                <div
+                  className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{ background: "var(--y-primary-50)", color: "var(--y-primary-700)" }}
+                >
+                  <Clock size={20} />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900">
-                  Horaires d'ouverture
-                </h3>
+                <h2 className="text-lg font-semibold tracking-tight" style={{ color: "var(--y-ink)" }}>
+                  Horaires d&apos;ouverture
+                </h2>
               </div>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-gray-700 font-medium">
-                    Lundi - Vendredi
-                  </span>
-                  <span className="text-gray-900 font-semibold">
-                    9h00 - 18h00
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-gray-700 font-medium">Samedi</span>
-                  <span className="text-gray-900 font-semibold">
-                    10h00 - 16h00
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-gray-700 font-medium">Dimanche</span>
-                  <span className="text-gray-500">Fermé</span>
-                </div>
-              </div>
-            </div>
-
-            {/* FAQ */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12  rounded-lg flex items-center justify-center">
-                  <HelpCircle className="w-6 h-6 text-[#a590ff]" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900">
-                  Questions fréquentes
-                </h3>
-              </div>
-              <div className="space-y-4">
-                {faqs.map((faq, index) => (
-                  <details
-                    key={index}
-                    className="group border border-gray-200 rounded-lg overflow-hidden"
+              <div className="flex flex-col">
+                {HORAIRES.map((h, i) => (
+                  <div
+                    key={h.jour}
+                    className="flex justify-between items-center py-3"
+                    style={{ borderTop: i === 0 ? "none" : "1px solid var(--y-line)" }}
                   >
-                    <summary className="cursor-pointer p-4 hover:bg-gray-50 transition-colors font-semibold text-gray-900 flex items-center justify-between">
-                      {faq.question}
-                      <span className="text-[#a590ff] group-open:rotate-180 transition-transform">
-                        ▼
-                      </span>
-                    </summary>
-                    <div className="p-4 pt-0 text-gray-600 leading-relaxed">
-                      {faq.answer}
-                    </div>
-                  </details>
+                    <span className="text-sm" style={{ color: "var(--y-ink-2)" }}>
+                      {h.jour}
+                    </span>
+                    <span
+                      className="text-sm font-medium"
+                      style={{ color: h.ferme ? "var(--y-ink-4)" : "var(--y-ink)" }}
+                    >
+                      {h.heures}
+                    </span>
+                  </div>
                 ))}
               </div>
             </div>
 
-            {/* Map placeholder */}
-            {/* <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="h-64 bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
-                <div className="text-center">
-                  <MapPin className="w-12 h-12 text-[#a590ff] mx-auto mb-3" />
-                  <p className="text-gray-700 font-semibold">
-                    123 Avenue des Champs-Élysées
-                  </p>
-                  <p className="text-gray-600">75008 Paris, France</p>
+            {/* FAQ */}
+            <div
+              className="rounded-3xl p-7 md:p-8"
+              style={{ background: "var(--y-bg-pure)", boxShadow: "var(--y-shadow-sm)" }}
+            >
+              <div className="flex items-center gap-4 mb-6">
+                <div
+                  className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{ background: "var(--y-primary-50)", color: "var(--y-primary-700)" }}
+                >
+                  <HelpCircle size={20} />
                 </div>
+                <h2 className="text-lg font-semibold tracking-tight" style={{ color: "var(--y-ink)" }}>
+                  Questions fréquentes
+                </h2>
               </div>
-            </div> */}
+
+              <div className="flex flex-col gap-2">
+                {faqs.map((faq) => (
+                  <details key={faq.question} className="group rounded-2xl overflow-hidden">
+                    <summary
+                      className="cursor-pointer list-none px-4 py-3.5 flex items-center justify-between gap-3 text-sm font-medium rounded-2xl transition-colors"
+                      style={{ background: "var(--y-bg-soft)", color: "var(--y-ink)" }}
+                    >
+                      {faq.question}
+                      <ChevronDown
+                        size={16}
+                        className="shrink-0 transition-transform group-open:rotate-180"
+                        style={{ color: "var(--y-primary-700)" }}
+                      />
+                    </summary>
+                    <p
+                      className="px-4 pt-3 pb-2 text-sm leading-relaxed"
+                      style={{ color: "var(--y-ink-2)" }}
+                    >
+                      {faq.answer}
+                    </p>
+                  </details>
+                ))}
+              </div>
+
+              <Link
+                href="/tarifs"
+                className="mt-6 inline-flex text-sm font-medium"
+                style={{ color: "var(--y-primary-700)" }}
+              >
+                Voir le détail des tarifs →
+              </Link>
+            </div>
           </motion.div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

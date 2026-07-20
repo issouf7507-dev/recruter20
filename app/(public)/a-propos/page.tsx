@@ -1,285 +1,369 @@
 "use client";
+
+import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  Target,
-  Heart,
+  ArrowRight,
+  Building2,
+  BookOpen,
   Users,
-  TrendingUp,
-  Award,
-  Globe,
-  Zap,
-  Shield,
-  Briefcase,
-  CheckCircle,
-  Play,
+  Megaphone,
   Quote,
+  ShieldCheck,
+  HeartHandshake,
+  Sparkles,
 } from "lucide-react";
-import Link from "next/link";
 
-const team = [
+const CHIFFRES = [
+  { value: "500+", label: "Entreprises clientes" },
+  { value: "38K+", label: "Candidats inscrits" },
+  { value: "160+", label: "Jobboards connectés" },
+  { value: "10K+", label: "Recrutements réussis" },
+];
+
+const METIERS = [
   {
-    name: "Sophie Martin",
-    role: "CEO & Co-fondatrice",
-    image:
-      "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face",
-    bio: "15 ans d'expérience dans le recrutement et la tech.",
+    icon: Building2,
+    title: "ATS SaaS",
+    desc: "Un logiciel de suivi des candidatures accessible aux PME comme aux grands groupes, facturé en FCFA.",
+    href: "/fonctionnalites",
+    cta: "Voir les fonctionnalités",
   },
   {
-    name: "Thomas Dubois",
-    role: "CTO & Co-fondateur",
-    image:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
-    bio: "Expert en développement produit et UX design.",
+    icon: BookOpen,
+    title: "CVthèque",
+    desc: "Une base de talents panafricaine où les recruteurs cherchent activement les profils dont ils ont besoin.",
+    href: "/tarifs",
+    cta: "Découvrir les accès",
   },
   {
-    name: "Marie Laurent",
-    role: "Head of Product",
-    image:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face",
-    bio: "Spécialiste en product management et stratégie.",
+    icon: Users,
+    title: "Recrutement à succès",
+    desc: "Notre équipe prend en charge la recherche de A à Z. Vous ne payez qu'une fois le candidat recruté.",
+    href: "/tarifs",
+    cta: "Soumettre un besoin",
   },
   {
-    name: "Lucas Bernard",
-    role: "Head of Growth",
-    image:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face",
-    bio: "Expert en marketing digital et acquisition.",
+    icon: Megaphone,
+    title: "Publicité RH",
+    desc: "Offres sponsorisées, mise en avant employeur et newsletter pour toucher notre audience de candidats.",
+    href: "/tarifs",
+    cta: "Voir les formats",
   },
 ];
 
-const features = [
+const ENGAGEMENTS = [
   {
-    icon: Users,
-    title: "Équipe Professionnelle",
-    description:
-      "Notre équipe d'experts en recrutement vous accompagne à chaque étape de votre recherche de talents.",
+    icon: ShieldCheck,
+    title: "Des données protégées",
+    desc: "Les CV et coordonnées des candidats ne sont jamais revendus. Accès contrôlé, conformité RGPD, hébergement sécurisé.",
   },
   {
-    icon: Target,
-    title: "Orientation Résultats",
-    description:
-      "Nous nous concentrons sur vos objectifs et vous aidons à atteindre vos cibles de recrutement.",
+    icon: HeartHandshake,
+    title: "Un accès équitable",
+    desc: "Un plan gratuit permanent pour les structures qui démarrent : la taille de l'entreprise ne doit pas décider de sa capacité à recruter.",
   },
   {
-    icon: CheckCircle,
-    title: "Garantie de Succès",
-    description:
-      "Notre approche éprouvée garantit des résultats concrets et mesurables pour votre entreprise.",
+    icon: Sparkles,
+    title: "Un produit qui évolue",
+    desc: "Nos fonctionnalités sont priorisées avec des recruteurs en poste, sur le terrain, pas depuis un tableau de bord.",
   },
 ];
 
 export default function AProposPage() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <div
-        className="bg-cover bg-center bg-no-repeat py-20 md:py-32 h-screen relative"
-        style={{ backgroundImage: "url('/img/about-bg.png')" }}
-      >
-        <div className="container mx-auto px-4">
+    <div className="pb-24" style={{ background: "var(--y-bg)" }}>
+      {/* ── Héros ── */}
+      <section className="pt-28 px-6 md:px-12 lg:px-20">
+        <div
+          className="relative overflow-hidden max-w-7xl mx-auto rounded-[32px] px-8 md:px-12 py-16 md:py-24"
+          style={{ background: "linear-gradient(155deg, #7c5cbf 0%, #5f47a0 55%, #4a3781 100%)" }}
+        >
+          <div
+            className="yl-orb"
+            style={{ width: 420, height: 420, top: -160, right: -100, background: "rgba(255,255,255,0.13)" }}
+          />
+          <div
+            className="yl-stripes absolute opacity-40"
+            style={{ width: 150, height: 150, bottom: -40, left: 32, borderRadius: 24 }}
+          />
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-center text-gray-900 max-w-4xl mx-auto relative mt-24"
+            className="relative z-10 max-w-3xl"
           >
-            {/* Decorative elements */}
-            <div className="absolute -top-4 -right-4 w-8 h-8 bg-gray-900 rounded-full opacity-20"></div>
-            <div className="absolute top-8 -left-8 w-4 h-4 bg-gray-900 rounded-full opacity-30"></div>
-            <div className="absolute -bottom-4 left-1/4 w-6 h-6 bg-gray-900 rounded-full opacity-20"></div>
-
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-8 text-white">
-              À propos de nous
+            <p className="text-sm font-semibold" style={{ color: "#e0d6ff" }}>
+              À propos d&apos;Ylsix
+            </p>
+            <h1
+              className="mt-3 text-4xl md:text-5xl lg:text-6xl font-semibold leading-[1.05] tracking-[-0.035em]"
+              style={{ color: "#fff" }}
+            >
+              Rapprocher les talents africains des entreprises qui les cherchent
             </h1>
-            <p className="text-lg md:text-xl text-white max-w-2xl mx-auto leading-relaxed">
-              Nous nous assurons que votre idée et votre création sont livrées
-              correctement. Notre mission est de révolutionner le recrutement en
-              connectant les meilleurs talents avec les entreprises qui les
-              méritent.
+            <p
+              className="mt-6 text-base md:text-lg leading-relaxed max-w-2xl"
+              style={{ color: "rgba(255,255,255,0.78)" }}
+            >
+              Ylsix est une plateforme de recrutement panafricaine, conçue et opérée depuis
+              Abidjan. Nous outillons les recruteurs d&apos;Afrique francophone et donnons aux
+              candidats les moyens de se rendre visibles.
             </p>
           </motion.div>
         </div>
-      </div>
+      </section>
 
-      {/* Mission Statement */}
-      <div className="bg-white container mx-auto ">
-        <div className="  px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-            className=" "
-          >
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-8">
-              Nous nous assurons que votre idée <br /> et votre création sont
-              livrées correctement
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-lg text-gray-600 leading-relaxed">
-              <p>
-                Chez Ylsix, nous croyons que chaque entreprise mérite de trouver
-                les talents qui correspondent parfaitement à sa culture et ses
-                objectifs. Notre plateforme révolutionne le processus de
-                recrutement en utilisant des technologies avancées et une
-                approche humaine.
-              </p>
-              <p>
-                Nous nous engageons à fournir des solutions de recrutement
-                innovantes qui permettent aux entreprises de se concentrer sur
-                ce qui compte le plus : leur croissance et leur développement.
-                Notre équipe d'experts travaille sans relâche pour garantir des
-                résultats exceptionnels.
-              </p>
-            </div>
-          </motion.div>
+      {/* ── Chiffres ── */}
+      <section className="mt-16 md:mt-20 px-6 md:px-12 lg:px-20">
+        <div
+          className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-y-8"
+          style={{ borderTop: "1px solid var(--y-line)", borderBottom: "1px solid var(--y-line)" }}
+        >
+          {CHIFFRES.map((c, i) => (
+            <motion.div
+              key={c.label}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: i * 0.08 }}
+              viewport={{ once: true }}
+              className="py-8 px-4 text-center lg:border-l lg:first:border-l-0"
+              style={{ borderColor: "var(--y-line)" }}
+            >
+              <div
+                className="text-3xl md:text-4xl font-semibold tracking-[-0.03em]"
+                style={{ color: "var(--y-primary-700)" }}
+              >
+                {c.value}
+              </div>
+              <div className="mt-1.5 text-sm" style={{ color: "var(--y-ink-3)" }}>
+                {c.label}
+              </div>
+            </motion.div>
+          ))}
         </div>
-      </div>
+      </section>
 
-      {/* Video/Quote Section */}
-      <div className="bg-gray-50 py-20 md:py-32 container mx-auto">
-        <div className="">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ">
-            {/* Video Section */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-              className="relative"
+      {/* ── Mission ── */}
+      <section className="mt-24 md:mt-32 px-6 md:px-12 lg:px-20">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          viewport={{ once: true }}
+          className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-10 lg:gap-16"
+        >
+          <div>
+            <p className="text-sm font-semibold" style={{ color: "var(--y-primary-700)" }}>
+              Notre mission
+            </p>
+            <h2
+              className="mt-3 text-3xl md:text-4xl lg:text-5xl font-semibold tracking-[-0.03em] leading-[1.1]"
+              style={{ color: "var(--y-ink)" }}
             >
-              <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl">
-                <img
-                  src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&h=450&fit=crop"
-                  alt="Notre équipe en action"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                  <button className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
-                    <Play className="w-8 h-8 text-gray-900 ml-1" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Quote Card */}
-              <div className="mt-8 bg-white rounded-2xl p-8 shadow-lg">
-                <Quote className="w-8 h-8 text-yellow-400 mb-4" />
-                <blockquote className="text-xl font-bold text-gray-900 mb-4">
-                  "Créer un impact, ensemble"
-                </blockquote>
-                <cite className="text-gray-600 font-medium">
-                  Fondateur de Ylsix
-                </cite>
-              </div>
-            </motion.div>
-
-            {/* Content Section */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-8">
-                Nous autonomisons les propriétaires de petites entreprises
-              </h2>
-              <div className="space-y-6 text-lg text-gray-600 leading-relaxed">
-                <p>
-                  Notre mission est de démocratiser l'accès aux meilleurs
-                  talents pour toutes les entreprises, quelle que soit leur
-                  taille. Nous croyons que chaque entreprise mérite de
-                  travailler avec des professionnels exceptionnels.
-                </p>
-                <div className="relative pl-6 border-l-4 border-[#a590ff]">
-                  <p className="italic">
-                    "Grâce à notre plateforme, les petites entreprises peuvent
-                    maintenant rivaliser avec les grandes corporations dans la
-                    recherche de talents. C'est notre engagement envers
-                    l'égalité des chances dans le monde du travail."
-                  </p>
-                </div>
-              </div>
-            </motion.div>
+              Le talent est partout. Les outils pour le trouver, non.
+            </h2>
           </div>
-        </div>
-      </div>
 
-      {/* Features Section */}
-      <div className="bg-[#a590ff] py-20 md:py-32">
-        <div className="container mx-auto px-4">
+          <div className="flex flex-col gap-5">
+            <p className="text-base md:text-lg leading-relaxed" style={{ color: "var(--y-ink-2)" }}>
+              En Afrique francophone, la plupart des recrutements passent encore par des
+              annonces éparpillées, des CV reçus par WhatsApp et des tableurs qu&apos;on se
+              partage. Les recruteurs perdent des semaines ; les candidats, eux, ne savent
+              jamais où en est leur candidature.
+            </p>
+            <p className="text-base md:text-lg leading-relaxed" style={{ color: "var(--y-ink-2)" }}>
+              Nous construisons l&apos;infrastructure qui manquait : une seule plateforme pour
+              publier, diffuser, trier, échanger et décider — pensée pour nos réalités, du
+              paiement en Mobile Money à la facturation en FCFA.
+            </p>
+
+            <div
+              className="mt-2 pl-5 py-1"
+              style={{ borderLeft: "3px solid var(--y-primary)" }}
+            >
+              <Quote size={20} className="mb-3" style={{ color: "var(--y-primary-700)" }} />
+              <blockquote
+                className="text-lg md:text-xl font-medium leading-relaxed"
+                style={{ color: "var(--y-ink)" }}
+              >
+                « Une PME d&apos;Abidjan doit pouvoir recruter aussi bien qu&apos;un grand
+                groupe. C&apos;est tout le sens de ce qu&apos;on construit. »
+              </blockquote>
+              <cite className="mt-3 block text-sm not-italic" style={{ color: "var(--y-ink-3)" }}>
+                L&apos;équipe fondatrice d&apos;Ylsix
+              </cite>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ── Nos 4 métiers ── */}
+      <section className="mt-24 md:mt-32 px-6 md:px-12 lg:px-20">
+        <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
             viewport={{ once: true }}
-            className="text-center max-w-4xl mx-auto mb-16"
+            className="max-w-2xl mb-12"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
-              Nous aidons les entreprises à grandir plus vite et plus grand
+            <p className="text-sm font-semibold" style={{ color: "var(--y-primary-700)" }}>
+              Ce que nous faisons
+            </p>
+            <h2
+              className="mt-3 text-3xl md:text-4xl lg:text-5xl font-semibold tracking-[-0.03em]"
+              style={{ color: "var(--y-ink)" }}
+            >
+              Quatre façons de recruter avec nous
             </h2>
-            <p className="text-lg text-white leading-relaxed">
-              Notre approche innovante et nos outils avancés permettent aux
-              entreprises de transformer leur processus de recrutement et
-              d'attirer les meilleurs talents.
+            <p className="mt-4 text-base" style={{ color: "var(--y-ink-2)" }}>
+              Du logiciel en libre-service à la mission confiée à notre équipe : vous choisissez
+              le niveau d&apos;accompagnement.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {features.map((feature, index) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {METIERS.map((m, i) => (
               <motion.div
-                key={feature.title}
+                key={m.title}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ duration: 0.4, delay: (i % 4) * 0.08 }}
                 viewport={{ once: true }}
-                className="text-center"
               >
-                <div className="w-20 h-20 bg-[#fff] rounded-full flex items-center justify-center mx-auto mb-6">
-                  <feature.icon className="w-10 h-10 text-[#a590ff]" />
+                <Link
+                  href={m.href}
+                  className="group flex flex-col h-full rounded-2xl p-6 transition-transform duration-200 hover:-translate-y-1"
+                  style={{ background: "var(--y-bg-pure)", boxShadow: "var(--y-shadow-sm)" }}
+                >
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                    style={{ background: "var(--y-primary-50)", color: "var(--y-primary-700)" }}
+                  >
+                    <m.icon size={22} />
+                  </div>
+                  <h3 className="text-lg font-semibold tracking-tight" style={{ color: "var(--y-ink)" }}>
+                    {m.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed flex-1" style={{ color: "var(--y-ink-3)" }}>
+                    {m.desc}
+                  </p>
+                  <span
+                    className="mt-5 inline-flex items-center gap-1 text-sm font-medium transition-all group-hover:gap-2"
+                    style={{ color: "var(--y-primary-700)" }}
+                  >
+                    {m.cta} <ArrowRight size={14} />
+                  </span>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Engagements (bande sombre) ── */}
+      <section className="mt-24 md:mt-32 px-6 md:px-12 lg:px-20">
+        <div
+          className="relative overflow-hidden max-w-7xl mx-auto rounded-[32px] px-8 md:px-12 py-14 md:py-20"
+          style={{ background: "var(--y-bg-ink)" }}
+        >
+          <div
+            className="yl-orb"
+            style={{ width: 420, height: 420, bottom: -200, right: -120, background: "rgba(165,144,255,0.22)" }}
+          />
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            viewport={{ once: true }}
+            className="relative z-10 max-w-2xl mb-12"
+          >
+            <p className="text-sm font-semibold" style={{ color: "#c9b8ff" }}>
+              Nos engagements
+            </p>
+            <h2
+              className="mt-3 text-3xl md:text-4xl lg:text-5xl font-semibold tracking-[-0.03em]"
+              style={{ color: "#fff" }}
+            >
+              Ce sur quoi nous ne transigeons pas
+            </h2>
+          </motion.div>
+
+          <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8">
+            {ENGAGEMENTS.map((e, i) => (
+              <motion.div
+                key={e.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: i * 0.08 }}
+                viewport={{ once: true }}
+              >
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                  style={{ background: "rgba(255,255,255,0.08)", color: "#c9b8ff" }}
+                >
+                  <e.icon size={22} />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-4">
-                  {feature.title}
+                <h3 className="text-lg font-semibold tracking-tight" style={{ color: "#fff" }}>
+                  {e.title}
                 </h3>
-                <p className="text-white leading-relaxed">
-                  {feature.description}
+                <p className="mt-2 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  {e.desc}
                 </p>
               </motion.div>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* CTA Section */}
-      {/* <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        viewport={{ once: true }}
-        className="bg-gray-900 py-20 md:py-32"
-      >
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
-            Prêt à transformer votre recrutement ?
-          </h2>
-          <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
-            Rejoignez des milliers d'entreprises qui font confiance à
-            Ylsix pour leurs besoins en recrutement.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-6 justify-center">
-            <Link
-              href="/offres"
-              className="bg-yellow-400 text-gray-900 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-yellow-300 transition-colors shadow-lg"
+      {/* ── CTA ── */}
+      <section className="mt-24 md:mt-32 px-6 md:px-12 lg:px-20">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          viewport={{ once: true }}
+          className="relative overflow-hidden max-w-7xl mx-auto rounded-[32px] px-8 md:px-12 py-14 md:py-16 flex flex-col lg:flex-row lg:items-center justify-between gap-8"
+          style={{ background: "linear-gradient(135deg, #7c5cbf 0%, #4a3781 100%)" }}
+        >
+          <div
+            className="yl-stripes absolute opacity-30"
+            style={{ width: 150, height: 150, bottom: -40, right: 40, borderRadius: 24 }}
+          />
+          <div className="relative z-10 max-w-2xl">
+            <h2
+              className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] leading-[1.1]"
+              style={{ color: "#fff" }}
             >
-              Voir les offres
+              Envie d&apos;en savoir plus sur Ylsix ?
+            </h2>
+            <p className="mt-4 text-base md:text-lg" style={{ color: "rgba(255,255,255,0.75)" }}>
+              Parlons de vos besoins de recrutement — ou commencez directement, c&apos;est
+              gratuit.
+            </p>
+          </div>
+
+          <div className="relative z-10 flex flex-wrap gap-3 shrink-0">
+            <Link
+              href="/auth/recruteur/register"
+              className="h-12 px-6 rounded-full text-sm font-medium flex items-center gap-2 transition-transform hover:-translate-y-0.5"
+              style={{ background: "#fff", color: "var(--y-primary-700)", boxShadow: "var(--y-shadow-lg)" }}
+            >
+              Créer un compte <ArrowRight size={16} />
             </Link>
             <Link
               href="/contact"
-              className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-gray-900 transition-colors"
+              className="h-12 px-6 rounded-full text-sm font-medium flex items-center transition-colors"
+              style={{ color: "#fff", boxShadow: "inset 0 0 0 1.5px rgba(255,255,255,0.4)" }}
             >
               Nous contacter
             </Link>
           </div>
-        </div>
-      </motion.div> */}
+        </motion.div>
+      </section>
     </div>
   );
 }

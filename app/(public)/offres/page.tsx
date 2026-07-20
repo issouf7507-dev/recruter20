@@ -6,6 +6,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useOffers } from "@/lib/hooks/use-offers";
 import { Card, CardContent } from "@/components/ui/card";
 import { OffreCard } from "@/components/public/OffreCard";
+import { OffrePreviewSheet } from "@/components/public/OffrePreviewSheet";
 
 import {
   Select,
@@ -46,11 +47,21 @@ export default function OffresPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [submittedSearch, setSubmittedSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [previewOffer, setPreviewOffer] = useState<any | null>(null);
 
   const handleSearch = () => {
     setSubmittedSearch(searchQuery);
     setCurrentPage(1);
   };
+
+  // Pré-remplissage depuis la recherche du Hero (/offres?q=...)
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) {
+      setSearchQuery(q);
+      setSubmittedSearch(q);
+    }
+  }, []);
   const [selectedContractTypes, setSelectedContractTypes] = useState<string[]>(
     [],
   );
@@ -290,10 +301,10 @@ export default function OffresPage() {
   // État de chargement initial
   if (isLoadingOffers) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-20 flex items-center justify-center">
+      <div className="min-h-screen pt-20 flex items-center justify-center" style={{ background: "var(--y-bg)" }}>
         <div className="container mx-auto px-4 py-12 text-center">
           <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 md:h-16 md:w-16 border-b-2 border-[#a590ff] mx-auto"></div>
-          <p className="mt-4 text-gray-600 text-sm sm:text-base md:text-lg">
+          <p className="mt-4 text-sm sm:text-base md:text-lg" style={{ color: "var(--y-ink-3)" }}>
             Chargement des offres...
           </p>
         </div>
@@ -302,53 +313,55 @@ export default function OffresPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
-      {/* Hero Section */}
+    <div className="min-h-screen" style={{ background: "var(--y-bg)" }}>
+      {/* Hero Section — bloc violet cohérent avec la refonte */}
       <div
-        className="bg-cover bg-center bg-no-repeat py-8 sm:py-12 md:py-20 lg:py-32"
-        style={{
-          backgroundImage: "url('/img/banniereweb_.png')",
-        }}
+        className="relative overflow-hidden px-6 md:px-12 lg:px-20 pt-32 pb-16 md:pb-20"
+        style={{ background: "linear-gradient(155deg, #7c5cbf 0%, #5f47a0 55%, #4a3781 100%)" }}
       >
-        <div className="container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center"
-          >
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4 text-gray-900">
-              Trouvez votre emploi idéal
-            </h1>
-            <p className="text-sm sm:text-base md:text-lg text-black mb-6 md:mb-8 max-w-3xl mx-auto px-2">
-              Vous cherchez un emploi ? Parcourez nos dernières offres d'emploi
-              pour voir et postuler aux meilleurs emplois d'aujourd'hui !
-            </p>
+        <div className="yl-orb" style={{ width: 420, height: 420, top: -160, right: -120, background: "rgba(255,255,255,0.14)" }} />
+        <div className="yl-stripes absolute opacity-40" style={{ width: 140, height: 140, bottom: 24, left: 40, borderRadius: 20 }} />
 
-            {/* Search Bar */}
-            <div className="max-w-3xl mx-auto bg-white rounded-2xl md:rounded-full shadow-lg border border-gray-200 p-3 sm:p-4">
-              <div className="flex flex-col md:flex-row gap-3 md:gap-2">
-                <div className="flex-1 flex items-center gap-3">
-                  <Search className="w-5 h-5 text-gray-400 shrink-0" />
-                  <input
-                    type="text"
-                    placeholder="Rechercher un poste ou mot-clé"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    className="flex-1 outline-none text-gray-800 placeholder-gray-400 text-sm sm:text-base min-w-0"
-                  />
-                </div>
-                <button
-                  onClick={handleSearch}
-                  className="bg-[#a590ff] text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold transition-colors cursor-pointer text-sm sm:text-base hover:bg-[#9580ef]"
-                >
-                  Rechercher
-                </button>
-              </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative z-10 max-w-3xl mx-auto text-center"
+        >
+          <p className="text-sm font-semibold" style={{ color: "#e0d6ff" }}>Offres d&apos;emploi</p>
+          <h1 className="mt-3 text-4xl md:text-5xl lg:text-6xl font-semibold tracking-[-0.035em]" style={{ color: "#fff" }}>
+            Trouvez votre emploi idéal
+          </h1>
+          <p className="mt-5 text-base md:text-lg" style={{ color: "rgba(255,255,255,0.78)" }}>
+            Parcourez nos dernières offres et postulez aux meilleures opportunités du moment.
+          </p>
+
+          {/* Search Bar */}
+          <form
+            onSubmit={(e) => { e.preventDefault(); handleSearch(); }}
+            className="mt-8 max-w-2xl mx-auto flex flex-col sm:flex-row items-stretch gap-2 p-2 rounded-3xl sm:rounded-full"
+            style={{ background: "var(--y-bg-pure)", boxShadow: "var(--y-shadow-lg)" }}
+          >
+            <div className="flex-1 flex items-center gap-2 px-3">
+              <Search className="w-[18px] h-[18px] shrink-0" style={{ color: "var(--y-ink-3)" }} />
+              <input
+                type="text"
+                placeholder="Rechercher un poste ou mot-clé"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 h-11 bg-transparent outline-none text-sm min-w-0"
+                style={{ color: "var(--y-ink)" }}
+              />
             </div>
-          </motion.div>
-        </div>
+            <button
+              type="submit"
+              className="h-11 px-6 rounded-full text-sm font-medium flex items-center justify-center gap-2 shrink-0 text-white transition-transform hover:-translate-y-0.5 cursor-pointer"
+              style={{ background: "linear-gradient(135deg, var(--y-primary) 0%, var(--y-primary-700) 100%)", boxShadow: "var(--y-shadow-violet)" }}
+            >
+              Rechercher
+            </button>
+          </form>
+        </motion.div>
       </div>
 
       {/* Main Content */}
@@ -368,7 +381,7 @@ export default function OffresPage() {
               {hasActiveFilters && (
                 <button
                   onClick={clearAllFilters}
-                  className="text-sm text-green-600 hover:underline"
+                  className="text-sm text-[#7c5cbf] hover:underline"
                 >
                   Tout effacer
                 </button>
@@ -383,7 +396,7 @@ export default function OffresPage() {
               <select
                 value={datePosted}
                 onChange={(e) => setDatePosted(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#a590ff] focus:border-transparent"
               >
                 <option value="N'importe quand">N'importe quand</option>
                 <option value="Aujourd'hui">Aujourd'hui</option>
@@ -414,7 +427,7 @@ export default function OffresPage() {
                           type.value,
                         )
                       }
-                      className="w-4 h-4 text-green-600 rounded"
+                      className="w-4 h-4 rounded accent-[#7c5cbf]"
                     />
                     <span className="text-gray-700">{type.label}</span>
                   </label>
@@ -428,7 +441,7 @@ export default function OffresPage() {
               <select
                 value={selectedCurrency}
                 onChange={(e) => setSelectedCurrency(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#a590ff] focus:border-transparent"
               >
                 <option value="Toutes">Toutes les devises</option>
                 {currencies.map((currency) => (
@@ -492,16 +505,18 @@ export default function OffresPage() {
                 </div>
               ) : (
                 <>
-                  {jobOffers.map((job, index) => (
-                    <motion.div
-                      key={job.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: index * 0.04 }}
-                    >
-                      <OffreCard offre={job} index={index} />
-                    </motion.div>
-                  ))}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {jobOffers.map((job, index) => (
+                      <motion.div
+                        key={job.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: index * 0.04 }}
+                      >
+                        <OffreCard offre={job} index={index} onPreview={setPreviewOffer} />
+                      </motion.div>
+                    ))}
+                  </div>
 
                   <div>
                     {pagination && pagination.totalPages > 1 && (
@@ -661,28 +676,38 @@ export default function OffresPage() {
         </div>
       </div>
 
-      {/* CTA Section */}
-      <div className="py-10 sm:py-12 md:py-16 mt-10 sm:mt-16 md:mt-20 bg-gradient-to-b from-gray-50 to-gray-100">
-        <div className="container mx-auto px-4 text-center">
+      {/* CTA Section — bande violette cohérente */}
+      <div className="mt-16 md:mt-24 px-6 md:px-12 lg:px-20">
+        <div
+          className="relative overflow-hidden max-w-7xl mx-auto rounded-[32px] px-8 md:px-14 py-14 md:py-16 text-center"
+          style={{ background: "linear-gradient(135deg, #7c5cbf 0%, #4a3781 100%)" }}
+        >
+          <div className="yl-orb" style={{ width: 360, height: 360, top: -140, left: -100, background: "rgba(255,255,255,0.12)" }} />
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
+            className="relative z-10"
           >
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4 px-2">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-[-0.02em] px-2" style={{ color: "#fff" }}>
               Vous ne trouvez pas ce que vous cherchez ?
             </h2>
-            <p className="text-gray-600 text-sm sm:text-base md:text-lg mb-6 md:mb-8 max-w-xl mx-auto px-4">
-              Créez une alerte emploi et recevez les nouvelles offres d'emploi
-              par email
+            <p className="mt-4 text-sm sm:text-base md:text-lg max-w-xl mx-auto px-4" style={{ color: "rgba(255,255,255,0.78)" }}>
+              Créez une alerte emploi et recevez les nouvelles offres directement par email.
             </p>
-            <button className="text-white bg-[#a590ff] hover:bg-[#9580ef] px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base md:text-lg transition-colors shadow-lg cursor-pointer">
+            <button
+              className="mt-8 h-12 px-6 rounded-full font-medium text-sm md:text-base transition-transform hover:-translate-y-0.5 cursor-pointer"
+              style={{ background: "#fff", color: "var(--y-primary-700)", boxShadow: "var(--y-shadow-lg)" }}
+            >
               Créer une alerte emploi
             </button>
           </motion.div>
         </div>
       </div>
+
+      {/* Aperçu rapide d'une offre (sheet) */}
+      <OffrePreviewSheet offre={previewOffer} onClose={() => setPreviewOffer(null)} />
     </div>
   );
 }
