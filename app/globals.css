@@ -40,6 +40,23 @@
 
 .yl-orb   { position: absolute; border-radius: 50%; filter: blur(40px); animation: yl-orb 8s ease-in-out infinite; }
 .yl-float { animation: yl-float 3.2s ease-in-out infinite; }
+
+/* Bandeau défilant (ticker offres/salaires) — inspiré du modèle */
+@keyframes yl-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.yl-marquee-track { display: flex; width: max-content; animation: yl-marquee 45s linear infinite; }
+.yl-marquee:hover .yl-marquee-track { animation-play-state: paused; }
+
+/* Accent rayures diagonales (équivalent des rayures du modèle) */
+.yl-stripes {
+  background-image: repeating-linear-gradient(135deg, var(--y-primary) 0, var(--y-primary) 7px, transparent 7px, transparent 15px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yl-orb, .yl-float, .yl-marquee-track { animation: none; }
+}
 .yl-skel  {
   background: linear-gradient(90deg, var(--y-bg-soft) 0%, #ECE7E0 50%, var(--y-bg-soft) 100%);
   background-size: 200% 100%;

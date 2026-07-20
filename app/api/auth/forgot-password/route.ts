@@ -29,10 +29,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Vérifier si l'utilisateur est un recruteur
-    if (user.type !== "RECRUTEUR" && user.type !== "COLLABORATEUR") {
+    // Seuls les comptes recruteur/collaborateur et candidat peuvent
+    // réinitialiser leur mot de passe via ce flux.
+    if (
+      user.type !== "RECRUTEUR" &&
+      user.type !== "COLLABORATEUR" &&
+      user.type !== "CANDIDAT"
+    ) {
       return NextResponse.json(
-        { message: "Cette fonctionnalité est réservée aux recruteurs" },
+        { message: "Cette fonctionnalité n'est pas disponible pour ce compte" },
         { status: 403 },
       );
     }
@@ -50,8 +55,11 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Envoyer l'email
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/recruteur/reset-password?token=${resetToken}`;
+    // Construire l'URL de réinitialisation selon le type de compte
+    // (source de vérité : le type stocké en base, pas le body de la requête).
+    const basePath =
+      user.type === "CANDIDAT" ? "/auth/candidat" : "/auth/recruteur";
+    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}${basePath}/reset-password?token=${resetToken}`;
 
     await emailService.sendResetPasswordEmail({
       to: email,

@@ -70,6 +70,16 @@ async function sendMail({
   }
 }
 
+/** Échappe le contenu fourni par l'utilisateur avant interpolation dans un template HTML. */
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 class EmailService {
   /**
    * Envoyer un email de réinitialisation de mot de passe
@@ -687,6 +697,14 @@ class EmailService {
   }) {
     const logoUrl = `${APP_URL}/img/icon2.png`;
 
+    // Ce template est alimenté par le formulaire public /contact : on échappe tout.
+    const safe = {
+      nom: escapeHtml(nom),
+      email: escapeHtml(email),
+      sujet: escapeHtml(sujet),
+      message: escapeHtml(message),
+    };
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -704,17 +722,17 @@ class EmailService {
             </div>
             <div style="padding: 35px 30px;">
               <div style="background: #252525; padding: 20px; border-radius: 12px; margin: 0 0 20px 0; border: 1px solid #333;">
-                <p style="margin: 0 0 8px 0; color: #d1d5db; font-size: 14px;"><strong style="color: #e5e7eb;">Nom :</strong> ${nom}</p>
-                <p style="margin: 0 0 8px 0; color: #d1d5db; font-size: 14px;"><strong style="color: #e5e7eb;">Email :</strong> ${email}</p>
-                <p style="margin: 0; color: #d1d5db; font-size: 14px;"><strong style="color: #e5e7eb;">Sujet :</strong> ${sujet}</p>
+                <p style="margin: 0 0 8px 0; color: #d1d5db; font-size: 14px;"><strong style="color: #e5e7eb;">Nom :</strong> ${safe.nom}</p>
+                <p style="margin: 0 0 8px 0; color: #d1d5db; font-size: 14px;"><strong style="color: #e5e7eb;">Email :</strong> ${safe.email}</p>
+                <p style="margin: 0; color: #d1d5db; font-size: 14px;"><strong style="color: #e5e7eb;">Sujet :</strong> ${safe.sujet}</p>
               </div>
               <div style="background: linear-gradient(135deg, #2d1f4e 0%, #1e1b4b 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #8b5cf6;">
-                <p style="margin: 0; color: #e5e7eb; font-size: 14px; white-space: pre-wrap;">${message}</p>
+                <p style="margin: 0; color: #e5e7eb; font-size: 14px; white-space: pre-wrap;">${safe.message}</p>
               </div>
             </div>
             <div style="background: #151515; padding: 25px 30px; border-top: 1px solid #2a2a2a;">
               <p style="font-size: 12px; color: #6b7280; text-align: center; margin: 0;">
-                Répondez directement à cet email pour contacter ${nom}.
+                Répondez directement à cet email pour contacter ${safe.nom}.
               </p>
             </div>
           </div>

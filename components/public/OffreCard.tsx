@@ -36,9 +36,11 @@ export interface Offre {
 interface Props {
   offre: Offre;
   index?: number;
+  /** Si fourni, un clic normal ouvre un aperçu au lieu de naviguer (le lien reste pour SEO / clic-milieu). */
+  onPreview?: (offre: Offre) => void;
 }
 
-export function OffreCard({ offre, index = 0 }: Props) {
+export function OffreCard({ offre, index = 0, onPreview }: Props) {
   const [hovered, setHovered] = useState(false);
   const grad = GRADIENTS[index % GRADIENTS.length];
 
@@ -65,11 +67,20 @@ export function OffreCard({ offre, index = 0 }: Props) {
     : null;
 
   return (
-    <Link href={`/offres/${offre.id}`}>
+    <Link
+      href={`/offres/${offre.id}`}
+      className="block h-full"
+      onClick={(e) => {
+        if (onPreview) {
+          e.preventDefault();
+          onPreview(offre);
+        }
+      }}
+    >
       <div
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        className="rounded-2xl p-5 transition-all duration-200 cursor-pointer"
+        className="rounded-2xl p-5 transition-all duration-200 cursor-pointer h-full flex flex-col"
         style={{
           background: "var(--y-bg-pure)",
           boxShadow: hovered
@@ -132,7 +143,7 @@ export function OffreCard({ offre, index = 0 }: Props) {
               background: hovered ? "var(--y-primary-50)" : "var(--y-bg)",
               color: hovered ? "var(--y-primary-700)" : "var(--y-ink-3)",
             }}
-            onClick={(e) => e.preventDefault()}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
           >
             <Bookmark size={14} />
           </button>
@@ -161,7 +172,7 @@ export function OffreCard({ offre, index = 0 }: Props) {
 
         {/* Footer */}
         <div
-          className="flex items-center justify-between mt-4 pt-3.5"
+          className="flex items-center justify-between mt-auto pt-3.5"
           style={{ borderTop: "1px dashed var(--y-line-2)" }}
         >
           <div className="flex items-center gap-2 text-xs" style={{ color: "var(--y-ink-3)" }}>

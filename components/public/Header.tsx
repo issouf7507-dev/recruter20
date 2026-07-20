@@ -20,6 +20,7 @@ import { toast } from "sonner";
 const NAV_LINKS = [
   { label: "Offres d'emploi", href: "/offres" },
   { label: "Fonctionnalités", href: "/fonctionnalites" },
+  { label: "Ressources", href: "/ressources" },
   { label: "Tarifs", href: "/tarifs" },
   { label: "À propos", href: "/a-propos" },
   { label: "Contact", href: "/contact" },
